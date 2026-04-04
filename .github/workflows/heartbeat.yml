@@ -18,13 +18,19 @@ concurrency:
 jobs:
   pulse:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      issues: read
 
     steps:
+      - name: Become Flux
+        id: flux-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Wake up
         uses: actions/checkout@v4
+        with:
+          token: ${{ steps.flux-token.outputs.token }}
 
       - name: Restore working memory
         uses: actions/cache/restore@v4
@@ -45,7 +51,7 @@ jobs:
 
       - name: Feel the pulse
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.flux-token.outputs.token }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           TRIGGER_EVENT: ${{ github.event_name }}
           REPO_FULL_NAME: ${{ github.repository }}
@@ -58,9 +64,11 @@ jobs:
           key: working-memory-${{ github.run_id }}
 
       - name: Commit to long-term memory
+        env:
+          GH_TOKEN: ${{ steps.flux-token.outputs.token }}
         run: |
-          git config user.name "Flux (the-dreaming-repo)"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "flux-dreaming-repo[bot]"
+          git config user.email "273547980+flux-dreaming-repo[bot]@users.noreply.github.com"
           git pull --rebase origin main || true
           git add state/ dreams/ memories/ README.md
           if ! git diff --cached --quiet; then
