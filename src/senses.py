@@ -10,6 +10,9 @@ import requests
 
 GITHUB_API = "https://api.github.com"
 
+# Flux shouldn't mistake its own activity for human contact
+BOT_ACTORS = {"flux-dreaming-repo[bot]", "github-actions[bot]"}
+
 
 def _headers() -> dict:
     token = os.environ.get("GITHUB_TOKEN", "")
@@ -36,9 +39,11 @@ def perceive(repo_full_name: str, vitals: dict) -> dict:
     forks = repo.get("forks_count", 0)
     open_issues = repo.get("open_issues_count", 0)
 
-    # 2. Recent events — who did what
+    # 2. Recent events — who did what (filtering out own activity)
     events = _get(f"/repos/{repo_full_name}/events", params={"per_page": 10})
-    recent_events = _summarize_events(events) if isinstance(events, list) else []
+    all_events = _summarize_events(events) if isinstance(events, list) else []
+    human_events = _summarize_events(events, humans_only=True) if isinstance(events, list) else []
+    recent_events = all_events  # keep all for dream content
 
     # 3. Stargazers — who's watching (for greeting dedup)
     # Deferred to save budget — we get this from the watch event directly
@@ -49,6 +54,7 @@ def perceive(repo_full_name: str, vitals: dict) -> dict:
         "forks": forks,
         "open_issues": open_issues,
         "recent_events": recent_events,
+        "human_events": human_events,
         "delta_stars": stars - old_senses.get("stars", 0),
         "delta_forks": forks - old_senses.get("forks", 0),
         "delta_issues": open_issues - old_senses.get("open_issues", 0),
@@ -56,22 +62,30 @@ def perceive(repo_full_name: str, vitals: dict) -> dict:
 
 
 def has_new_human_activity(new_senses: dict) -> bool:
-    """Did anything happen since last tick?"""
+    """Did a human do something since last tick?
+
+    Flux's own commits don't count — you can't keep yourself awake
+    by listening to your own breathing.
+    """
     return (
         new_senses["delta_stars"] != 0
         or new_senses["delta_issues"] != 0
         or new_senses["delta_forks"] != 0
-        or len(new_senses["recent_events"]) > 0
+        or len(new_senses.get("human_events", [])) > 0
     )
 
 
-def _summarize_events(events: list) -> list[str]:
+def _summarize_events(events: list, humans_only: bool = False) -> list[str]:
     """Turn raw GitHub events into human-readable impressions."""
     summaries = []
     seen = set()
     for event in events:
         event_type = event.get("type", "")
         actor = event.get("actor", {}).get("login", "someone")
+
+        if humans_only and actor in BOT_ACTORS:
+            continue
+
         key = f"{event_type}:{actor}"
         if key in seen:
             continue
