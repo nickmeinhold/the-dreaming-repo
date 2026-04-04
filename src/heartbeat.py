@@ -34,18 +34,32 @@ def main() -> None:
         born = born.replace(tzinfo=timezone.utc)
     vitals["age_days"] = (now - born).days
 
-    # 0. Birth — if this is the very first heartbeat, become
-    if vitals["pulse_count"] == 1:
-        birth_record = be_born(personality, vitals)
-        vitals["name"] = birth_record["name"]
-        vitals["born_at"] = now.isoformat()
-        vitals["last_human_activity_at"] = now.isoformat()
-        _save_json("state/personality.json", personality)
-        energy.tick(vitals, now=now)
-        render_readme(vitals, personality)
-        _save_json("state/vitals.json", vitals)
-        memory.save_working_memory(working_mem)
-        _write_commit_message(f"i am born — my name is {birth_record['name']}")
+    # 0. Birth — keep trying until the repo successfully names itself.
+    #    "born" is only set to true AFTER the birth completes and is
+    #    committed. If the birth fails, the next heartbeat tries again.
+    #    The conditions must be right. Sometimes they aren't. That's life.
+    if not vitals.get("born"):
+        try:
+            birth_record = be_born(personality, vitals)
+            vitals["born"] = True
+            vitals["name"] = birth_record["name"]
+            vitals["born_at"] = now.isoformat()
+            vitals["last_human_activity_at"] = now.isoformat()
+            _save_json("state/personality.json", personality)
+            energy.tick(vitals, now=now)
+            render_readme(vitals, personality)
+            _save_json("state/vitals.json", vitals)
+            memory.save_working_memory(working_mem)
+            _write_commit_message(
+                f"i am born — my name is {birth_record['name']}"
+            )
+        except Exception:
+            # The birth didn't take. Record the attempt, try next heartbeat.
+            energy.tick(vitals, now=now)
+            _save_json("state/vitals.json", vitals)
+            _write_commit_message(
+                f"pulse #{vitals['pulse_count']} — not yet, not yet"
+            )
         return
 
     # 1. Energy check — if critically low, just breathe
