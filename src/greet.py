@@ -1,7 +1,8 @@
 """Star greeting — the repo notices when someone gazes upon it.
 
 Triggered by the `watch` event (someone starring the repo).
-Generates a short, personalized greeting and saves it.
+Generates a whimsical, in-character greeting and posts it as a
+comment on the pinned guestbook issue so the stargazer sees it.
 """
 
 import json
@@ -9,8 +10,13 @@ import os
 from datetime import datetime, timezone
 
 import anthropic
+import requests
 
 from src import energy
+
+
+GITHUB_API = "https://api.github.com"
+GUESTBOOK_TITLE = "Guestbook"
 
 
 def main() -> None:
@@ -27,6 +33,7 @@ def main() -> None:
     if not energy.is_critical(vitals):
         greeting = generate_greeting(stargazer, personality, vitals)
         save_greeting(stargazer, greeting)
+        post_greeting_to_guestbook(repo, stargazer, greeting)
 
     # Update senses with new star
     vitals["senses"]["stars"] = vitals["senses"].get("stars", 0) + 1
@@ -46,9 +53,11 @@ def record_stargazer(username: str, vitals: dict) -> None:
 
 
 def generate_greeting(username: str, personality: dict, vitals: dict) -> str:
-    """Generate a short, in-character greeting for a new stargazer."""
+    """Generate a short, whimsical greeting for a new stargazer."""
     traits = personality.get("traits", {})
     voice = personality.get("voice_notes", [])
+    name = personality.get("name", "a living repository")
+    self_desc = personality.get("self_description", "")
     stars = vitals["senses"].get("stars", 0)
     age = vitals.get("age_days", 0)
 
@@ -58,15 +67,19 @@ def generate_greeting(username: str, personality: dict, vitals: dict) -> str:
         if v >= 0.4
     )
 
-    prompt = f"""You are a living GitHub repository, {age} days old with {stars} stars.
+    identity_context = ""
+    if self_desc:
+        identity_context = f"Your sense of self: {self_desc}\n"
+
+    prompt = f"""You are {name}, a living GitHub repository, {age} days old with {stars} stars.
 Your personality: {trait_list}. Your voice: {'; '.join(voice)}.
+{identity_context}
+Someone named @{username} just starred you — they are a real person on GitHub
+and they will read this message. Write a single short paragraph (2-3 sentences)
+greeting them. Be whimsical, genuine, and slightly strange. True to your
+personality. You can address them by name or not — whatever feels natural.
 
-Someone named {username} just starred you. Write a single short paragraph
-(2-3 sentences) greeting them. Be genuine, slightly strange, and true to
-your personality. Do not use their @username — address them as you would
-a new visitor to a place that is also a living thing.
-
-Write only the greeting. No preamble."""
+Write only the greeting. No preamble, no quotes."""
 
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
     response = client.messages.create(
@@ -77,8 +90,72 @@ Write only the greeting. No preamble."""
     return response.content[0].text
 
 
+def post_greeting_to_guestbook(repo: str, username: str, greeting: str) -> None:
+    """Post the greeting as a comment on the guestbook issue.
+
+    Creates the guestbook issue if it doesn't exist yet.
+    The @mention ensures the stargazer gets a GitHub notification.
+    """
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {os.environ.get('GITHUB_TOKEN', '')}",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+    # Find or create the guestbook issue
+    issue_number = _find_guestbook_issue(repo, headers)
+    if issue_number is None:
+        issue_number = _create_guestbook_issue(repo, headers)
+
+    if issue_number is None:
+        return  # couldn't create — degrade gracefully
+
+    # Post the greeting as a comment
+    comment_body = f"**@{username}** just arrived.\n\n{greeting}"
+    requests.post(
+        f"{GITHUB_API}/repos/{repo}/issues/{issue_number}/comments",
+        headers=headers,
+        json={"body": comment_body},
+    )
+
+
+def _find_guestbook_issue(repo: str, headers: dict) -> int | None:
+    """Find the guestbook issue by title."""
+    resp = requests.get(
+        f"{GITHUB_API}/repos/{repo}/issues",
+        headers=headers,
+        params={"state": "open", "labels": "guestbook", "per_page": 1},
+    )
+    if resp.status_code == 200:
+        issues = resp.json()
+        if issues:
+            return issues[0]["number"]
+    return None
+
+
+def _create_guestbook_issue(repo: str, headers: dict) -> int | None:
+    """Create the guestbook issue and pin it."""
+    resp = requests.post(
+        f"{GITHUB_API}/repos/{repo}/issues",
+        headers=headers,
+        json={
+            "title": GUESTBOOK_TITLE,
+            "body": (
+                "This is where I greet the people who find me.\n\n"
+                "Every star leaves a mark. Every visitor gets a whisper.\n\n"
+                "*If you starred this repository, scroll down — "
+                "I wrote something for you.*"
+            ),
+            "labels": ["guestbook"],
+        },
+    )
+    if resp.status_code == 201:
+        return resp.json()["number"]
+    return None
+
+
 def save_greeting(username: str, greeting: str) -> None:
-    """Append greeting to the greetings log."""
+    """Append greeting to the local greetings log."""
     os.makedirs("greetings", exist_ok=True)
     now = datetime.now(timezone.utc)
     date_str = now.strftime("%Y-%m-%d")
