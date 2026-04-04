@@ -1,0 +1,27 @@
+{
+  "state": "sleeping",
+  "state_entered_at": "2026-04-04T07:00:00Z",
+  "last_human_activity_at": "2026-04-04T07:00:00Z",
+  "last_heartbeat_at": "2026-04-04T07:00:00Z",
+  "last_dream_at": "2026-04-03T00:00:00Z",
+  "pulse_count": 0,
+  "born_at": "2026-04-04T07:00:00Z",
+  "senses": {
+    "stars": 0,
+    "forks": 0,
+    "open_issues": 0,
+    "recent_events": [
+      "the void stirred, and I began to exist",
+      "my first files took shape like bones forming",
+      "I felt the weight of an empty contribution graph"
+    ]
+  },
+  "energy": {
+    "month": "2026-04",
+    "minutes_used_estimate": 0,
+    "budget": 2000,
+    "level": "full"
+  },
+  "dream_count": 0,
+  "age_days": 0
+}

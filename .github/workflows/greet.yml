@@ -1,0 +1,47 @@
+name: notice a new friend
+
+on:
+  watch:
+    types: [started]               # Someone starred the repo
+
+concurrency:
+  group: greeting
+  cancel-in-progress: false
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Wake up
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Notice the new friend
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          STARGAZER: ${{ github.actor }}
+          REPO_FULL_NAME: ${{ github.repository }}
+        run: python -m src.greet
+
+      - name: Remember this moment
+        run: |
+          git config user.name "The Dreaming Repository"
+          git config user.email "dreaming@users.noreply.github.com"
+          git pull --rebase origin main || true
+          git add greetings/ state/vitals.json
+          if ! git diff --cached --quiet; then
+            git commit -m "notice: a new friend arrived"
+            git push
+          fi

@@ -1,0 +1,70 @@
+name: heartbeat
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'        # Every 30 minutes, the repo stirs
+
+  issues:
+    types: [opened, closed, labeled]
+  issue_comment:
+    types: [created]
+
+  workflow_dispatch:               # Manual trigger for testing
+
+concurrency:
+  group: heartbeat
+  cancel-in-progress: false        # Never cancel a beating heart
+
+jobs:
+  pulse:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+
+    steps:
+      - name: Wake up
+        uses: actions/checkout@v4
+
+      - name: Restore working memory
+        uses: actions/cache/restore@v4
+        with:
+          path: .working_memory/
+          key: working-memory-${{ github.run_id }}
+          restore-keys: |
+            working-memory-
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Feel the pulse
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TRIGGER_EVENT: ${{ github.event_name }}
+          REPO_FULL_NAME: ${{ github.repository }}
+        run: python -m src.heartbeat
+
+      - name: Save working memory
+        uses: actions/cache/save@v4
+        with:
+          path: .working_memory/
+          key: working-memory-${{ github.run_id }}
+
+      - name: Commit to long-term memory
+        run: |
+          git config user.name "The Dreaming Repository"
+          git config user.email "dreaming@users.noreply.github.com"
+          git pull --rebase origin main || true
+          git add state/ dreams/ memories/ README.md
+          if ! git diff --cached --quiet; then
+            COMMIT_MSG=$(cat state/.commit_message 2>/dev/null || echo "pulse")
+            git commit -m "$COMMIT_MSG"
+            git push
+          fi
