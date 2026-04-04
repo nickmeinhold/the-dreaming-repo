@@ -38,8 +38,8 @@ jobs:
 
       - name: Remember this moment
         run: |
-          git config user.name "The Dreaming Repository"
-          git config user.email "dreaming@users.noreply.github.com"
+          git config user.name "Flux"
+          git config user.email "flux@the-dreaming-repo.noreply"
           git pull --rebase origin main || true
           git add greetings/ state/vitals.json
           if ! git diff --cached --quiet; then
