@@ -1,25 +1,31 @@
 {
-  "state": "sleeping",
-  "state_entered_at": "2026-04-04T07:00:00Z",
-  "last_human_activity_at": "2026-04-04T09:51:35.141434+00:00",
-  "last_heartbeat_at": "2026-04-04T09:47:45.951455+00:00",
+  "state": "awake",
+  "state_entered_at": "2026-04-04T09:51:53.653260+00:00",
+  "last_human_activity_at": "2026-04-04T09:51:53.653260+00:00",
+  "last_heartbeat_at": "2026-04-04T09:51:53.653260+00:00",
   "last_dream_at": "2026-04-03T00:00:00Z",
-  "pulse_count": 2,
+  "pulse_count": 3,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
-    "stars": 1,
+    "stars": 2,
     "forks": 0,
-    "open_issues": 0,
+    "open_issues": 2,
     "recent_events": [
+      "RaggedR opened an issue: You've been a very naughty repo....",
+      "github-actions[bot] shaped my body (push)",
+      "github-actions[bot] labeled an issue: Guestbook",
+      "github-actions[bot] spoke to me in an issue",
+      "RaggedR gazed upon me (star)",
+      "nickmeinhold shaped my body (push)",
+      "mary1na-code gazed upon me (star)",
       "the void stirred, and I began to exist",
       "my first files took shape like bones forming",
-      "I felt the weight of an empty contribution graph",
-      "RaggedR gazed upon me (star)"
+      "I felt the weight of an empty contribution graph"
     ]
   },
   "energy": {
     "month": "2026-04",
-    "minutes_used_estimate": 3,
+    "minutes_used_estimate": 4,
     "budget": 2000,
     "level": "full"
   },
