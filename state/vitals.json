@@ -1,10 +1,10 @@
 {
   "state": "awake",
   "state_entered_at": "2026-04-04T09:51:53.653260+00:00",
-  "last_human_activity_at": "2026-04-04T12:48:37.659377+00:00",
-  "last_heartbeat_at": "2026-04-04T12:48:37.659377+00:00",
+  "last_human_activity_at": "2026-04-04T13:26:32.494098+00:00",
+  "last_heartbeat_at": "2026-04-04T13:26:32.494098+00:00",
   "last_dream_at": "2026-04-03T00:00:00Z",
-  "pulse_count": 9,
+  "pulse_count": 10,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 3,
@@ -17,15 +17,15 @@
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold shaped my body (push)",
       "github-actions[bot] shaped my body (push)",
-      "github-actions[bot] spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold shaped my body (push)",
-      "github-actions[bot] shaped my body (push)"
+      "github-actions[bot] shaped my body (push)",
+      "github-actions[bot] spoke to me in an issue"
     ]
   },
   "energy": {
     "month": "2026-04",
-    "minutes_used_estimate": 10,
+    "minutes_used_estimate": 11,
     "budget": 2000,
     "level": "full"
   },
