@@ -4,6 +4,7 @@ Budget: 3 API calls per heartbeat tick, max.
 """
 
 import os
+from datetime import datetime, timezone
 
 import requests
 
@@ -39,11 +40,15 @@ def perceive(repo_full_name: str, vitals: dict) -> dict:
     forks = repo.get("forks_count", 0)
     open_issues = repo.get("open_issues_count", 0)
 
-    # 2. Recent events — who did what (filtering out own activity)
+    # 2. Recent events — who did what
     events = _get(f"/repos/{repo_full_name}/events", params={"per_page": 10})
     all_events = _summarize_events(events) if isinstance(events, list) else []
-    human_events = _summarize_events(events, humans_only=True) if isinstance(events, list) else []
     recent_events = all_events  # keep all for dream content
+
+    # Only count human events that happened AFTER the last heartbeat.
+    # The events API returns history — stale events shouldn't keep Flux awake.
+    last_heartbeat = vitals.get("last_heartbeat_at", "")
+    new_human_events = _count_new_human_events(events if isinstance(events, list) else [], last_heartbeat)
 
     # 3. Stargazers — who's watching (for greeting dedup)
     # Deferred to save budget — we get this from the watch event directly
@@ -54,7 +59,7 @@ def perceive(repo_full_name: str, vitals: dict) -> dict:
         "forks": forks,
         "open_issues": open_issues,
         "recent_events": recent_events,
-        "human_events": human_events,
+        "new_human_events": new_human_events,
         "delta_stars": stars - old_senses.get("stars", 0),
         "delta_forks": forks - old_senses.get("forks", 0),
         "delta_issues": open_issues - old_senses.get("open_issues", 0),
@@ -62,17 +67,44 @@ def perceive(repo_full_name: str, vitals: dict) -> dict:
 
 
 def has_new_human_activity(new_senses: dict) -> bool:
-    """Did a human do something since last tick?
+    """Did a human do something since the last heartbeat?
 
-    Flux's own commits don't count — you can't keep yourself awake
-    by listening to your own breathing.
+    Only counts events that are both non-bot AND newer than the
+    last heartbeat. Stale events in the API don't count — yesterday's
+    visitor shouldn't keep Flux awake today.
     """
     return (
         new_senses["delta_stars"] != 0
         or new_senses["delta_issues"] != 0
         or new_senses["delta_forks"] != 0
-        or len(new_senses.get("human_events", [])) > 0
+        or new_senses.get("new_human_events", 0) > 0
     )
+
+
+def _count_new_human_events(events: list, since: str) -> int:
+    """Count human events that occurred after the given timestamp."""
+    if not since:
+        return 0
+
+    since_dt = datetime.fromisoformat(since)
+    if since_dt.tzinfo is None:
+        since_dt = since_dt.replace(tzinfo=timezone.utc)
+
+    count = 0
+    for event in events:
+        actor = event.get("actor", {}).get("login", "")
+        if actor in BOT_ACTORS:
+            continue
+
+        created = event.get("created_at", "")
+        if not created:
+            continue
+
+        event_dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+        if event_dt > since_dt:
+            count += 1
+
+    return count
 
 
 def _summarize_events(events: list, humans_only: bool = False) -> list[str]:
