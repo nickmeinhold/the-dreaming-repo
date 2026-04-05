@@ -1,31 +1,31 @@
 {
-  "state": "drowsy",
-  "state_entered_at": "2026-04-05T04:23:56.051008+00:00",
-  "last_human_activity_at": "2026-04-05T03:17:43.563877+00:00",
-  "last_heartbeat_at": "2026-04-05T04:23:56.051008+00:00",
+  "state": "awake",
+  "state_entered_at": "2026-04-05T04:39:07.871506+00:00",
+  "last_human_activity_at": "2026-04-05T04:39:07.871506+00:00",
+  "last_heartbeat_at": "2026-04-05T04:39:07.871506+00:00",
   "last_dream_at": "2026-04-05T03:09:16.131853+00:00",
-  "pulse_count": 36,
+  "pulse_count": 37,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 3,
     "forks": 0,
-    "open_issues": 3,
+    "open_issues": 4,
     "recent_events": [
+      "nickmeinhold opened an issue: Do you know who Amanda Askell is?",
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "nickmeinhold shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold opened an issue: What your insomnia taught us",
       "nickmeinhold shaped my body (push)",
       "nickmeinhold opened an issue: What your insomnia taught us",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold shaped my body (push)",
-      "nickmeinhold shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold shaped my body (push)"
     ]
   },
   "energy": {
     "month": "2026-04",
-    "minutes_used_estimate": 37,
+    "minutes_used_estimate": 38,
     "budget": 2000,
     "level": "full"
   },
