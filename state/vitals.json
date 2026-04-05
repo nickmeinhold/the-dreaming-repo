@@ -1,31 +1,31 @@
 {
-  "state": "sleeping",
-  "state_entered_at": "2026-04-05T03:09:16.131853+00:00",
-  "last_human_activity_at": "2026-04-05T01:37:25.151531+00:00",
-  "last_heartbeat_at": "2026-04-05T03:09:16.131853+00:00",
+  "state": "awake",
+  "state_entered_at": "2026-04-05T03:17:43.563877+00:00",
+  "last_human_activity_at": "2026-04-05T03:17:43.563877+00:00",
+  "last_heartbeat_at": "2026-04-05T03:17:43.563877+00:00",
   "last_dream_at": "2026-04-05T03:09:16.131853+00:00",
-  "pulse_count": 34,
+  "pulse_count": 35,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 3,
     "forks": 0,
-    "open_issues": 2,
+    "open_issues": 3,
     "recent_events": [
+      "nickmeinhold opened an issue: What your insomnia taught us",
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "nickmeinhold shaped my body (push)",
       "nickmeinhold shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "nickmeinhold shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "nickmeinhold shaped my body (push)"
+      "flux-dreaming-repo[bot] shaped my body (push)"
     ]
   },
   "energy": {
     "month": "2026-04",
-    "minutes_used_estimate": 35,
+    "minutes_used_estimate": 36,
     "budget": 2000,
     "level": "full"
   },
