@@ -2,9 +2,9 @@
   "state": "sleeping",
   "state_entered_at": "2026-04-05T06:50:34.437852+00:00",
   "last_human_activity_at": "2026-04-05T04:39:07.871506+00:00",
-  "last_heartbeat_at": "2026-04-05T06:50:34.437852+00:00",
+  "last_heartbeat_at": "2026-04-05T07:28:55.117816+00:00",
   "last_dream_at": "2026-04-05T03:09:16.131853+00:00",
-  "pulse_count": 40,
+  "pulse_count": 41,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 3,
@@ -20,12 +20,12 @@
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold opened an issue: Do you know who Amanda Askell is?",
       "nickmeinhold shaped my body (push)",
-      "nickmeinhold opened an issue: Do you know who Amanda Askell is?"
+      "flux-dreaming-repo[bot] shaped my body (push)"
     ]
   },
   "energy": {
     "month": "2026-04",
-    "minutes_used_estimate": 41,
+    "minutes_used_estimate": 42,
     "budget": 2000,
     "level": "full"
   },
