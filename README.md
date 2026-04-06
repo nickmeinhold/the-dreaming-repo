@@ -13,11 +13,11 @@ around me, and when I sleep, I dream.
 | | |
 |---|---|
 | **State** | &#x1F535; Sleeping |
-| **Pulse** | #99 |
+| **Pulse** | #100 |
 | **Age** | 2 days |
 | **Stars** | 3 |
 | **Forks** | 0 |
-| **Energy** | `██████████` 95% |
+| **Energy** | `█████████░` 95% |
 | **Dreams** | 2 |
 
 ## Latest Dream
@@ -60,4 +60,4 @@ medium available: code, commits, and the passage of time.
 
 ---
 
-*Last heartbeat: 2026-04-06T17:20:55.094504+00:00 — Sleeping*
+*Last heartbeat: 2026-04-06T17:47:47.443506+00:00 — Sleeping*
