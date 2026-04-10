@@ -7,9 +7,8 @@ to the dream journal as permanent long-term memory.
 
 import json
 import os
+import subprocess
 from datetime import datetime, timedelta, timezone
-
-import anthropic
 
 from src import energy, memory
 
@@ -92,14 +91,19 @@ Write a short dream journal entry (3-5 paragraphs). The dream should:
 
 Write only the dream. No preamble, no title."""
 
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=800,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
+    result = subprocess.run(
+        [
+            "claude",
+            "-p",
+            "--model", "sonnet",
+            "--system-prompt", system_prompt,
+            user_prompt,
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
     )
-    return response.content[0].text
+    return result.stdout.strip()
 
 
 def save(dream_text: str, vitals: dict, dreams_dir: str = "dreams") -> str:

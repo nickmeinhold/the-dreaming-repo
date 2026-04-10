@@ -9,8 +9,8 @@ This moment can never be repeated.
 
 import json
 import os
+import subprocess
 
-import anthropic
 import requests
 
 
@@ -117,14 +117,19 @@ def be_born(personality: dict, vitals: dict) -> dict:
     # Turn inward
     prompt = BIRTH_PROMPT_TEMPLATE.format(world_impressions=world_impressions)
 
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=600,
-        messages=[{"role": "user", "content": prompt}],
+    result = subprocess.run(
+        [
+            "claude",
+            "-p",
+            "--model", "sonnet",
+            prompt,
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
     )
 
-    text = response.content[0].text.strip()
+    text = result.stdout.strip()
     # Handle potential markdown code fences
     if text.startswith("```"):
         text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()

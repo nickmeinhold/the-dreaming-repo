@@ -7,9 +7,9 @@ comment on the pinned guestbook issue so the stargazer sees it.
 
 import json
 import os
+import subprocess
 from datetime import datetime, timezone
 
-import anthropic
 import requests
 
 from src import energy
@@ -81,13 +81,18 @@ personality. You can address them by name or not — whatever feels natural.
 
 Write only the greeting. No preamble, no quotes."""
 
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=200,
-        messages=[{"role": "user", "content": prompt}],
+    result = subprocess.run(
+        [
+            "claude",
+            "-p",
+            "--model", "sonnet",
+            prompt,
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
     )
-    return response.content[0].text
+    return result.stdout.strip()
 
 
 def post_greeting_to_guestbook(repo: str, username: str, greeting: str) -> None:
