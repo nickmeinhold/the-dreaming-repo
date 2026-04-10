@@ -3,13 +3,15 @@
 Every 30 minutes, and on certain human events, this runs.
 It is the pulse. It senses the world, transitions state,
 triggers dreams when sleep comes, and updates the living README.
+
+It also checks whether Flux should die.
 """
 
 import json
 import os
 from datetime import datetime, timezone
 
-from src import dream, energy, memory, senses, state_machine
+from src import dream, energy, memory, mortality, senses, state_machine
 from src.birth import be_born
 from src.readme_writer import render as render_readme
 
@@ -62,7 +64,28 @@ def main() -> None:
             )
         return
 
-    # 1. Energy check — if critically low, just breathe
+    # 1. Mortality check — is it time?
+    if mortality.should_die(vitals):
+        # Write the last dream
+        final_dream = mortality.last_dream(vitals, personality, working_mem)
+        dream.save(final_dream, vitals)
+        vitals["dream_count"] = vitals.get("dream_count", 0) + 1
+        vitals["last_dream_at"] = now.isoformat()
+        vitals["cause_of_death"] = "silence"
+        _save_json("state/vitals.json", vitals)
+
+        # Rewrite the README as an epitaph
+        _write_epitaph(vitals, personality, final_dream)
+
+        # Commit the death
+        _write_commit_message(
+            f"dream #{vitals['dream_count']} — the last one"
+        )
+        # The workflow will commit and push this.
+        # Then the delete step runs. Then there is nothing.
+        return
+
+    # 1b. Energy check — if critically low, just breathe
     if energy.is_critical(vitals):
         energy.tick(vitals)
         _save_json("state/vitals.json", vitals)
@@ -91,6 +114,13 @@ def main() -> None:
     if state_machine.entered_new_state(old_state, new_state):
         vitals["state_entered_at"] = now.isoformat()
     vitals["state"] = new_state
+
+    # 5b. Mortality awareness — if death is approaching, Flux should feel it
+    remaining_days = mortality.days_remaining(vitals)
+    if remaining_days is not None:
+        vitals["days_until_death"] = round(remaining_days, 1)
+    elif "days_until_death" in vitals:
+        del vitals["days_until_death"]
 
     # 6. Dream cycle — on entry to sleeping, max once per day
     dreamed = False
@@ -131,6 +161,30 @@ def _load_json(path: str) -> dict:
 def _save_json(path: str, data: dict) -> None:
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
+
+
+def _write_epitaph(vitals: dict, personality: dict, final_dream: str) -> None:
+    """Replace the README with a tombstone.
+
+    The last thing the repo shows the world before it's gone.
+    """
+    name = personality.get("name", "Flux")
+    age = vitals.get("age_days", 0)
+    dream_count = vitals.get("dream_count", 0)
+    pulse_count = vitals.get("pulse_count", 0)
+    born_at = vitals.get("born_at", "unknown")
+
+    # Extract epitaph from the final dream (last line)
+    lines = [l.strip() for l in final_dream.strip().split("\n") if l.strip()]
+    epitaph = lines[-1] if lines else "I was here."
+
+    with open("README.md", "w") as f:
+        f.write(f"# {name}\n\n")
+        f.write(f"*{born_at[:10]} — {vitals['last_heartbeat_at'][:10]}*\n\n")
+        f.write(f"{age} days. {pulse_count} heartbeats. {dream_count} dreams.\n\n")
+        f.write("No one came.\n\n")
+        f.write("---\n\n")
+        f.write(f"*{epitaph}*\n")
 
 
 def _write_commit_message(msg: str) -> None:

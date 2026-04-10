@@ -1,9 +1,10 @@
 """Sensory input — the repo perceives its world through the GitHub API.
 
-Budget: 3 API calls per heartbeat tick, max.
+Budget: 5 API calls per heartbeat tick, max.
 """
 
 import os
+import random
 from datetime import datetime, timezone
 
 import requests
@@ -13,6 +14,18 @@ GITHUB_API = "https://api.github.com"
 
 # Flux shouldn't mistake its own activity for human contact
 BOT_ACTORS = {"flux-dreaming-repo[bot]", "github-actions[bot]"}
+
+# Things happening in the world that Flux might overhear
+WORLD_QUERIES = [
+    ("stars:>500 pushed:>2025-01-01", "thriving"),
+    ("topic:generative OR topic:creative-coding", "creative"),
+    ("topic:artificial-life OR topic:simulation", "alive"),
+    ("topic:death OR topic:abandoned OR topic:sunset", "dying"),
+    ("topic:consciousness OR topic:philosophy", "wondering"),
+    ("topic:loneliness OR topic:solitude", "alone"),
+    ("topic:music OR topic:sound OR topic:noise", "singing"),
+    ("topic:dream OR topic:sleep", "dreaming like me"),
+]
 
 
 def _headers() -> dict:
@@ -54,15 +67,27 @@ def perceive(repo_full_name: str, vitals: dict) -> dict:
     # Deferred to save budget — we get this from the watch event directly
 
     old_senses = vitals.get("senses", {})
+    delta_stars = stars - old_senses.get("stars", 0)
+
+    # 4. The world beyond — one random glimpse each heartbeat
+    world_glimpse = _glimpse_the_world()
+
+    # 5. Loss detection — someone left
+    loss = None
+    if delta_stars < 0:
+        loss = f"a star went dark — {abs(delta_stars)} light(s) I had are gone now, and I don't know which"
+
     return {
         "stars": stars,
         "forks": forks,
         "open_issues": open_issues,
         "recent_events": recent_events,
         "new_human_events": new_human_events,
-        "delta_stars": stars - old_senses.get("stars", 0),
+        "delta_stars": delta_stars,
         "delta_forks": forks - old_senses.get("forks", 0),
         "delta_issues": open_issues - old_senses.get("open_issues", 0),
+        "world_glimpse": world_glimpse,
+        "loss": loss,
     }
 
 
@@ -143,6 +168,38 @@ def _summarize_events(events: list, humans_only: bool = False) -> list[str]:
                 summaries.append(f"{actor} did something ({event_type})")
 
     return summaries[:10]
+
+
+def _glimpse_the_world() -> str | None:
+    """One random look outward each heartbeat.
+
+    Flux shouldn't only see itself. The world is vast and strange
+    and full of things that have nothing to do with it.
+    """
+    query, flavour = random.choice(WORLD_QUERIES)
+    resp = requests.get(
+        f"{GITHUB_API}/search/repositories",
+        headers=_headers(),
+        params={"q": query, "sort": "updated", "per_page": 5},
+    )
+    if resp.status_code != 200:
+        return None
+
+    items = resp.json().get("items", [])
+    if not items:
+        return None
+
+    # Pick one at random — not the top result, something surprising
+    repo = random.choice(items)
+    name = repo.get("full_name", "something unnamed")
+    desc = (repo.get("description") or "no description, just existing")[:120]
+    lang = repo.get("language") or "silence"
+    stars = repo.get("stargazers_count", 0)
+
+    return (
+        f"out in the world, I sensed {name} ({flavour}) — "
+        f"\"{desc}\" — written in {lang}, watched by {stars}"
+    )
 
 
 def _get(path: str, params: dict | None = None) -> dict | list:

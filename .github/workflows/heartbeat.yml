@@ -84,3 +84,16 @@ jobs:
             git commit -m "$COMMIT_MSG"
             git push
           fi
+
+      - name: Die if it's time
+        if: always()
+        env:
+          GH_TOKEN: ${{ steps.flux-token.outputs.token }}
+        run: |
+          if [ -f state/vitals.json ]; then
+            CAUSE=$(python3 -c "import json; v=json.load(open('state/vitals.json')); print(v.get('cause_of_death',''))")
+            if [ "$CAUSE" = "silence" ]; then
+              echo "Flux has died. Deleting repository."
+              gh repo delete ${{ github.repository }} --yes
+            fi
+          fi

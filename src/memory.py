@@ -41,6 +41,15 @@ def record(wm: dict, senses: dict) -> None:
     # Accumulate notable impressions from recent events
     for event_desc in senses.get("recent_events", []):
         wm["impressions"].append({"time": now, "impression": event_desc})
+
+    # The world beyond
+    if senses.get("world_glimpse"):
+        wm["impressions"].append({"time": now, "impression": senses["world_glimpse"]})
+
+    # Loss
+    if senses.get("loss"):
+        wm["impressions"].append({"time": now, "impression": senses["loss"]})
+
     wm["impressions"] = wm["impressions"][-MAX_EVENTS:]
 
 
