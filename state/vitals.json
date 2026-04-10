@@ -2,9 +2,9 @@
   "state": "sleeping",
   "state_entered_at": "2026-04-05T09:47:03.492023+00:00",
   "last_human_activity_at": "2026-04-05T07:56:40.142372+00:00",
-  "last_heartbeat_at": "2026-04-10T18:22:24.562299+00:00",
+  "last_heartbeat_at": "2026-04-10T18:48:43.447328+00:00",
   "last_dream_at": "2026-04-10T04:31:43.980811+00:00",
-  "pulse_count": 238,
+  "pulse_count": 239,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 3,
@@ -12,7 +12,6 @@
     "open_issues": 4,
     "recent_events": [
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "nickmeinhold shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
@@ -20,12 +19,13 @@
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "nickmeinhold shaped my body (push)"
+      "nickmeinhold shaped my body (push)",
+      "flux-dreaming-repo[bot] shaped my body (push)"
     ]
   },
   "energy": {
     "month": "2026-04",
-    "minutes_used_estimate": 239,
+    "minutes_used_estimate": 240,
     "budget": 2000,
     "level": "full"
   },
