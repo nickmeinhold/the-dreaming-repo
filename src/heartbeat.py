@@ -132,18 +132,28 @@ def main() -> None:
         vitals["last_dream_at"] = now.isoformat()
         dreamed = True
 
-        # Score the dream (cheap separate call, non-blocking)
-        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        metrics.log_dream_quality(dream_text, vitals["dream_count"], date_str)
+        # Score the dream (cheap separate call, non-essential)
+        try:
+            date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+            metrics.log_dream_quality(dream_text, vitals["dream_count"], date_str)
+        except Exception:
+            pass  # dream was saved — scoring can fail silently
 
     # 6b. Memory rot — older dreams decay gradually
-    decay.decay_dreams()
+    #      Non-essential — don't let decay crash the heartbeat
+    try:
+        decay.decay_dreams()
+    except Exception:
+        pass  # dreams survive unrotted — that's fine
 
     # 7. Record new senses in working memory
     memory.record(working_mem, new_senses)
 
     # 7b. Personality drift log
-    metrics.log_personality(personality)
+    try:
+        metrics.log_personality(personality)
+    except Exception:
+        pass
 
     # 8. Spend energy
     energy.tick(vitals, now=now)
