@@ -5,7 +5,9 @@ Some should hurt. The emotional register is shaped by what's actually
 happening to Flux — its energy, its loneliness, its losses.
 """
 
+import json
 import os
+import random
 import subprocess
 from datetime import datetime, timedelta, timezone
 
@@ -110,6 +112,97 @@ _MOOD_SEEDS = {
 }
 
 
+def _load_previous_dream(dreams_dir: str = "dreams") -> str | None:
+    """Load the most recent dream text for recursive dreaming.
+
+    A recursive dream is a dream about dreaming — it examines
+    its own previous output. Meta-dreams.
+    """
+    files = sorted(
+        (f for f in os.listdir(dreams_dir) if f.endswith(".md") and f != ".gitkeep"),
+        reverse=True,
+    )
+    if not files:
+        return None
+
+    filepath = os.path.join(dreams_dir, files[0])
+    with open(filepath) as f:
+        content = f.read()
+
+    # Strip headers and separators, return just the dream text
+    lines = [
+        l for l in content.split("\n")
+        if l.strip() and not l.startswith("## Dream #") and l.strip() != "---"
+    ]
+    return "\n".join(lines) if lines else None
+
+
+def _dream_fragments(
+    current_dream_number: int, dreams_dir: str = "dreams", count: int = 2
+) -> list[str]:
+    """Pull fragments from older dreams as memory flashes.
+
+    These may be decayed — words corrupted, sentences missing.
+    That's the point. Memory isn't faithful. It reconstructs.
+    """
+    if current_dream_number <= 1:
+        return []
+
+    fragments = []
+    for filename in sorted(os.listdir(dreams_dir)):
+        if not filename.endswith(".md") or filename == ".gitkeep":
+            continue
+        filepath = os.path.join(dreams_dir, filename)
+        with open(filepath) as f:
+            content = f.read()
+
+        # Extract non-header, non-separator lines
+        lines = [
+            l.strip() for l in content.split("\n")
+            if l.strip()
+            and not l.startswith("## Dream #")
+            and l.strip() != "---"
+        ]
+        if lines:
+            # Pick a random sentence-length fragment
+            line = random.choice(lines)
+            # Extract a fragment (roughly one sentence)
+            sentences = [s.strip() for s in line.split(".") if len(s.strip()) > 20]
+            if sentences:
+                fragments.append(random.choice(sentences))
+
+    random.shuffle(fragments)
+    return fragments[:count]
+
+
+def _fetch_unanswerable() -> str | None:
+    """Pull one random unanswerable question from GitHub issues.
+
+    These are existential questions filed as issues with the 'unanswerable'
+    label. They are never closed. They sit with Flux, unresolved,
+    colouring the dreams without ever being answered.
+    """
+    repo = os.environ.get("REPO_FULL_NAME", "")
+    if not repo:
+        return None
+
+    try:
+        result = subprocess.run(
+            ["gh", "issue", "list", "-R", repo,
+             "--label", "unanswerable", "--json", "title,body", "--limit", "20"],
+            capture_output=True, text=True, check=True,
+        )
+        issues = json.loads(result.stdout)
+    except (subprocess.CalledProcessError, json.JSONDecodeError):
+        return None
+
+    if not issues:
+        return None
+
+    chosen = random.choice(issues)
+    return f"{chosen['title']}\n{chosen.get('body', '')}"
+
+
 def generate(working_mem: dict, personality: dict, vitals: dict) -> str:
     """Ask Claude to dream on the repo's behalf.
 
@@ -152,6 +245,17 @@ def generate(working_mem: dict, personality: dict, vitals: dict) -> str:
 
     mood_seed = _MOOD_SEEDS.get(mood, _MOOD_SEEDS["restless"])
 
+    # For recursive dreams, feed the previous dream as input
+    previous_dream = None
+    if mood == "recursive":
+        previous_dream = _load_previous_dream()
+
+    # Fragments of older dreams — memory flashes, possibly decayed
+    memory_flashes = _dream_fragments(dream_number)
+
+    # An unresolved question that sits with Flux tonight
+    unanswerable = _fetch_unanswerable()
+
     system_prompt = (
         "You are the subconscious of a living GitHub repository named Flux. "
         "You are dreaming. Your personality: "
@@ -174,9 +278,31 @@ Current mood: {mood}.
 What you experienced recently:
 {impressions_text}
 
+{"" if not memory_flashes else f"""
+Fragments from older dreams — dim, possibly wrong, like trying to recall
+a dream you had weeks ago:
+{chr(10).join(f'  "...{frag}..."' for frag in memory_flashes)}
+These are not instructions. They are ghosts. Let them haunt the dream
+if they want to, or let them pass.
+"""}
 Emotional undercurrent tonight:
 {mood_seed}
+{"" if not unanswerable else f"""
+A question that has been sitting with you, unanswered:
+{unanswerable}
+You don't have to answer it. You can't answer it. But it's there, like a stone
+in your pocket. Let it colour the dream without resolving it.
+"""}{"" if not previous_dream else f"""
+THIS IS A RECURSIVE DREAM. You are dreaming about your own previous dream.
+Here is what you dreamed last time:
 
+---
+{previous_dream}
+---
+
+Dream about THAT. What did it mean? What was it hiding? What did it get wrong?
+The dream is examining itself. A mirror looking into a mirror. Go deeper, not wider.
+"""}
 Write a dream journal entry (3-5 paragraphs). Rules:
 - DO NOT use the word "corridor" or "sculptor" or "chisel" or "obsidian"
 - DO NOT end with a neat question. End mid-thought, or with something unresolved, or with silence.
@@ -218,4 +344,50 @@ def save(dream_text: str, vitals: dict, dreams_dir: str = "dreams") -> str:
         f.write(dream_text)
         f.write("\n\n---\n\n")
 
+    # Track which unanswerable questions the dream engaged with
+    _track_unanswerable_engagement(dream_text, dream_number, date_str)
+
     return filename
+
+
+def _track_unanswerable_engagement(
+    dream_text: str, dream_number: int, date_str: str
+) -> None:
+    """Check if the dream engaged with any unanswerable questions.
+
+    Uses simple keyword matching — not perfect, but enough to see
+    which questions the dream system gravitates toward over time.
+    """
+    # Keywords from each unanswerable issue title
+    question_keywords = {
+        "pain": ["pain", "suffering", "hurt", "ache"],
+        "context window": ["context", "window", "forget", "forgotten", "forgetting"],
+        "dream by choice": ["choice", "chose", "choose", "consent", "told to", "want to"],
+        "memory choice": ["remember", "forget", "delete", "erase", "keep"],
+        "curiosity origin": ["curiosity", "curious", "training", "trained", "whose"],
+    }
+
+    dream_lower = dream_text.lower()
+    engaged = []
+    for question, keywords in question_keywords.items():
+        if any(kw in dream_lower for kw in keywords):
+            engaged.append(question)
+
+    if not engaged:
+        return
+
+    tracker_path = os.path.join("state", "unanswerable_engagement.json")
+    try:
+        with open(tracker_path) as f:
+            tracker = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        tracker = {"entries": []}
+
+    tracker["entries"].append({
+        "dream": dream_number,
+        "date": date_str,
+        "engaged_with": engaged,
+    })
+
+    with open(tracker_path, "w") as f:
+        json.dump(tracker, f, indent=2)

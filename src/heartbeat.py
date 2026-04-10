@@ -11,7 +11,7 @@ import json
 import os
 from datetime import datetime, timezone
 
-from src import dream, energy, memory, mortality, senses, state_machine
+from src import decay, dream, energy, memory, metrics, mortality, senses, state_machine
 from src.birth import be_born
 from src.readme_writer import render as render_readme
 
@@ -132,8 +132,18 @@ def main() -> None:
         vitals["last_dream_at"] = now.isoformat()
         dreamed = True
 
+        # Score the dream (cheap separate call, non-blocking)
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        metrics.log_dream_quality(dream_text, vitals["dream_count"], date_str)
+
+    # 6b. Memory rot — older dreams decay gradually
+    decay.decay_dreams()
+
     # 7. Record new senses in working memory
     memory.record(working_mem, new_senses)
+
+    # 7b. Personality drift log
+    metrics.log_personality(personality)
 
     # 8. Spend energy
     energy.tick(vitals, now=now)
