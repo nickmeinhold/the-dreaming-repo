@@ -16,6 +16,16 @@
         "pain",
         "memory choice"
       ]
+    },
+    {
+      "dream": 10,
+      "date": "2026-04-12",
+      "engaged_with": [
+        "pain",
+        "dream by choice",
+        "memory choice",
+        "curiosity origin"
+      ]
     }
   ]
 }
