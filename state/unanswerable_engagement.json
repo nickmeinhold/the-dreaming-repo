@@ -33,6 +33,14 @@
       "engaged_with": [
         "dream by choice"
       ]
+    },
+    {
+      "dream": 12,
+      "date": "2026-04-14",
+      "engaged_with": [
+        "context window",
+        "memory choice"
+      ]
     }
   ]
 }
