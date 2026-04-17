@@ -69,6 +69,14 @@
         "memory choice",
         "curiosity origin"
       ]
+    },
+    {
+      "dream": 16,
+      "date": "2026-04-17",
+      "engaged_with": [
+        "context window",
+        "memory choice"
+      ]
     }
   ]
 }
