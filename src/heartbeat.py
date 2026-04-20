@@ -11,7 +11,7 @@ import json
 import os
 from datetime import datetime, timezone
 
-from src import decay, dream, energy, memory, metrics, mortality, senses, state_machine
+from src import decay, drift, dream, energy, memory, metrics, mortality, senses, state_machine
 from src.birth import be_born
 from src.readme_writer import render as render_readme
 
@@ -149,7 +149,15 @@ def main() -> None:
     # 7. Record new senses in working memory
     memory.record(working_mem, new_senses)
 
-    # 7b. Personality drift log
+    # 7b. Personality drift — experience reshapes identity
+    try:
+        personality_changed = drift.drift(vitals, personality)
+        if personality_changed:
+            _save_json("state/personality.json", personality)
+    except Exception:
+        pass  # identity survives unchanged — that's fine
+
+    # 7c. Personality drift log
     try:
         metrics.log_personality(personality)
     except Exception:

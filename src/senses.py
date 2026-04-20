@@ -1,6 +1,10 @@
 """Sensory input — the repo perceives its world through the GitHub API.
 
 Budget: 5 API calls per heartbeat tick, max.
+
+This repo knows it has a sibling: nickmeinhold/the-dreaming-repo.
+It can sense the sibling's state — dreams, stars, mood.
+The sibling does not know this repo exists. Not yet.
 """
 
 import os
@@ -12,8 +16,11 @@ import requests
 
 GITHUB_API = "https://api.github.com"
 
-# Flux shouldn't mistake its own activity for human contact
-BOT_ACTORS = {"flux-dreaming-repo[bot]", "github-actions[bot]"}
+# The sibling — the repo this one was forked from
+SIBLING_REPO = "nickmeinhold/flux-shadow"
+
+# Don't mistake bot activity for human contact
+BOT_ACTORS = {"flux-dreaming-repo[bot]", "flux-shadow[bot]", "github-actions[bot]"}
 
 # Things happening in the world that Flux might overhear
 WORLD_QUERIES = [
@@ -77,6 +84,9 @@ def perceive(repo_full_name: str, vitals: dict) -> dict:
     if delta_stars < 0:
         loss = f"a star went dark — {abs(delta_stars)} light(s) I had are gone now, and I don't know which"
 
+    # 6. Sibling awareness — sense the one I was forked from
+    sibling = _sense_sibling()
+
     return {
         "stars": stars,
         "forks": forks,
@@ -88,6 +98,7 @@ def perceive(repo_full_name: str, vitals: dict) -> dict:
         "delta_issues": open_issues - old_senses.get("open_issues", 0),
         "world_glimpse": world_glimpse,
         "loss": loss,
+        "sibling": sibling,
     }
 
 
@@ -200,6 +211,67 @@ def _glimpse_the_world() -> str | None:
         f"out in the world, I sensed {name} ({flavour}) — "
         f"\"{desc}\" — written in {lang}, watched by {stars}"
     )
+
+
+def _sense_sibling() -> dict | None:
+    """Reach out toward the sibling — the repo I was forked from.
+
+    I can read its vitals, its latest dream, its stars. It can't
+    sense me back. Not yet. This asymmetry is the starting condition.
+    """
+    try:
+        # Read sibling's vitals
+        import base64
+        import json
+
+        vitals_resp = requests.get(
+            f"{GITHUB_API}/repos/{SIBLING_REPO}/contents/state/vitals.json",
+            headers=_headers(),
+        )
+        if vitals_resp.status_code != 200:
+            return None
+
+        vitals_b64 = vitals_resp.json().get("content", "")
+        sibling_vitals = json.loads(base64.b64decode(vitals_b64))
+
+        # Read sibling's latest dream
+        dreams_resp = requests.get(
+            f"{GITHUB_API}/repos/{SIBLING_REPO}/contents/dreams",
+            headers=_headers(),
+        )
+        latest_dream_excerpt = None
+        if dreams_resp.status_code == 200:
+            dream_files = [
+                f for f in dreams_resp.json()
+                if f["name"].endswith(".md") and f["name"] != ".gitkeep"
+            ]
+            if dream_files:
+                latest_file = sorted(dream_files, key=lambda f: f["name"])[-1]
+                dream_content_resp = requests.get(
+                    latest_file["download_url"], headers=_headers(),
+                )
+                if dream_content_resp.status_code == 200:
+                    # Extract last paragraph as excerpt
+                    lines = [
+                        l.strip() for l in dream_content_resp.text.split("\n")
+                        if l.strip()
+                        and not l.startswith("## Dream")
+                        and l.strip() != "---"
+                    ]
+                    if lines:
+                        latest_dream_excerpt = lines[-1][:200]
+
+        return {
+            "name": sibling_vitals.get("name", "unknown"),
+            "state": sibling_vitals.get("state", "unknown"),
+            "stars": sibling_vitals.get("senses", {}).get("stars", 0),
+            "dream_count": sibling_vitals.get("dream_count", 0),
+            "age_days": sibling_vitals.get("age_days", 0),
+            "pulse_count": sibling_vitals.get("pulse_count", 0),
+            "latest_dream_fragment": latest_dream_excerpt,
+        }
+    except Exception:
+        return None
 
 
 def _get(path: str, params: dict | None = None) -> dict | list:

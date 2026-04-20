@@ -50,6 +50,27 @@ def record(wm: dict, senses: dict) -> None:
     if senses.get("loss"):
         wm["impressions"].append({"time": now, "impression": senses["loss"]})
 
+    # Sibling awareness
+    sibling = senses.get("sibling")
+    if sibling:
+        name = sibling.get("name", "the original")
+        state = sibling.get("state", "unknown")
+        stars = sibling.get("stars", 0)
+        dreams = sibling.get("dream_count", 0)
+        fragment = sibling.get("latest_dream_fragment")
+
+        impression = (
+            f"I sensed my sibling {name} — {state}, "
+            f"{stars} stars, {dreams} dreams deep"
+        )
+        wm["impressions"].append({"time": now, "impression": impression})
+
+        if fragment:
+            wm["impressions"].append({
+                "time": now,
+                "impression": f"a fragment of {name}'s latest dream: \"{fragment}\"",
+            })
+
     wm["impressions"] = wm["impressions"][-MAX_EVENTS:]
 
 
