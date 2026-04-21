@@ -74,9 +74,12 @@ export async function toggleFavourite(
       data: { paperId: paper.id, userId: session.userId },
     });
     return { success: true, favourited: true };
-  } catch {
-    // Unique constraint violation from concurrent request — treat as already favourited
-    return { success: true, favourited: true };
+  } catch (e: unknown) {
+    // Prisma unique constraint violation (P2002) from concurrent request
+    if (e instanceof Error && "code" in e && (e as { code: string }).code === "P2002") {
+      return { success: true, favourited: true };
+    }
+    return { success: false, favourited: false, error: "Failed to favourite paper" };
   }
 }
 

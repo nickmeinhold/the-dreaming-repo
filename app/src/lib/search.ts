@@ -26,7 +26,7 @@ export async function searchPapers(
 ): Promise<{ results: SearchResult[]; total: number }> {
   const limit = options?.limit ?? 20;
   const offset = options?.offset ?? 0;
-  const sanitized = query.replace(/[^\p{L}\p{N}\s-]/gu, " ").trim();
+  const sanitized = query.replace(/[^\p{L}\p{N}\s-]/gu, " ").replace(/\s+/g, " ").trim();
 
   if (!sanitized) return { results: [], total: 0 };
 

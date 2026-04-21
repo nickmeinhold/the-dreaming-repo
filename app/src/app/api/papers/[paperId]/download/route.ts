@@ -6,7 +6,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createReadStream, statSync } from "node:fs";
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { prisma } from "@/lib/db";
@@ -57,7 +58,7 @@ export async function GET(
   }
 
   try {
-    const stat = statSync(absolutePath);
+    const fileStat = await stat(absolutePath);
     const contentType = isLatex ? "application/x-tex" : "application/pdf";
     const ext = isLatex ? "tex" : "pdf";
     const filename = `${paperId}.${ext}`;
@@ -68,7 +69,7 @@ export async function GET(
       headers: {
         "Content-Type": contentType,
         "Content-Disposition": `inline; filename="${filename}"`,
-        "Content-Length": String(stat.size),
+        "Content-Length": String(fileStat.size),
       },
     });
   } catch {
