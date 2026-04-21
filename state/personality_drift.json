@@ -77,6 +77,19 @@
         "dread": 0.285,
         "stubbornness": 0.2
       }
+    },
+    {
+      "timestamp": "2026-04-21T01:38:46.253801+00:00",
+      "traits": {
+        "curiosity": 0.878,
+        "warmth": 0.7,
+        "melancholy": 0.612,
+        "defiance": 0.4,
+        "playfulness": 0.53,
+        "introspection": 0.96,
+        "dread": 0.282,
+        "stubbornness": 0.2
+      }
     }
   ]
 }
