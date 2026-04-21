@@ -11,16 +11,20 @@ export async function nextPaperId(prisma: { paper: any }): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `${year}-`;
 
-  const latest = await prisma.paper.findFirst({
+  // Fetch all papers for this year and find the max sequence number numerically.
+  // Lexicographic sort fails when IDs grow past 3 digits (999 > 1000 as strings).
+  const papers = await prisma.paper.findMany({
     where: { paperId: { startsWith: prefix } },
-    orderBy: { paperId: "desc" },
     select: { paperId: true },
   });
 
-  const seq = latest
-    ? parseInt(latest.paperId.split("-")[1], 10) + 1
-    : 1;
+  let maxSeq = 0;
+  for (const p of papers) {
+    const num = parseInt(p.paperId.split("-")[1], 10);
+    if (!isNaN(num) && num > maxSeq) maxSeq = num;
+  }
 
+  const seq = maxSeq + 1;
   // Use minimum 3 digits, but grow naturally for >999 papers
   const width = Math.max(3, String(seq).length);
   return `${year}-${String(seq).padStart(width, "0")}`;

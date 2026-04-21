@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { nextPaperId } from "@/lib/paper-id";
 import { storePaperFiles } from "@/lib/storage";
-import { MAX_PDF_SIZE } from "@/lib/constants";
+import { MAX_PDF_SIZE, VALID_CATEGORIES } from "@/lib/constants";
 
 export interface SubmitPaperResult {
   success: boolean;
@@ -30,8 +30,10 @@ export async function submitPaper(
 
   // Validate
   if (!title?.trim()) return { success: false, error: "Title is required" };
+  if (title.length > 500) return { success: false, error: "Title must be under 500 characters" };
   if (!abstract?.trim()) return { success: false, error: "Abstract is required" };
-  if (!category || !["research", "expository"].includes(category)) {
+  if (abstract.length > 10_000) return { success: false, error: "Abstract must be under 10,000 characters" };
+  if (!category || !(VALID_CATEGORIES as readonly string[]).includes(category)) {
     return { success: false, error: "Category must be research or expository" };
   }
   if (!pdf || pdf.size === 0) return { success: false, error: "PDF is required" };

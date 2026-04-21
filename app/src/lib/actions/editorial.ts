@@ -35,9 +35,17 @@ export async function assignReviewer(
 
   const paper = await prisma.paper.findUnique({
     where: { paperId },
-    select: { id: true },
+    select: {
+      id: true,
+      authors: { select: { userId: true } },
+    },
   });
   if (!paper) return { success: false, error: "Paper not found" };
+
+  // Prevent self-review: reviewer must not be an author
+  if (paper.authors.some((a) => a.userId === user.id)) {
+    return { success: false, error: "An author cannot review their own paper" };
+  }
 
   // Check for existing review
   const existing = await prisma.review.findUnique({

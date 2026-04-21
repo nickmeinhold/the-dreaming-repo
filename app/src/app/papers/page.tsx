@@ -7,16 +7,16 @@ const PAGE_SIZE = 20;
 export default async function PapersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; category?: string; status?: string }>;
+  searchParams: Promise<{ page?: string; category?: string }>;
 }) {
   const params = await searchParams;
-  const page = Math.max(1, parseInt(params.page ?? "1", 10));
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const category = params.category;
-  const status = params.status;
 
+  // Only published papers are publicly visible
   const where = {
+    status: "published" as const,
     ...(category && { category }),
-    ...(status ? { status } : {}),
   };
 
   const [papers, total] = await Promise.all([

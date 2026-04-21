@@ -89,6 +89,15 @@ export default async function PaperDetailPage({ params }: Props) {
 
   if (!paper) notFound();
 
+  // Unpublished papers are only visible to authors and editors
+  if (paper.status !== "published") {
+    const isAuthor = session && paper.authors.some(
+      (a) => a.user.githubLogin === session.githubLogin,
+    );
+    const isEditor = session && ["editor", "admin"].includes(session.role);
+    if (!isAuthor && !isEditor) notFound();
+  }
+
   // Check user-specific state
   let isFavourited = false;
   let hasRead = false;
@@ -260,8 +269,23 @@ function ScoreCell({ label, score }: { label: string; score: number }) {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function serializeNotes(notes: any[]): any[] {
+interface PrismaNoteTree {
+  id: number;
+  content: string;
+  createdAt: Date;
+  user: { displayName: string; githubLogin: string; avatarUrl: string | null };
+  replies?: PrismaNoteTree[];
+}
+
+interface SerializedNote {
+  id: number;
+  content: string;
+  createdAt: string;
+  user: { displayName: string; githubLogin: string; avatarUrl: string | null };
+  replies: SerializedNote[];
+}
+
+function serializeNotes(notes: PrismaNoteTree[]): SerializedNote[] {
   return notes.map((n) => ({
     id: n.id,
     content: n.content,

@@ -1,11 +1,11 @@
 /**
  * Search Sanitization — Pure Functions
  *
- * Extracted from search.ts for independent testability.
+ * Extracted for independent testability.
  * These are pure functions with no I/O dependencies.
  */
 
-const VALID_CATEGORIES = ["research", "expository"] as const;
+import { VALID_CATEGORIES } from "@/lib/constants";
 
 /**
  * Strip special characters from a search query, preserving words.

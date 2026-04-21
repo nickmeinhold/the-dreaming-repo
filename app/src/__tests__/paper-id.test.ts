@@ -19,10 +19,19 @@ import { nextPaperId } from "@/lib/paper-id";
 // ── Mock Prisma client (duck-typed) ──────────────────────
 
 function mockPrisma(latestPaperId: string | null) {
+  // Build a list of all papers up to the given ID to test numeric max-finding
+  const papers: { paperId: string }[] = [];
+  if (latestPaperId) {
+    const seq = parseInt(latestPaperId.split("-")[1], 10);
+    const yearPrefix = latestPaperId.split("-")[0];
+    for (let i = 1; i <= seq; i++) {
+      const width = Math.max(3, String(i).length);
+      papers.push({ paperId: `${yearPrefix}-${String(i).padStart(width, "0")}` });
+    }
+  }
   return {
     paper: {
-      findFirst: async () =>
-        latestPaperId ? { paperId: latestPaperId } : null,
+      findMany: async () => papers,
     },
   };
 }

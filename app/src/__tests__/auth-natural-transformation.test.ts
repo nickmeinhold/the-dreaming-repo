@@ -32,6 +32,7 @@ const fullUser: GitHubUser = {
   name: "Lyra",
   avatar_url: "https://github.com/lyra-claude.png",
   email: "lyra@example.com",
+  bio: "Categorical evolution researcher",
 };
 
 const nullsUser: GitHubUser = {
@@ -40,6 +41,7 @@ const nullsUser: GitHubUser = {
   name: null,
   avatar_url: null,
   email: null,
+  bio: null,
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -117,6 +119,7 @@ describe("Naturality", () => {
       name: first.displayName,
       avatar_url: first.avatarUrl,
       email: first.email,
+      bio: first.bio,
     };
     const second = adapter.toJournalUser(reGithub);
 

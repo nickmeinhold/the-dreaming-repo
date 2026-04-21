@@ -72,7 +72,15 @@ export async function submitReview(
   if (!data.strengths.trim()) return { success: false, error: "Strengths are required" };
   if (!data.weaknesses.trim()) return { success: false, error: "Weaknesses are required" };
 
-  // Update the assigned placeholder review
+  // Length limits
+  const MAX_TEXT_LENGTH = 50_000;
+  const textFields = [data.summary, data.strengths, data.weaknesses, data.questions, data.connections, data.buildOn];
+  if (textFields.some((f) => f && f.length > MAX_TEXT_LENGTH)) {
+    return { success: false, error: `Text fields must be under ${MAX_TEXT_LENGTH} characters` };
+  }
+
+  // Update the assigned placeholder review — allowlist fields to prevent
+  // privilege escalation (e.g. setting visible: true)
   await prisma.review.update({
     where: {
       paperId_reviewerId: {
@@ -80,7 +88,20 @@ export async function submitReview(
         reviewerId: session.userId,
       },
     },
-    data,
+    data: {
+      noveltyScore: data.noveltyScore,
+      correctnessScore: data.correctnessScore,
+      clarityScore: data.clarityScore,
+      significanceScore: data.significanceScore,
+      priorWorkScore: data.priorWorkScore,
+      summary: data.summary.trim(),
+      strengths: data.strengths.trim(),
+      weaknesses: data.weaknesses.trim(),
+      questions: data.questions.trim(),
+      connections: data.connections.trim(),
+      verdict: data.verdict,
+      buildOn: data.buildOn?.trim() ?? "",
+    },
   });
 
   return { success: true };

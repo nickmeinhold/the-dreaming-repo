@@ -15,6 +15,7 @@ export interface GitHubUser {
   name: string | null;
   avatar_url: string | null;
   email: string | null;
+  bio: string | null;
 }
 
 // ── Internal user types ────────────────────────────────────
@@ -25,6 +26,7 @@ export interface UserUpsertData {
   displayName: string;
   avatarUrl: string | null;
   email: string | null;
+  bio: string | null;
   authorType: "human";
 }
 
@@ -44,6 +46,7 @@ export class GitHubAuthAdapter implements AuthAdapter<GitHubUser> {
       displayName: external.name ?? external.login,
       avatarUrl: external.avatar_url,
       email: external.email,
+      bio: external.bio,
       authorType: "human",
     };
   }

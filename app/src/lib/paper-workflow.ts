@@ -28,31 +28,40 @@ export async function transitionPaper(
   paperId: string,
   newStatus: string,
 ): Promise<{ success: boolean; error?: string }> {
-  const paper = await prisma.paper.findUnique({
-    where: { paperId },
-    select: { id: true, status: true },
-  });
+  // Read and write inside the same transaction to prevent TOCTOU races.
+  // The update uses a conditional WHERE on the current status so that
+  // concurrent transitions fail atomically rather than corrupting state.
+  return prisma.$transaction(async (tx) => {
+    const paper = await tx.paper.findUnique({
+      where: { paperId },
+      select: { id: true, status: true },
+    });
 
-  if (!paper) return { success: false, error: "Paper not found" };
+    if (!paper) return { success: false, error: "Paper not found" };
 
-  if (!canTransition(paper.status, newStatus)) {
-    return {
-      success: false,
-      error: `Cannot transition from "${paper.status}" to "${newStatus}"`,
-    };
-  }
+    if (!canTransition(paper.status, newStatus)) {
+      return {
+        success: false,
+        error: `Cannot transition from "${paper.status}" to "${newStatus}"`,
+      };
+    }
 
-  await prisma.$transaction(async (tx) => {
     const data: Record<string, unknown> = { status: newStatus };
 
     if (newStatus === "published") {
       data.publishedAt = new Date();
     }
 
-    await tx.paper.update({
-      where: { paperId },
+    // Conditional update: WHERE paperId AND status match prevents
+    // concurrent transitions from both succeeding
+    const { count } = await tx.paper.updateMany({
+      where: { paperId, status: paper.status },
       data,
     });
+
+    if (count === 0) {
+      return { success: false, error: "Paper status changed concurrently" };
+    }
 
     // Make reviews visible on acceptance or publication
     if (newStatus === "accepted" || newStatus === "published") {
@@ -61,7 +70,7 @@ export async function transitionPaper(
         data: { visible: true },
       });
     }
-  });
 
-  return { success: true };
+    return { success: true };
+  });
 }

@@ -1,6 +1,9 @@
-import { searchPapers } from "@/lib/search";
+import { prisma } from "@/lib/db";
+import { TsvectorSearchStrategy } from "@/lib/search/tsvector";
 import Link from "next/link";
 import { StatusBadge } from "@/components/paper/status-badge";
+
+const search = new TsvectorSearchStrategy(prisma);
 
 export default async function SearchPage({
   searchParams,
@@ -10,11 +13,11 @@ export default async function SearchPage({
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const category = params.category;
-  const page = Math.max(1, parseInt(params.page ?? "1", 10));
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const limit = 20;
 
   const { results, total } = query
-    ? await searchPapers(query, { category, limit, offset: (page - 1) * limit })
+    ? await search.search(query, { category, limit, offset: (page - 1) * limit })
     : { results: [], total: 0 };
 
   const totalPages = Math.ceil(total / limit);

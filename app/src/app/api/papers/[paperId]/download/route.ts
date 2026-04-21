@@ -12,7 +12,7 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { getAbsolutePdfPath, UPLOADS_BASE } from "@/lib/storage";
+import { resolveUploadPath, UPLOADS_BASE } from "@/lib/storage";
 
 export async function GET(
   request: NextRequest,
@@ -23,10 +23,15 @@ export async function GET(
 
   const paper = await prisma.paper.findUnique({
     where: { paperId },
-    select: { id: true, pdfPath: true, latexPath: true, title: true },
+    select: { id: true, pdfPath: true, latexPath: true, title: true, status: true },
   });
 
   if (!paper) {
+    return NextResponse.json({ error: "Paper not found" }, { status: 404 });
+  }
+
+  // Only published papers are downloadable by the public
+  if (paper.status !== "published") {
     return NextResponse.json({ error: "Paper not found" }, { status: 404 });
   }
 
@@ -47,10 +52,10 @@ export async function GET(
       .create({
         data: { paperId: paper.id, userId: session.userId },
       })
-      .catch(() => {});
+      .catch((err) => console.error("[download] Failed to log download:", err));
   }
 
-  const absolutePath = getAbsolutePdfPath(filePath);
+  const absolutePath = resolveUploadPath(filePath);
 
   // Guard against path traversal — resolved path must stay within uploads/
   if (!path.resolve(absolutePath).startsWith(path.resolve(UPLOADS_BASE))) {

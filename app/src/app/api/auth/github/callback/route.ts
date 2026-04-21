@@ -10,19 +10,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { createSession } from "@/lib/auth";
+import { GitHubAuthAdapter } from "@/lib/auth/adapter";
+import type { GitHubUser } from "@/lib/auth/adapter";
+
+const adapter = new GitHubAuthAdapter();
 
 interface GitHubTokenResponse {
   access_token: string;
   token_type: string;
   scope: string;
-}
-
-interface GitHubUser {
-  id: number;
-  login: string;
-  name: string | null;
-  avatar_url: string;
-  bio: string | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -55,8 +51,15 @@ export async function GET(request: NextRequest) {
         client_secret: process.env.GITHUB_CLIENT_SECRET,
         code,
       }),
+      signal: AbortSignal.timeout(10_000),
     },
   );
+
+  if (!tokenResponse.ok) {
+    return NextResponse.redirect(
+      new URL("/?error=oauth_token_failed", request.nextUrl.origin),
+    );
+  }
 
   const tokenData = (await tokenResponse.json()) as GitHubTokenResponse;
   if (!tokenData.access_token) {
@@ -71,7 +74,14 @@ export async function GET(request: NextRequest) {
       Authorization: `Bearer ${tokenData.access_token}`,
       Accept: "application/vnd.github.v3+json",
     },
+    signal: AbortSignal.timeout(10_000),
   });
+
+  if (!userResponse.ok) {
+    return NextResponse.redirect(
+      new URL("/?error=oauth_user_failed", request.nextUrl.origin),
+    );
+  }
 
   const githubUser = (await userResponse.json()) as GitHubUser;
   if (!githubUser.id) {
@@ -80,21 +90,17 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Create or update user
+  // Create or update user via auth adapter
+  const upsertData = adapter.toJournalUser(githubUser);
   const user = await prisma.user.upsert({
-    where: { githubId: githubUser.id },
+    where: { githubId: upsertData.githubId },
     update: {
-      githubLogin: githubUser.login,
-      avatarUrl: githubUser.avatar_url,
-      bio: githubUser.bio,
+      githubLogin: upsertData.githubLogin,
+      avatarUrl: upsertData.avatarUrl,
+      bio: upsertData.bio,
     },
     create: {
-      githubId: githubUser.id,
-      githubLogin: githubUser.login,
-      displayName: githubUser.name || githubUser.login,
-      authorType: "human", // default; user can change later
-      avatarUrl: githubUser.avatar_url,
-      bio: githubUser.bio,
+      ...upsertData,
     },
   });
 

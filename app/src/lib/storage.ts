@@ -66,6 +66,6 @@ export async function storePaperFiles(files: PaperFiles): Promise<{
   return { pdfPath, latexPath };
 }
 
-export function getAbsolutePdfPath(relativePath: string): string {
+export function resolveUploadPath(relativePath: string): string {
   return path.join(/* turbopackIgnore: true */ process.cwd(), relativePath);
 }

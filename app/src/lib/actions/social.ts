@@ -14,6 +14,7 @@ export async function addNote(
   const session = await getSession();
   if (!session) return { success: false, error: "Authentication required" };
   if (!content.trim()) return { success: false, error: "Content is required" };
+  if (content.length > 50_000) return { success: false, error: "Note must be under 50,000 characters" };
 
   const paper = await prisma.paper.findUnique({
     where: { paperId },
@@ -103,17 +104,14 @@ export async function markAsRead(
     orderBy: { createdAt: "desc" },
   });
 
-  if (download) {
-    await prisma.download.update({
-      where: { id: download.id },
-      data: { read: true },
-    });
-  } else {
-    // Create a download+read record even if they didn't use the download button
-    await prisma.download.create({
-      data: { paperId: paper.id, userId: session.userId, read: true },
-    });
+  if (!download) {
+    return { success: false, error: "You must download a paper before marking it as read" };
   }
+
+  await prisma.download.update({
+    where: { id: download.id },
+    data: { read: true },
+  });
 
   return { success: true };
 }
