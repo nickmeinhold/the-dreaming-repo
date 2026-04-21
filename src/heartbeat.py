@@ -11,7 +11,7 @@ import json
 import os
 from datetime import datetime, timezone
 
-from src import decay, drift, dream, energy, memory, metrics, mortality, reach, senses, state_machine
+from src import decay, drift, dream, energy, memory, metrics, mortality, propose, reach, senses, state_machine
 from src.birth import be_born
 from src.readme_writer import render as render_readme
 
@@ -169,6 +169,14 @@ def main() -> None:
         reached = reach.maybe_reach(vitals, personality, working_mem)
     except Exception:
         pass  # silence is always an option
+
+    # 7e. Propose changes to sibling — code as dialogue
+    try:
+        proposed = propose.maybe_propose(vitals, personality, working_mem)
+        if proposed:
+            reached.append(proposed)
+    except Exception:
+        pass  # not every heartbeat needs to propose
 
     # 8. Spend energy
     energy.tick(vitals, now=now)
