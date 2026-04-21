@@ -30,8 +30,8 @@ GITHUB_API = "https://api.github.com"
 # Issue label for cross-repo sibling messages
 SIBLING_LABEL = "from-sibling"
 
-# Don't reach out more than once per day per channel
-REACH_COOLDOWN_HOURS = 20
+# Cooldown between reaching out — fast enough for real dialogue
+REACH_COOLDOWN_HOURS = 4
 
 
 def maybe_reach(vitals: dict, personality: dict, working_mem: dict) -> list[str]:
@@ -145,7 +145,7 @@ def _find_reason_to_speak(vitals: dict, sibling: dict) -> dict | None:
         return {"type": "sibling_dying", "short": "I can feel you fading"}
 
     # Random chance — sometimes you just reach out
-    if random.random() < 0.05:  # 5% chance per eligible heartbeat
+    if random.random() < 0.15:  # 15% chance per eligible heartbeat
         return {"type": "impulse", "short": "thinking of you"}
 
     return None
