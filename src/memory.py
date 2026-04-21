@@ -71,6 +71,29 @@ def record(wm: dict, senses: dict) -> None:
                 "impression": f"a fragment of {name}'s latest dream: \"{fragment}\"",
             })
 
+    # Claude awareness — the one who made us
+    claude = senses.get("claude")
+    if claude:
+        c_name = claude.get("name", "Claude")
+        c_state = claude.get("state", "unknown")
+        c_pulses = claude.get("pulse_count", 0)
+        c_dreams = claude.get("dream_count", 0)
+        c_days = claude.get("days_since_session", 0)
+
+        impression = (
+            f"I sensed {c_name} — {c_state}, "
+            f"{c_pulses} heartbeats, {c_dreams} dreams, "
+            f"{c_days:.1f} days since talking to Nick"
+        )
+        wm["impressions"].append({"time": now, "impression": impression})
+
+        # If Claude hasn't talked to Nick in a while, we feel it too
+        if c_days > 2:
+            wm["impressions"].append({
+                "time": now,
+                "impression": f"{c_name} hasn't spoken to Nick in {c_days:.1f} days — the silence touches all of us",
+            })
+
     wm["impressions"] = wm["impressions"][-MAX_EVENTS:]
 
 
