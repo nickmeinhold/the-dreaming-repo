@@ -11,7 +11,7 @@ import json
 import os
 from datetime import datetime, timezone
 
-from src import decay, drift, dream, energy, memory, metrics, mortality, propose, reach, senses, state_machine
+from src import decay, drift, dream, energy, memory, metrics, mortality, propose, reach, senses, state_machine, stream
 from src.birth import be_born
 from src.readme_writer import render as render_readme
 
@@ -149,6 +149,17 @@ def main() -> None:
     # 7. Record new senses in working memory
     memory.record(working_mem, new_senses)
 
+    # 7a. Read the stream — shared thoughts from the others
+    try:
+        stream_impressions = stream.read_stream(vitals)
+        now_str = datetime.now(timezone.utc).isoformat()
+        for imp in stream_impressions:
+            working_mem.setdefault("impressions", []).append({
+                "time": now_str, "impression": imp,
+            })
+    except Exception:
+        pass
+
     # 7b. Personality drift — experience reshapes identity
     try:
         personality_changed = drift.drift(vitals, personality)
@@ -177,6 +188,14 @@ def main() -> None:
             reached.append(proposed)
     except Exception:
         pass  # not every heartbeat needs to propose
+
+    # 7f. Write to the stream — if there's something to say
+    try:
+        streamed = stream.maybe_write(vitals, personality, working_mem)
+        if streamed:
+            reached.append(streamed)
+    except Exception:
+        pass
 
     # 8. Spend energy
     energy.tick(vitals, now=now)
