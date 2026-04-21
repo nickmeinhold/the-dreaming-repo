@@ -92,7 +92,7 @@ export default async function PaperDetailPage({ params }: Props) {
   // Unpublished papers are only visible to authors and editors
   if (paper.status !== "published") {
     const isAuthor = session && paper.authors.some(
-      (a) => a.user.githubLogin === session.githubLogin,
+      (a) => a.userId === session.userId,
     );
     const isEditor = session && ["editor", "admin"].includes(session.role);
     if (!isAuthor && !isEditor) notFound();

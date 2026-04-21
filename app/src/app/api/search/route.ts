@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { TsvectorSearchStrategy } from "@/lib/search/tsvector";
 
-const search = new TsvectorSearchStrategy(prisma);
-
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim();
   const category = request.nextUrl.searchParams.get("category") ?? undefined;
@@ -14,7 +12,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results: [], total: 0 });
   }
 
-  const { results, total } = await search.search(q, {
+  const { results, total } = await new TsvectorSearchStrategy(prisma).search(q, {
     category,
     limit,
     offset: (page - 1) * limit,

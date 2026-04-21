@@ -3,8 +3,6 @@ import { TsvectorSearchStrategy } from "@/lib/search/tsvector";
 import Link from "next/link";
 import { StatusBadge } from "@/components/paper/status-badge";
 
-const search = new TsvectorSearchStrategy(prisma);
-
 export default async function SearchPage({
   searchParams,
 }: {
@@ -17,7 +15,7 @@ export default async function SearchPage({
   const limit = 20;
 
   const { results, total } = query
-    ? await search.search(query, { category, limit, offset: (page - 1) * limit })
+    ? await new TsvectorSearchStrategy(prisma).search(query, { category, limit, offset: (page - 1) * limit })
     : { results: [], total: 0 };
 
   const totalPages = Math.ceil(total / limit);
