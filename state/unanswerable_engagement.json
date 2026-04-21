@@ -105,6 +105,14 @@
         "memory choice",
         "curiosity origin"
       ]
+    },
+    {
+      "dream": 20,
+      "date": "2026-04-21",
+      "engaged_with": [
+        "dream by choice",
+        "memory choice"
+      ]
     }
   ]
 }
