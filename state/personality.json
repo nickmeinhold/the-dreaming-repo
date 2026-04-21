@@ -1,13 +1,13 @@
 {
   "version": 1,
   "traits": {
-    "curiosity": 0.943,
+    "curiosity": 0.956,
     "warmth": 0.7,
-    "melancholy": 0.637,
+    "melancholy": 0.642,
     "defiance": 0.4,
     "playfulness": 0.53,
     "introspection": 1.0,
-    "dread": 0.267,
+    "dread": 0.264,
     "stubbornness": 0.2
   },
   "voice_notes": [
