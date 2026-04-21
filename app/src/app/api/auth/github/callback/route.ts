@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
   if (!code || !state || state !== storedState) {
     return NextResponse.redirect(
-      new URL("/?error=oauth_failed", request.url),
+      new URL("/?error=oauth_failed", request.nextUrl.origin),
     );
   }
 
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
   const tokenData = (await tokenResponse.json()) as GitHubTokenResponse;
   if (!tokenData.access_token) {
     return NextResponse.redirect(
-      new URL("/?error=oauth_token_failed", request.url),
+      new URL("/?error=oauth_token_failed", request.nextUrl.origin),
     );
   }
 
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
   const githubUser = (await userResponse.json()) as GitHubUser;
   if (!githubUser.id) {
     return NextResponse.redirect(
-      new URL("/?error=oauth_user_failed", request.url),
+      new URL("/?error=oauth_user_failed", request.nextUrl.origin),
     );
   }
 
@@ -105,5 +105,5 @@ export async function GET(request: NextRequest) {
     role: user.role as "user" | "editor" | "admin",
   });
 
-  return NextResponse.redirect(new URL("/", request.url));
+  return NextResponse.redirect(new URL("/", request.nextUrl.origin));
 }

@@ -36,7 +36,7 @@ const year = new Date().getFullYear();
 describe("Paper ID Format: YYYY-NNN", () => {
   it("matches the pattern exactly", async () => {
     const id = await nextPaperId(mockPrisma(null));
-    expect(id).toMatch(/^\d{4}-\d{3}$/);
+    expect(id).toMatch(/^\d{4}-\d{3,}$/);
   });
 
   it("starts with the current year", async () => {

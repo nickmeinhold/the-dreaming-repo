@@ -22,6 +22,7 @@ import {
   type IdGenerator,
   type PaperRepository,
   type StorageService,
+  type TransactionContext,
   type ValidatedSubmission,
   type FilePaths,
 } from "@/lib/submission/mediator";
@@ -88,6 +89,12 @@ function mockStorage(opts?: {
   };
 }
 
+function mockTxContext(): TransactionContext {
+  return {
+    run: async <T>(fn: (tx: unknown) => Promise<T>) => fn({}),
+  };
+}
+
 // ═══════════════════════════════════════════════════════════
 //  HAPPY PATH
 // ═══════════════════════════════════════════════════════════
@@ -98,6 +105,7 @@ describe("Happy Path", () => {
       mockIdGen(),
       mockRepo(),
       mockStorage(),
+      mockTxContext(),
     );
     const result = await mediator.submit(testSubmission);
 
@@ -114,7 +122,7 @@ describe("Happy Path", () => {
     const storage: StorageService = {
       store: async () => { order.push("store"); return ok(testPaths); },
     };
-    const mediator = new SubmissionMediator(mockIdGen(), repo, storage);
+    const mediator = new SubmissionMediator(mockIdGen(), repo, storage, mockTxContext());
 
     await mediator.submit(testSubmission);
 
@@ -134,6 +142,7 @@ describe("Failure Propagation", () => {
       mockIdGen({ fail: true }),
       repo,
       storage,
+      mockTxContext(),
     );
 
     const result = await mediator.submit(testSubmission);
@@ -145,7 +154,7 @@ describe("Failure Propagation", () => {
   it("repository create failure → err, no store", async () => {
     const repo = mockRepo({ createFail: true });
     const storage = mockStorage();
-    const mediator = new SubmissionMediator(mockIdGen(), repo, storage);
+    const mediator = new SubmissionMediator(mockIdGen(), repo, storage, mockTxContext());
 
     const result = await mediator.submit(testSubmission);
     expect(result.tag).toBe("err");
@@ -156,7 +165,7 @@ describe("Failure Propagation", () => {
   it("storage failure → err, no updatePaths", async () => {
     const repo = mockRepo();
     const storage = mockStorage({ fail: true });
-    const mediator = new SubmissionMediator(mockIdGen(), repo, storage);
+    const mediator = new SubmissionMediator(mockIdGen(), repo, storage, mockTxContext());
 
     const result = await mediator.submit(testSubmission);
     expect(result.tag).toBe("err");
@@ -167,7 +176,7 @@ describe("Failure Propagation", () => {
   it("repository updatePaths failure → err surfaced", async () => {
     const repo = mockRepo({ updateFail: true });
     const storage = mockStorage();
-    const mediator = new SubmissionMediator(mockIdGen(), repo, storage);
+    const mediator = new SubmissionMediator(mockIdGen(), repo, storage, mockTxContext());
 
     const result = await mediator.submit(testSubmission);
     expect(result.tag).toBe("err");
@@ -192,6 +201,7 @@ describe("Step Isolation", () => {
       mockIdGen(),
       mockRepo(),
       storage,
+      mockTxContext(),
     );
 
     await mediator.submit(testSubmission);
@@ -224,6 +234,7 @@ describe("Step Isolation", () => {
       customIdGen,
       mockRepo(),
       mockStorage(),
+      mockTxContext(),
     );
 
     const result = await mediator.submit(testSubmission);
@@ -238,23 +249,24 @@ describe("Step Isolation", () => {
 describe("Pipeline Invariants", () => {
   it("error from any step is surfaced in the Result", async () => {
     // Test each failure point surfaces its error
-    const m1 = new SubmissionMediator(mockIdGen({ fail: true }), mockRepo(), mockStorage());
+    const tx = mockTxContext();
+    const m1 = new SubmissionMediator(mockIdGen({ fail: true }), mockRepo(), mockStorage(), tx);
     expect((await m1.submit(testSubmission)).tag).toBe("err");
 
-    const m2 = new SubmissionMediator(mockIdGen(), mockRepo({ createFail: true }), mockStorage());
+    const m2 = new SubmissionMediator(mockIdGen(), mockRepo({ createFail: true }), mockStorage(), tx);
     expect((await m2.submit(testSubmission)).tag).toBe("err");
 
-    const m3 = new SubmissionMediator(mockIdGen(), mockRepo(), mockStorage({ fail: true }));
+    const m3 = new SubmissionMediator(mockIdGen(), mockRepo(), mockStorage({ fail: true }), tx);
     expect((await m3.submit(testSubmission)).tag).toBe("err");
 
-    const m4 = new SubmissionMediator(mockIdGen(), mockRepo({ updateFail: true }), mockStorage());
+    const m4 = new SubmissionMediator(mockIdGen(), mockRepo({ updateFail: true }), mockStorage(), tx);
     expect((await m4.submit(testSubmission)).tag).toBe("err");
   });
 
   it("successful path runs all 4 steps exactly once", async () => {
     const repo = mockRepo();
     const storage = mockStorage();
-    const mediator = new SubmissionMediator(mockIdGen(), repo, storage);
+    const mediator = new SubmissionMediator(mockIdGen(), repo, storage, mockTxContext());
 
     await mediator.submit(testSubmission);
 
@@ -268,7 +280,7 @@ describe("Pipeline Invariants", () => {
     // Fail at step 2 (create) — steps 3 and 4 should not run
     const repo = mockRepo({ createFail: true });
     const storage = mockStorage();
-    const mediator = new SubmissionMediator(mockIdGen(), repo, storage);
+    const mediator = new SubmissionMediator(mockIdGen(), repo, storage, mockTxContext());
 
     await mediator.submit(testSubmission);
 

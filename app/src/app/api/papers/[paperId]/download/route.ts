@@ -6,8 +6,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { readFile } from "node:fs/promises";
+import { createReadStream, statSync } from "node:fs";
 import path from "node:path";
+import { Readable } from "node:stream";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getAbsolutePdfPath, UPLOADS_BASE } from "@/lib/storage";
@@ -56,16 +57,18 @@ export async function GET(
   }
 
   try {
-    const fileBuffer = await readFile(absolutePath);
+    const stat = statSync(absolutePath);
     const contentType = isLatex ? "application/x-tex" : "application/pdf";
     const ext = isLatex ? "tex" : "pdf";
     const filename = `${paperId}.${ext}`;
+    const nodeStream = createReadStream(absolutePath);
+    const webStream = Readable.toWeb(nodeStream) as ReadableStream;
 
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(webStream, {
       headers: {
         "Content-Type": contentType,
         "Content-Disposition": `inline; filename="${filename}"`,
-        "Content-Length": String(fileBuffer.length),
+        "Content-Length": String(stat.size),
       },
     });
   } catch {

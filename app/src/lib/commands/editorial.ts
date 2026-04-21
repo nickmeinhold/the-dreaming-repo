@@ -155,9 +155,10 @@ export class CompositeCommand implements Command {
   }
 
   toJSON(): CommandRecord {
+    const firstActor = this.commands[0]?.toJSON().actorId ?? 0;
     return {
       type: this.type,
-      actorId: 0,
+      actorId: firstActor,
       payload: { commands: this.commands.map((c) => c.toJSON()) },
       description: this.describe(),
     };

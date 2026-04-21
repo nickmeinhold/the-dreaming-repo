@@ -58,19 +58,24 @@ export async function toggleFavourite(
   });
   if (!paper) return { success: false, favourited: false, error: "Paper not found" };
 
-  const existing = await prisma.favourite.findUnique({
-    where: {
-      paperId_userId: { paperId: paper.id, userId: session.userId },
-    },
+  // Use deleteMany to atomically check-and-delete (avoids TOCTOU race)
+  const { count } = await prisma.favourite.deleteMany({
+    where: { paperId: paper.id, userId: session.userId },
   });
 
-  if (existing) {
-    await prisma.favourite.delete({ where: { id: existing.id } });
+  if (count > 0) {
     return { success: true, favourited: false };
-  } else {
+  }
+
+  // No existing favourite — create one. Unique constraint prevents duplicates
+  // from concurrent double-clicks.
+  try {
     await prisma.favourite.create({
       data: { paperId: paper.id, userId: session.userId },
     });
+    return { success: true, favourited: true };
+  } catch {
+    // Unique constraint violation from concurrent request — treat as already favourited
     return { success: true, favourited: true };
   }
 }

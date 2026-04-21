@@ -31,6 +31,10 @@ export interface FilePaths {
   latexPath: string | null;
 }
 
+export interface TransactionContext {
+  run<T>(fn: (tx: unknown) => Promise<T>): Promise<T>;
+}
+
 export interface IdGenerator {
   next(tx: unknown): Promise<string>;
 }
@@ -58,28 +62,29 @@ export class SubmissionMediator {
     private readonly idGenerator: IdGenerator,
     private readonly repository: PaperRepository,
     private readonly storage: StorageService,
+    private readonly txContext: TransactionContext,
   ) {}
 
   async submit(
     validated: ValidatedSubmission,
   ): Promise<Result<{ paperId: string }>> {
-    // Step 1: Generate ID
+    // Steps 1-2 run inside a transaction for atomicity
     let paperId: string;
+    let createResult: Result<{ id: number }>;
+
     try {
-      paperId = await this.idGenerator.next(null);
+      ({ paperId, createResult } = await this.txContext.run(async (tx) => {
+        const id = await this.idGenerator.next(tx);
+        const result = await this.repository.create(id, validated, tx);
+        return { paperId: id, createResult: result };
+      }));
     } catch (e) {
-      return err(`ID generation failed: ${(e as Error).message}`);
+      return err(`Transaction failed: ${(e as Error).message}`);
     }
 
-    // Step 2: Create paper record
-    const createResult = await this.repository.create(
-      paperId,
-      validated,
-      null,
-    );
     if (createResult.isErr()) return err(createResult.error);
 
-    // Step 3: Store files
+    // Step 3: Store files (outside transaction — filesystem is not transactional)
     const storeResult = await this.storage.store(paperId, validated);
     if (storeResult.isErr()) return err(storeResult.error);
 

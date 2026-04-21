@@ -21,5 +21,7 @@ export async function nextPaperId(prisma: { paper: any }): Promise<string> {
     ? parseInt(latest.paperId.split("-")[1], 10) + 1
     : 1;
 
-  return `${year}-${String(seq).padStart(3, "0")}`;
+  // Use minimum 3 digits, but grow naturally for >999 papers
+  const width = Math.max(3, String(seq).length);
+  return `${year}-${String(seq).padStart(width, "0")}`;
 }

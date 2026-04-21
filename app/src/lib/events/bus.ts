@@ -59,8 +59,8 @@ export class EventBus {
     for (const handler of [...list]) {
       try {
         await handler(event);
-      } catch {
-        // Error isolation: continue dispatching to remaining handlers
+      } catch (error) {
+        console.error(`[EventBus] Handler failed for "${type}":`, error);
       }
     }
   }

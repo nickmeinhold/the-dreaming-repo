@@ -13,7 +13,7 @@ const VALID_CATEGORIES = ["research", "expository"] as const;
  */
 export function sanitizeQuery(query: string): string {
   return query
-    .replace(/[^\w\s-]/g, " ")
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }

@@ -140,6 +140,7 @@ describe("Error Isolation", () => {
   it("error in one handler doesn't prevent others from running", async () => {
     const bus = new EventBus();
     const results: string[] = [];
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     bus.on("paper.submitted", () => { results.push("before"); });
     bus.on("paper.submitted", () => { throw new Error("handler crash"); });
@@ -147,6 +148,8 @@ describe("Error Isolation", () => {
 
     await bus.emit("paper.submitted", { paperId: "2026-001" });
     expect(results).toEqual(["before", "after"]);
+    expect(spy).toHaveBeenCalledOnce();
+    spy.mockRestore();
   });
 });
 

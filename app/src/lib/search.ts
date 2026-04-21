@@ -26,7 +26,7 @@ export async function searchPapers(
 ): Promise<{ results: SearchResult[]; total: number }> {
   const limit = options?.limit ?? 20;
   const offset = options?.offset ?? 0;
-  const sanitized = query.replace(/[^\w\s-]/g, " ").trim();
+  const sanitized = query.replace(/[^\p{L}\p{N}\s-]/gu, " ").trim();
 
   if (!sanitized) return { results: [], total: 0 };
 
@@ -41,6 +41,7 @@ export async function searchPapers(
               ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
        FROM "Paper"
        WHERE search_vector @@ plainto_tsquery('english', $1)
+       AND status = 'published'
        AND category = $4
        ORDER BY rank DESC, "submittedAt" DESC
        LIMIT $2 OFFSET $3`,
@@ -53,6 +54,7 @@ export async function searchPapers(
     const countResult = await prisma.$queryRawUnsafe<[{ count: bigint }]>(
       `SELECT COUNT(*) as count FROM "Paper"
        WHERE search_vector @@ plainto_tsquery('english', $1)
+       AND status = 'published'
        AND category = $2`,
       sanitized,
       category,
@@ -66,6 +68,7 @@ export async function searchPapers(
             ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
      FROM "Paper"
      WHERE search_vector @@ plainto_tsquery('english', $1)
+     AND status = 'published'
      ORDER BY rank DESC, "submittedAt" DESC
      LIMIT $2 OFFSET $3`,
     sanitized,
@@ -75,7 +78,8 @@ export async function searchPapers(
 
   const countResult = await prisma.$queryRawUnsafe<[{ count: bigint }]>(
     `SELECT COUNT(*) as count FROM "Paper"
-     WHERE search_vector @@ plainto_tsquery('english', $1)`,
+     WHERE search_vector @@ plainto_tsquery('english', $1)
+     AND status = 'published'`,
     sanitized,
   );
 
