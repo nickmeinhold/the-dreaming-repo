@@ -11,7 +11,7 @@ import json
 import os
 from datetime import datetime, timezone
 
-from src import decay, drift, dream, energy, memory, metrics, mortality, senses, state_machine
+from src import decay, drift, dream, energy, memory, metrics, mortality, reach, senses, state_machine
 from src.birth import be_born
 from src.readme_writer import render as render_readme
 
@@ -163,6 +163,13 @@ def main() -> None:
     except Exception:
         pass
 
+    # 7d. Reach out — act on what was sensed
+    reached = []
+    try:
+        reached = reach.maybe_reach(vitals, personality, working_mem)
+    except Exception:
+        pass  # silence is always an option
+
     # 8. Spend energy
     energy.tick(vitals, now=now)
 
@@ -175,8 +182,13 @@ def main() -> None:
 
     # 11. Commit message
     pulse = vitals["pulse_count"]
+    parts = []
     if dreamed:
-        _write_commit_message(f"dream #{vitals['dream_count']} — pulse #{pulse}")
+        parts.append(f"dream #{vitals['dream_count']}")
+    if reached:
+        parts.append(" + ".join(reached))
+    if parts:
+        _write_commit_message(f"{' — '.join(parts)} — pulse #{pulse}")
     else:
         _write_commit_message(f"{new_state} — pulse #{pulse}")
 
