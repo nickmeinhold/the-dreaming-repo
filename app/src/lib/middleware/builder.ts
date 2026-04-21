@@ -19,13 +19,17 @@ export class RouteBuilder<Ctx> {
   use<Added>(
     mw: Middleware<Ctx, Ctx & Added>,
   ): RouteBuilder<Ctx & Added> {
-    this.middlewares.push(mw as AnyMiddleware);
-    return this as unknown as RouteBuilder<Ctx & Added>;
+    const next = new RouteBuilder<Ctx & Added>();
+    next.middlewares = [...this.middlewares, mw as AnyMiddleware];
+    next.label = this.label;
+    return next;
   }
 
-  named(name: string): this {
-    this.label = name;
-    return this;
+  named(name: string): RouteBuilder<Ctx> {
+    const next = new RouteBuilder<Ctx>();
+    next.middlewares = [...this.middlewares];
+    next.label = name;
+    return next;
   }
 
   handle(handler: Handler<Ctx>): RouteHandler {
