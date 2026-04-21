@@ -31,6 +31,24 @@ export async function submitReview(
   });
   if (!paper) return { success: false, error: "Paper not found" };
 
+  // Only papers under review accept reviews
+  if (paper.status !== "under-review") {
+    return { success: false, error: "Paper is not under review" };
+  }
+
+  // Reviewer must be assigned (placeholder review exists)
+  const existing = await prisma.review.findUnique({
+    where: {
+      paperId_reviewerId: {
+        paperId: paper.id,
+        reviewerId: session.userId,
+      },
+    },
+  });
+  if (!existing) {
+    return { success: false, error: "You have not been assigned to review this paper" };
+  }
+
   // Validate scores
   const scores = [
     data.noveltyScore,
@@ -54,22 +72,15 @@ export async function submitReview(
   if (!data.strengths.trim()) return { success: false, error: "Strengths are required" };
   if (!data.weaknesses.trim()) return { success: false, error: "Weaknesses are required" };
 
-  // Upsert: update existing placeholder or create new
-  await prisma.review.upsert({
+  // Update the assigned placeholder review
+  await prisma.review.update({
     where: {
       paperId_reviewerId: {
         paperId: paper.id,
         reviewerId: session.userId,
       },
     },
-    create: {
-      paperId: paper.id,
-      reviewerId: session.userId,
-      ...data,
-    },
-    update: {
-      ...data,
-    },
+    data,
   });
 
   return { success: true };

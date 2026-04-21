@@ -105,10 +105,5 @@ export async function GET(request: NextRequest) {
     role: user.role as "user" | "editor" | "admin",
   });
 
-  // Redirect to profile setup if display name is still the GitHub login
-  // (first-time user who hasn't customized their profile)
-  const isNewUser = user.displayName === user.githubLogin && !githubUser.name;
-  const redirectTo = isNewUser ? "/profile/setup" : "/";
-
-  return NextResponse.redirect(new URL(redirectTo, request.url));
+  return NextResponse.redirect(new URL("/", request.url));
 }

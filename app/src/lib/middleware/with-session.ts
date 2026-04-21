@@ -7,11 +7,9 @@
 
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { getJwtSecret, COOKIE_NAME } from "@/lib/constants";
 import { requestStore } from "./async-context";
 import type { TraceContext, SessionContext, Role } from "./types";
-
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret-change-me");
-const COOKIE_NAME = "journal_session";
 
 export async function withSession(
   ctx: TraceContext,
@@ -26,7 +24,7 @@ export async function withSession(
   }
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     const userId = payload.sub ? parseInt(payload.sub, 10) : NaN;
     const githubLogin = payload.login as string;
     const role = payload.role as Role;
@@ -38,7 +36,6 @@ export async function withSession(
       );
     }
 
-    // Update the async context store with the user ID
     const store = requestStore.getStore();
     if (store) store.userId = userId;
 

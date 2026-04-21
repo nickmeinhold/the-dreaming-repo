@@ -10,7 +10,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   submitted: ["under-review"],
-  "under-review": ["revision", "accepted", "published"],
+  "under-review": ["revision", "accepted"],
   revision: ["under-review"],
   accepted: ["published"],
 };

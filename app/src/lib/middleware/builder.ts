@@ -7,7 +7,6 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { requestStore } from "./async-context";
 import type { Middleware, Handler, RouteHandler, RouteParams } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,11 +46,7 @@ export class RouteBuilder<Ctx> {
           ctx = result;
         }
 
-        const store = requestStore.getStore();
-        if (store && "userId" in ctx) {
-          store.userId = (ctx as { userId: number }).userId;
-        }
-
+        // userId is set by withSession — no need to duplicate here
         return await handler(ctx);
       } catch (error) {
         console.error(`[${routeLabel}]`, error);

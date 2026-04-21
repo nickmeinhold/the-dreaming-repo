@@ -12,7 +12,11 @@ import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { dump } from "./yaml";
 
-const UPLOADS_DIR = path.join(/* turbopackIgnore: true */ process.cwd(), "uploads", "papers");
+// Canonical storage for the web app
+export const UPLOADS_BASE = path.join(/* turbopackIgnore: true */ process.cwd(), "uploads");
+const UPLOADS_DIR = path.join(UPLOADS_BASE, "papers");
+// Filesystem bridge: writes to ../submissions/ so the /peer-review
+// Claude Code skill can read papers without the web app running
 const SUBMISSIONS_DIR = path.resolve(/* turbopackIgnore: true */ process.cwd(), "..", "submissions");
 
 interface PaperFiles {

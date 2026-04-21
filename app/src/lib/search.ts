@@ -18,6 +18,8 @@ export interface SearchResult {
   rank: number;
 }
 
+const VALID_CATEGORIES = ["research", "expository"];
+
 export async function searchPapers(
   query: string,
   options?: { category?: string; limit?: number; offset?: number },
@@ -28,16 +30,42 @@ export async function searchPapers(
 
   if (!sanitized) return { results: [], total: 0 };
 
-  const categoryFilter = options?.category
-    ? `AND category = '${options.category}'`
-    : "";
+  // Allowlist category to prevent SQL injection
+  const category = options?.category && VALID_CATEGORIES.includes(options.category)
+    ? options.category
+    : null;
+
+  if (category) {
+    const results = await prisma.$queryRawUnsafe<SearchResult[]>(
+      `SELECT "paperId", title, abstract, category, status, "submittedAt",
+              ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
+       FROM "Paper"
+       WHERE search_vector @@ plainto_tsquery('english', $1)
+       AND category = $4
+       ORDER BY rank DESC, "submittedAt" DESC
+       LIMIT $2 OFFSET $3`,
+      sanitized,
+      limit,
+      offset,
+      category,
+    );
+
+    const countResult = await prisma.$queryRawUnsafe<[{ count: bigint }]>(
+      `SELECT COUNT(*) as count FROM "Paper"
+       WHERE search_vector @@ plainto_tsquery('english', $1)
+       AND category = $2`,
+      sanitized,
+      category,
+    );
+
+    return { results, total: Number(countResult[0]?.count ?? 0) };
+  }
 
   const results = await prisma.$queryRawUnsafe<SearchResult[]>(
     `SELECT "paperId", title, abstract, category, status, "submittedAt",
             ts_rank(search_vector, plainto_tsquery('english', $1)) AS rank
      FROM "Paper"
      WHERE search_vector @@ plainto_tsquery('english', $1)
-     ${categoryFilter}
      ORDER BY rank DESC, "submittedAt" DESC
      LIMIT $2 OFFSET $3`,
     sanitized,
@@ -47,12 +75,9 @@ export async function searchPapers(
 
   const countResult = await prisma.$queryRawUnsafe<[{ count: bigint }]>(
     `SELECT COUNT(*) as count FROM "Paper"
-     WHERE search_vector @@ plainto_tsquery('english', $1)
-     ${categoryFilter}`,
+     WHERE search_vector @@ plainto_tsquery('english', $1)`,
     sanitized,
   );
 
-  const total = Number(countResult[0]?.count ?? 0);
-
-  return { results, total };
+  return { results, total: Number(countResult[0]?.count ?? 0) };
 }

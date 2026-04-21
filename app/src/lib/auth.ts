@@ -8,13 +8,8 @@
 
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { getJwtSecret, COOKIE_NAME, SESSION_DURATION, SESSION_MAX_AGE } from "./constants";
 import type { Role } from "./middleware/types";
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "dev-secret-change-me",
-);
-const COOKIE_NAME = "journal_session";
-const SESSION_DURATION = "8h";
 
 export interface SessionPayload {
   userId: number;
@@ -31,7 +26,7 @@ export async function createSession(payload: SessionPayload): Promise<string> {
     .setSubject(String(payload.userId))
     .setIssuedAt()
     .setExpirationTime(SESSION_DURATION)
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
@@ -39,7 +34,7 @@ export async function createSession(payload: SessionPayload): Promise<string> {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: 8 * 60 * 60, // 8 hours
+    maxAge: SESSION_MAX_AGE,
   });
 
   return token;
@@ -51,7 +46,7 @@ export async function getSession(): Promise<SessionPayload | null> {
   if (!token) return null;
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     const userId = payload.sub ? parseInt(payload.sub, 10) : NaN;
     if (isNaN(userId)) return null;
 

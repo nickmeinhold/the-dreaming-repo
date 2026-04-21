@@ -1,14 +1,13 @@
 /**
  * Paper ID Generation — YYYY-NNN format
  *
- * Sequential within year, generated inside a transaction
- * to prevent gaps or collisions. The paper_id is the
- * public-facing identifier (like arXiv's 2301.12345).
+ * Sequential within year. Must be called inside a transaction
+ * to prevent race conditions on concurrent submissions.
  */
 
-import type { PrismaClient } from "@/generated/prisma/client";
-
-export async function nextPaperId(prisma: PrismaClient): Promise<string> {
+// Accepts either PrismaClient or a transaction client ($transaction callback argument)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function nextPaperId(prisma: { paper: any }): Promise<string> {
   const year = new Date().getFullYear();
   const prefix = `${year}-`;
 

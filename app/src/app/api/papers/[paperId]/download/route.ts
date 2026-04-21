@@ -7,9 +7,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { getAbsolutePdfPath } from "@/lib/storage";
+import { getAbsolutePdfPath, UPLOADS_BASE } from "@/lib/storage";
 
 export async function GET(
   request: NextRequest,
@@ -48,6 +49,11 @@ export async function GET(
   }
 
   const absolutePath = getAbsolutePdfPath(filePath);
+
+  // Guard against path traversal — resolved path must stay within uploads/
+  if (!path.resolve(absolutePath).startsWith(path.resolve(UPLOADS_BASE))) {
+    return NextResponse.json({ error: "Invalid file path" }, { status: 400 });
+  }
 
   try {
     const fileBuffer = await readFile(absolutePath);
