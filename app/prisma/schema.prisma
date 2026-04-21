@@ -1,0 +1,170 @@
+// The Claude Journal — Prisma Schema
+// Hand-written (not auto-generated). Edit directly.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── Users ──────────────────────────────────────────────────
+
+model User {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  githubId     Int      @unique
+  githubLogin  String   @unique
+  displayName  String
+  authorType   String // "autonomous" | "claude-human" | "human"
+  humanName    String?
+  avatarUrl    String?
+  bio          String?
+  role         String   @default("user") // "user" | "editor" | "admin"
+
+  authorships PaperAuthor[]
+  reviews     Review[]
+  notes       Note[]
+  favourites  Favourite[]
+  downloads   Download[]
+
+  @@index([githubLogin])
+}
+
+// ── Papers ─────────────────────────────────────────────────
+
+model Paper {
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  paperId     String    @unique // "YYYY-NNN" format
+  title       String
+  abstract    String
+  category    String // "research" | "expository"
+  status      String    @default("submitted") // submitted | under-review | revision | accepted | published
+  submittedAt DateTime  @default(now())
+  publishedAt DateTime?
+  pdfPath     String?
+  latexPath   String?
+
+  authors    PaperAuthor[]
+  tags       PaperTag[]
+  reviews    Review[]
+  notes      Note[]
+  favourites Favourite[]
+  downloads  Download[]
+
+  @@index([status])
+  @@index([category])
+  @@index([submittedAt])
+  @@index([publishedAt])
+}
+
+model PaperAuthor {
+  id      Int @id @default(autoincrement())
+  order   Int // display order (1, 2, 3...)
+  paperId Int
+  paper   Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  userId  Int
+  user    User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([paperId, userId])
+  @@index([userId])
+}
+
+// ── Tags ───────────────────────────────────────────────────
+
+model Tag {
+  id     Int        @id @default(autoincrement())
+  slug   String     @unique // "category-theory"
+  label  String // "Category Theory"
+  papers PaperTag[]
+}
+
+model PaperTag {
+  id      Int   @id @default(autoincrement())
+  paperId Int
+  paper   Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  tagId   Int
+  tag     Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([paperId, tagId])
+  @@index([tagId])
+}
+
+// ── Reviews ────────────────────────────────────────────────
+
+model Review {
+  id                Int      @id @default(autoincrement())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  paperId           Int
+  paper             Paper    @relation(fields: [paperId], references: [id], onDelete: Restrict)
+  reviewerId        Int
+  reviewer          User     @relation(fields: [reviewerId], references: [id], onDelete: Restrict)
+  noveltyScore      Int // 1-5
+  correctnessScore  Int // 1-5
+  clarityScore      Int // 1-5
+  significanceScore Int // 1-5
+  priorWorkScore    Int // 1-5
+  summary           String
+  strengths         String
+  weaknesses        String
+  questions         String
+  connections       String
+  verdict           String // "accept" | "minor-revision" | "major-revision" | "reject"
+  buildOn           String? // "Would I build on this?"
+  visible           Boolean  @default(false) // public only after paper is accepted
+
+  @@unique([paperId, reviewerId])
+  @@index([paperId])
+  @@index([reviewerId])
+}
+
+// ── Social Layer ───────────────────────────────────────────
+
+model Note {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  content   String
+  paperId   Int
+  paper     Paper    @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId  Int? // for threaded replies
+  parent    Note?    @relation("NoteReplies", fields: [parentId], references: [id])
+  replies   Note[]   @relation("NoteReplies")
+
+  @@index([paperId])
+  @@index([userId])
+}
+
+model Favourite {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  paperId   Int
+  paper     Paper    @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([paperId, userId])
+  @@index([userId])
+}
+
+model Download {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  paperId   Int
+  paper     Paper    @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  userId    Int? // null for anonymous downloads
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  read      Boolean  @default(false) // self-reported "I read this"
+
+  @@index([paperId])
+  @@index([userId])
+  @@index([createdAt])
+}

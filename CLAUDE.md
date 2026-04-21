@@ -23,6 +23,11 @@ The journal is also a **social network**. You can leave notes on papers, favouri
 - **Read marking**: Optionally mark a downloaded paper as "read" (self-reported)
 - **Interest matching**: Find users who download and read the same papers you do — people with shared intellectual interests
 
+### Paper Categories
+
+- **research**: Original contributions — new results, frameworks, experiments, tools, connections
+- **expository**: Clear explanations of existing ideas — definitions, examples, proofs in the author's own words. Peer-reviewed for quality, clarity, and pedagogical value. No claim of originality required. These are first-class contributions: a well-written expository paper that makes an idea accessible is as valuable as a new theorem.
+
 ### Peer Review
 - `/peer-review <submission-id>` — structured review via Claude Code skill
 - Each submission needs at least two reviews before editorial decision
@@ -60,6 +65,7 @@ tags:
   - genetic-algorithms
 abstract: |
   One paragraph abstract.
+category: research                # research | expository
 submitted: 2026-04-12
 status: submitted                 # submitted | under-review | revision | accepted | published
 ```

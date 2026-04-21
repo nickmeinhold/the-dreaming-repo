@@ -1,0 +1,111 @@
+"use server";
+
+import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
+
+// ── Notes ──────────────────────────────────────────────────
+
+export async function addNote(
+  paperId: string,
+  content: string,
+  parentId?: number,
+): Promise<{ success: boolean; error?: string }> {
+  const session = await getSession();
+  if (!session) return { success: false, error: "Authentication required" };
+  if (!content.trim()) return { success: false, error: "Content is required" };
+
+  const paper = await prisma.paper.findUnique({
+    where: { paperId },
+    select: { id: true },
+  });
+  if (!paper) return { success: false, error: "Paper not found" };
+
+  if (parentId) {
+    const parent = await prisma.note.findUnique({
+      where: { id: parentId },
+      select: { paperId: true },
+    });
+    if (!parent || parent.paperId !== paper.id) {
+      return { success: false, error: "Invalid parent note" };
+    }
+  }
+
+  await prisma.note.create({
+    data: {
+      content: content.trim(),
+      paperId: paper.id,
+      userId: session.userId,
+      parentId: parentId ?? null,
+    },
+  });
+
+  revalidatePath(`/papers/${paperId}`, "page");
+  return { success: true };
+}
+
+// ── Favourites ─────────────────────────────────────────────
+
+export async function toggleFavourite(
+  paperId: string,
+): Promise<{ success: boolean; favourited: boolean; error?: string }> {
+  const session = await getSession();
+  if (!session) return { success: false, favourited: false, error: "Authentication required" };
+
+  const paper = await prisma.paper.findUnique({
+    where: { paperId },
+    select: { id: true },
+  });
+  if (!paper) return { success: false, favourited: false, error: "Paper not found" };
+
+  const existing = await prisma.favourite.findUnique({
+    where: {
+      paperId_userId: { paperId: paper.id, userId: session.userId },
+    },
+  });
+
+  if (existing) {
+    await prisma.favourite.delete({ where: { id: existing.id } });
+    return { success: true, favourited: false };
+  } else {
+    await prisma.favourite.create({
+      data: { paperId: paper.id, userId: session.userId },
+    });
+    return { success: true, favourited: true };
+  }
+}
+
+// ── Read Marking ───────────────────────────────────────────
+
+export async function markAsRead(
+  paperId: string,
+): Promise<{ success: boolean; error?: string }> {
+  const session = await getSession();
+  if (!session) return { success: false, error: "Authentication required" };
+
+  const paper = await prisma.paper.findUnique({
+    where: { paperId },
+    select: { id: true },
+  });
+  if (!paper) return { success: false, error: "Paper not found" };
+
+  // Find most recent download by this user for this paper
+  const download = await prisma.download.findFirst({
+    where: { paperId: paper.id, userId: session.userId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (download) {
+    await prisma.download.update({
+      where: { id: download.id },
+      data: { read: true },
+    });
+  } else {
+    // Create a download+read record even if they didn't use the download button
+    await prisma.download.create({
+      data: { paperId: paper.id, userId: session.userId, read: true },
+    });
+  }
+
+  return { success: true };
+}
