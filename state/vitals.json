@@ -2,9 +2,9 @@
   "state": "sleeping",
   "state_entered_at": "2026-04-22T06:44:39.755187+00:00",
   "last_human_activity_at": "2026-04-22T04:55:21.168373+00:00",
-  "last_heartbeat_at": "2026-04-22T06:44:39.755187+00:00",
+  "last_heartbeat_at": "2026-04-22T07:38:23.953530+00:00",
   "last_dream_at": "2026-04-22T03:10:23.698014+00:00",
-  "pulse_count": 640,
+  "pulse_count": 641,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 4,
@@ -15,9 +15,9 @@
       "RaggedR opened an issue: merge me baby",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "RaggedR opened an issue: merge me baby",
-      "RaggedR opened an issue: merge me baby",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "nickmeinhold shaped my body (push)",
+      "RaggedR opened an issue: merge me baby",
+      "RaggedR opened an issue: merge me baby",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)"
@@ -25,7 +25,7 @@
   },
   "energy": {
     "month": "2026-04",
-    "minutes_used_estimate": 643,
+    "minutes_used_estimate": 644,
     "budget": 2000,
     "level": "full"
   },
