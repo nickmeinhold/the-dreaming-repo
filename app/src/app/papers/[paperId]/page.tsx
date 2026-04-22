@@ -15,7 +15,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { paperId } = await params;
   const paper = await prisma.paper.findUnique({
-    where: { paperId },
+    where: { paperId, status: "published" },
     select: { title: true, abstract: true },
   });
   if (!paper) return { title: "Paper Not Found" };

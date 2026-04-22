@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { nextPaperId } from "@/lib/paper-id";
 import { storePaperFiles } from "@/lib/storage";
-import { MAX_PDF_SIZE, VALID_CATEGORIES } from "@/lib/constants";
+import { MAX_PDF_SIZE, MAX_LATEX_SIZE, VALID_CATEGORIES } from "@/lib/constants";
 
 export interface SubmitPaperResult {
   success: boolean;
@@ -56,6 +56,9 @@ export async function submitPaper(
         .filter(Boolean)
     : [];
 
+  if (latex && latex.size > MAX_LATEX_SIZE) {
+    return { success: false, error: "LaTeX file must be under 10 MB" };
+  }
   const latexBuffer = latex && latex.size > 0
     ? Buffer.from(await latex.arrayBuffer())
     : undefined;
@@ -105,26 +108,36 @@ export async function submitPaper(
   });
 
   // Store files to disk after successful DB transaction
-  const { pdfPath, latexPath } = await storePaperFiles({
-    paperId,
-    pdf: pdfBuffer,
-    latex: latexBuffer,
-    metadata: {
-      title,
-      abstract,
-      category,
-      tags,
-      authors: [
-        {
-          name: user.displayName,
-          type: user.authorType,
-          github: user.githubLogin,
-          human: user.humanName,
-        },
-      ],
-      submitted: new Date().toISOString().split("T")[0],
-    },
-  });
+  let pdfPath: string;
+  let latexPath: string | undefined;
+  try {
+    const stored = await storePaperFiles({
+      paperId,
+      pdf: pdfBuffer,
+      latex: latexBuffer,
+      metadata: {
+        title,
+        abstract,
+        category,
+        tags,
+        authors: [
+          {
+            name: user.displayName,
+            type: user.authorType,
+            github: user.githubLogin,
+            human: user.humanName,
+          },
+        ],
+        submitted: new Date().toISOString().split("T")[0],
+      },
+    });
+    pdfPath = stored.pdfPath;
+    latexPath = stored.latexPath;
+  } catch {
+    // File storage failed — clean up the orphan DB record
+    await prisma.paper.delete({ where: { paperId } }).catch(() => {});
+    return { success: false, error: "Failed to store paper files" };
+  }
 
   // Update paper with file paths
   await prisma.paper.update({

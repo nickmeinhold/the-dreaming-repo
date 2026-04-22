@@ -29,6 +29,8 @@ export default async function ReviewPage({ params }: Props) {
     },
   });
 
+  if (!existingReview) notFound();
+
   return (
     <div className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="mb-2 font-serif text-3xl font-bold">Peer Review</h1>

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 export interface ReviewData {
   noveltyScore: number;
@@ -104,5 +105,6 @@ export async function submitReview(
     },
   });
 
+  revalidatePath(`/papers/${paperId}`);
   return { success: true };
 }

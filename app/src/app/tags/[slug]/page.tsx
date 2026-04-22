@@ -44,6 +44,7 @@ export default async function TagDetailPage({ params }: Props) {
 
   const papers = tag.papers
     .map((pt) => pt.paper)
+    .filter((p) => p.status === "published")
     .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime());
 
   return (

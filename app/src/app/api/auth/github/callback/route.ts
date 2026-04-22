@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Create or update user via auth adapter
-  const upsertData = adapter.toJournalUser(githubUser);
+  const { email: _email, ...upsertData } = adapter.toJournalUser(githubUser);
   const user = await prisma.user.upsert({
     where: { githubId: upsertData.githubId },
     update: {
@@ -99,9 +99,7 @@ export async function GET(request: NextRequest) {
       avatarUrl: upsertData.avatarUrl,
       bio: upsertData.bio,
     },
-    create: {
-      ...upsertData,
-    },
+    create: upsertData,
   });
 
   // Create session

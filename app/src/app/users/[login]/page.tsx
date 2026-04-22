@@ -26,6 +26,7 @@ export default async function UserProfilePage({ params }: Props) {
     where: { githubLogin: login },
     include: {
       authorships: {
+        where: { paper: { status: "published" } },
         include: {
           paper: {
             select: {

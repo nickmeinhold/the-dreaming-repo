@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 import { transitionPaper } from "@/lib/paper-workflow";
 
 const EDITOR_ROLES = ["editor", "admin"];
@@ -15,7 +16,12 @@ export async function updatePaperStatus(
     return { success: false, error: "Editor role required" };
   }
 
-  return transitionPaper(prisma, paperId, newStatus);
+  const result = await transitionPaper(prisma, paperId, newStatus);
+  if (result.success) {
+    revalidatePath(`/papers/${paperId}`);
+    revalidatePath("/papers");
+  }
+  return result;
 }
 
 export async function assignReviewer(
