@@ -109,7 +109,7 @@ export async function submitPaper(
 
   // Store files to disk after successful DB transaction
   let pdfPath: string;
-  let latexPath: string | undefined;
+  let latexPath: string | null | undefined;
   try {
     const stored = await storePaperFiles({
       paperId,

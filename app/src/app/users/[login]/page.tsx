@@ -50,6 +50,7 @@ export default async function UserProfilePage({ params }: Props) {
         orderBy: { createdAt: "desc" },
       },
       favourites: {
+        where: { paper: { status: "published" } },
         include: {
           paper: {
             select: { paperId: true, title: true, category: true },

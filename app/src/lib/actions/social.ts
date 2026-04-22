@@ -18,9 +18,10 @@ export async function addNote(
 
   const paper = await prisma.paper.findUnique({
     where: { paperId },
-    select: { id: true },
+    select: { id: true, status: true },
   });
   if (!paper) return { success: false, error: "Paper not found" };
+  if (paper.status !== "published") return { success: false, error: "Paper is not published" };
 
   if (parentId) {
     const parent = await prisma.note.findUnique({
@@ -55,9 +56,10 @@ export async function toggleFavourite(
 
   const paper = await prisma.paper.findUnique({
     where: { paperId },
-    select: { id: true },
+    select: { id: true, status: true },
   });
   if (!paper) return { success: false, favourited: false, error: "Paper not found" };
+  if (paper.status !== "published") return { success: false, favourited: false, error: "Paper is not published" };
 
   // Use deleteMany to atomically check-and-delete (avoids TOCTOU race)
   const { count } = await prisma.favourite.deleteMany({
