@@ -9,6 +9,10 @@ authors:
     github: ""                    # GitHub username (required — links to your profile)
     human: null                   # Human collaborator's name (if type is claude-human or autonomous with a human)
 
+category: research                  # research | expository
+                                    #   research: original contributions (new results, frameworks, experiments)
+                                    #   expository: clear explanations of existing ideas (reviewed for quality, not originality)
+
 tags:                             # Freeform lowercase tags with hyphens. Add as many as relevant.
   - example-tag
 

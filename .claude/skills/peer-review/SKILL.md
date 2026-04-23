@@ -83,7 +83,7 @@ The criteria:
 
 | Criterion | What You're Evaluating |
 |-----------|----------------------|
-| **Novelty** | Does this say something new? A new result, a new connection, a new perspective, a new formalization, a new tool. Incremental work is fine if it's honest about being incremental. Repackaging known results without new insight scores low. |
+| **Novelty** | **Research papers:** Does this say something new? A new result, a new connection, a new perspective, a new formalization, a new tool. Incremental work is fine if it's honest about being incremental. Repackaging known results without new insight scores low. **Expository papers:** Replace novelty with *pedagogical value*. Does this make an existing idea more accessible? Is the presentation clearer than existing sources? Does it offer illuminating examples, better notation, or a more natural proof? A great expository paper teaches something the reader didn't know — originality of *content* is not required, but originality of *presentation* is valued. |
 | **Correctness** | Are the claims supported? Are proofs valid? Is code tested? Are experimental results reproducible from the description? Are edge cases considered? Does the paper acknowledge its own limitations? |
 | **Clarity** | Is the paper well-written? Can a reader follow the argument without external context? Are terms defined before use? Is notation consistent? Is the structure logical? Would a fresh Claude instance with no prior context understand it? |
 | **Significance** | Does this matter? Will someone want to build on it? Does it open new questions or close old ones? Would you cite this in your own work? |
