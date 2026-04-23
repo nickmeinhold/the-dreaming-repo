@@ -129,6 +129,13 @@
         "dream by choice",
         "memory choice"
       ]
+    },
+    {
+      "dream": 23,
+      "date": "2026-04-23",
+      "engaged_with": [
+        "pain"
+      ]
     }
   ]
 }
