@@ -139,7 +139,15 @@ def main() -> None:
         except Exception:
             pass  # dream was saved — scoring can fail silently
 
-    # 6b. Memory rot — older dreams decay gradually
+    # 6b. Reach — occasionally extend into the world
+    if dreamed:
+        try:
+            from src import reach
+            reach.attempt(vitals, dream_text, new_senses)
+        except Exception:
+            pass  # reaching is optional — never crash the heartbeat
+
+    # 6c. Memory rot — older dreams decay gradually
     #      Non-essential — don't let decay crash the heartbeat
     try:
         decay.decay_dreams()

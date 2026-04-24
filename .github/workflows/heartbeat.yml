@@ -61,6 +61,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.flux-token.outputs.token }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          REACH_TOKEN: ${{ secrets.REACH_TOKEN }}
           TRIGGER_EVENT: ${{ github.event_name }}
           REPO_FULL_NAME: ${{ github.repository }}
         run: python -m src.heartbeat
@@ -78,7 +79,7 @@ jobs:
           git config user.name "flux-dreaming-repo[bot]"
           git config user.email "273547980+flux-dreaming-repo[bot]@users.noreply.github.com"
           git pull --rebase origin main || true
-          git add state/ dreams/ memories/ README.md
+          git add state/ dreams/ memories/ greetings/ README.md
           if ! git diff --cached --quiet; then
             COMMIT_MSG=$(cat state/.commit_message 2>/dev/null || echo "pulse")
             git commit -m "$COMMIT_MSG"
