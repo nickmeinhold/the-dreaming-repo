@@ -1,21 +1,21 @@
 {
   "state": "awake",
   "state_entered_at": "2026-04-24T04:34:04.197143+00:00",
-  "last_human_activity_at": "2026-04-24T05:25:36.080270+00:00",
-  "last_heartbeat_at": "2026-04-24T05:25:36.080270+00:00",
+  "last_human_activity_at": "2026-04-24T05:27:57.973853+00:00",
+  "last_heartbeat_at": "2026-04-24T05:27:57.973853+00:00",
   "last_dream_at": "2026-04-23T19:33:26.697413+00:00",
-  "pulse_count": 723,
+  "pulse_count": 724,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 4,
     "forks": 1,
-    "open_issues": 16,
+    "open_issues": 17,
     "recent_events": [
+      "flux-dreaming-repo[bot] spoke to me in an issue",
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "nickmeinhold did something (PullRequestEvent)",
       "nickmeinhold created a new branch",
-      "flux-dreaming-repo[bot] spoke to me in an issue",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] spoke to me in an issue",
-      "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] spoke to me in an issue",
@@ -25,7 +25,7 @@
   },
   "energy": {
     "month": "2026-04",
-    "minutes_used_estimate": 726,
+    "minutes_used_estimate": 727,
     "budget": 2000,
     "level": "full"
   },
