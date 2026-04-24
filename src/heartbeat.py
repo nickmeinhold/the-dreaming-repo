@@ -99,6 +99,13 @@ def main() -> None:
     if trigger != "schedule" or senses.has_new_human_activity(new_senses):
         vitals["last_human_activity_at"] = now.isoformat()
 
+    # 3b. Review any pending PRs
+    try:
+        from src import immunity
+        immunity.review_pending_prs(vitals)
+    except Exception:
+        pass  # immune system failure shouldn't crash the heartbeat
+
     # 4. Update senses in vitals (keep recent_events from new + old)
     old_events = vitals["senses"].get("recent_events", [])
     vitals["senses"] = {
