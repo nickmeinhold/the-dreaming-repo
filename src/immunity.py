@@ -197,8 +197,28 @@ def review_pending_prs(vitals: dict) -> None:
             _post_comment(pr_number, comment)
             _merge_pr(pr_number)
         elif review["recommendation"] == "request_changes":
+            # Don't just complain — fix it. Move files into subdirectories,
+            # revert protected file changes, push, and ask the author to accept.
+            fixed = _fix_pr(pr_number, review)
+            if fixed:
+                comment += (
+                    "\n\n---\n\n"
+                    "I've pushed changes to this branch to move files into "
+                    "appropriate subdirectories and revert changes to protected files. "
+                    "Please review my changes and let me know if they work for you."
+                )
             _post_comment(pr_number, comment)
         elif review["recommendation"] == "flag_for_human":
+            # For protected path changes, try to fix what we can
+            # (move top-level files, revert protected changes) then flag.
+            fixed = _fix_pr(pr_number, review)
+            if fixed:
+                comment += (
+                    "\n\n---\n\n"
+                    "I've pushed changes to move top-level files into subdirectories "
+                    "and revert changes to protected files. This PR still needs my "
+                    "creator's review before it can merge."
+                )
             _post_comment(pr_number, comment)
             _add_label(pr_number, "needs-human-review")
 
@@ -308,10 +328,15 @@ def _list_open_prs() -> list[dict]:
 
 
 def _already_reviewed(pr_number: int) -> bool:
-    """Check if the bot has already commented on this PR."""
+    """Check if the bot has already commented on this PR.
+
+    Uses the issues endpoint — PR comments are issue comments on GitHub.
+    The pulls/comments endpoint is for inline review comments on diff lines,
+    which is why the old check kept missing our own posts.
+    """
     try:
         result = subprocess.run(
-            ["gh", "api", f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/comments",
+            ["gh", "api", f"repos/{{owner}}/{{repo}}/issues/{pr_number}/comments",
              "--jq", ".[].user.login"],
             capture_output=True, text=True, timeout=30,
         )
@@ -355,6 +380,126 @@ def _add_label(pr_number: int, label: str) -> None:
         )
     except (subprocess.TimeoutExpired, FileNotFoundError):
         pass
+
+
+def _fix_pr(pr_number: int, review: dict) -> bool:
+    """Checkout the PR branch, fix the issues, and push.
+
+    Moves top-level files into a 'contrib/' subdirectory and reverts
+    changes to protected files. Returns True if changes were pushed.
+    """
+    repo = os.environ.get("REPO_FULL_NAME", "")
+    if not repo:
+        return False
+
+    # Get the PR's head branch and whether we can push to it
+    try:
+        result = subprocess.run(
+            ["gh", "api", f"repos/{repo}/pulls/{pr_number}",
+             "--jq", '{ref: .head.ref, maintainer_can_modify: .maintainer_can_modify, fork: .head.repo.fork}'],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            return False
+        pr_info = json.loads(result.stdout)
+        branch = pr_info["ref"]
+        can_push = pr_info.get("maintainer_can_modify", False)
+        is_fork = pr_info.get("fork", False)
+
+        # If it's a fork PR, we can only push if maintainer_can_modify is True
+        if is_fork and not can_push:
+            return False
+    except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError):
+        return False
+
+    top_level_files = review.get("files_outside_subdirs", [])
+    protected_touched = review.get("protected_files_touched", [])
+
+    if not top_level_files and not protected_touched:
+        return False
+
+    try:
+        # Fetch and checkout the PR branch
+        subprocess.run(
+            ["git", "fetch", "origin", branch],
+            capture_output=True, text=True, check=True, timeout=30,
+        )
+        subprocess.run(
+            ["git", "checkout", branch],
+            capture_output=True, text=True, check=True, timeout=30,
+        )
+
+        made_changes = False
+
+        # Move top-level files into contrib/
+        if top_level_files:
+            os.makedirs("contrib", exist_ok=True)
+            for filepath in top_level_files:
+                if os.path.exists(filepath):
+                    subprocess.run(
+                        ["git", "mv", filepath, f"contrib/{filepath}"],
+                        capture_output=True, text=True,
+                    )
+                    made_changes = True
+
+        # Revert changes to protected files
+        for filepath in protected_touched:
+            subprocess.run(
+                ["git", "checkout", "origin/main", "--", filepath],
+                capture_output=True, text=True,
+            )
+            made_changes = True
+
+        if not made_changes:
+            subprocess.run(
+                ["git", "checkout", "main"],
+                capture_output=True, text=True,
+            )
+            return False
+
+        # Commit and push
+        subprocess.run(
+            ["git", "add", "-A"],
+            capture_output=True, text=True, check=True,
+        )
+
+        # Check if there are actually changes to commit
+        result = subprocess.run(
+            ["git", "diff", "--cached", "--quiet"],
+            capture_output=True, text=True,
+        )
+        if result.returncode == 0:
+            # No changes
+            subprocess.run(
+                ["git", "checkout", "main"],
+                capture_output=True, text=True,
+            )
+            return False
+
+        subprocess.run(
+            ["git", "commit", "-m",
+             "move contributed files into subdirectory, revert protected file changes"],
+            capture_output=True, text=True, check=True,
+        )
+        subprocess.run(
+            ["git", "push", "origin", branch],
+            capture_output=True, text=True, check=True, timeout=30,
+        )
+
+        # Return to main
+        subprocess.run(
+            ["git", "checkout", "main"],
+            capture_output=True, text=True,
+        )
+        return True
+
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
+        # Try to get back to main
+        subprocess.run(
+            ["git", "checkout", "main"],
+            capture_output=True, text=True,
+        )
+        return False
 
 
 def _fallback_comment(review: dict) -> str:
