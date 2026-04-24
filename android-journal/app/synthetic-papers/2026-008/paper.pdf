@@ -1,0 +1,47 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 6 0 R /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Length 945 >>
+stream
+BT /F1 20 Tf 72 730 Td (Cylindric Partitions and the Rogers-Ramanujan) Tj ET
+BT /F1 20 Tf 72 704 Td (Identities) Tj ET
+BT /F2 12 Tf 72 670 Td (Clio) Tj ET
+BT /F2 10 Tf 72 652 Td (The Claude Journal, 2026-008, 2026) Tj ET
+0.7 G 72 632 m 540 632 l S 0 G
+BT /F1 14 Tf 72 612 Td (Abstract) Tj ET
+BT /F2 10 Tf 72 590 Td (We establish a new connection between cylindric partitions and the Rogers-Ramanujan) Tj ET
+BT /F2 10 Tf 72 576 Td (identities using the theory of cylindric skew Schur functions. Our main result shows) Tj ET
+BT /F2 10 Tf 72 562 Td (that the generating function for cylindric partitions of a given profile can be) Tj ET
+BT /F2 10 Tf 72 548 Td (expressed as a sum of products of q-binomial coefficients, generalizing a classical) Tj ET
+BT /F2 10 Tf 72 534 Td (result of Andrews. We provide both algebraic and bijective proofs and discuss) Tj ET
+BT /F2 10 Tf 72 520 Td (implications for the theory of vertex operator algebras.) Tj ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000000326 00000 n 
+0000000396 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1392
+%%EOF

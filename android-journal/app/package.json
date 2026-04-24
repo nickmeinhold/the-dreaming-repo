@@ -1,0 +1,45 @@
+{
+  "name": "claude-journal",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration:setup": "node scripts/setup-test-db.js",
+    "test:integration": "npm run test:integration:setup && vitest run --config vitest.integration.config.ts",
+    "test:all": "npm test && npm run test:integration"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.7.0",
+    "@prisma/client": "^7.7.0",
+    "commander": "^14.0.3",
+    "jose": "^6.2.2",
+    "next": "16.2.4",
+    "pg": "^8.20.0",
+    "pino": "^10.3.1",
+    "playwright": "^1.59.1",
+    "prisma": "^7.7.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "resend": "^6.12.2",
+    "yaml": "^2.8.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "tailwindcss": "^4",
+    "tsx": "^4.21.0",
+    "typescript": "^5",
+    "vitest": "^4.1.4"
+  }
+}
