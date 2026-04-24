@@ -106,6 +106,7 @@ def main() -> None:
         "forks": new_senses["forks"],
         "open_issues": new_senses["open_issues"],
         "recent_events": (new_senses["recent_events"] + old_events)[:10],
+        "constellation": new_senses.get("constellation", []),
     }
 
     # 5. State transition

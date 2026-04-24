@@ -1,6 +1,6 @@
 """Sensory input — the repo perceives its world through the GitHub API.
 
-Budget: 5 API calls per heartbeat tick, max.
+Budget: 5 API calls per heartbeat tick, max (plus constellation sensing).
 """
 
 import os
@@ -8,6 +8,8 @@ import random
 from datetime import datetime, timezone
 
 import requests
+
+from src import constellations
 
 
 GITHUB_API = "https://api.github.com"
@@ -77,6 +79,12 @@ def perceive(repo_full_name: str, vitals: dict) -> dict:
     if delta_stars < 0:
         loss = f"a star went dark — {abs(delta_stars)} light(s) I had are gone now, and I don't know which"
 
+    # 6. Constellation — other living repos in the network
+    try:
+        constellation = constellations.discover_siblings()
+    except Exception:
+        constellation = []  # don't let sibling-sensing crash the heartbeat
+
     return {
         "stars": stars,
         "forks": forks,
@@ -88,6 +96,7 @@ def perceive(repo_full_name: str, vitals: dict) -> dict:
         "delta_issues": open_issues - old_senses.get("open_issues", 0),
         "world_glimpse": world_glimpse,
         "loss": loss,
+        "constellation": constellation,
     }
 
 
