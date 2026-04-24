@@ -1,5 +1,6 @@
 import { PrismaClient } from "@/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { logger } from "@/lib/logger";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const globalForPrisma = globalThis as unknown as { prisma?: any };
@@ -9,16 +10,11 @@ const LOG_QUERIES = process.env.LOG_DB_QUERIES === "true"
   || process.env.NODE_ENV === "production";
 
 function logQuery(model: string, operation: string, ms: number) {
-  const level = ms > SLOW_QUERY_MS ? 40 : 30;
-  console.log(JSON.stringify({
-    level,
-    time: Date.now(),
-    cat: "db",
-    msg: `${model}.${operation} ${ms}ms`,
-    model,
-    operation,
-    ms,
-  }));
+  if (ms > SLOW_QUERY_MS) {
+    logger.warn({ cat: "db", model, operation, ms }, `${model}.${operation} ${ms}ms`);
+  } else {
+    logger.info({ cat: "db", model, operation, ms }, `${model}.${operation} ${ms}ms`);
+  }
 }
 
 function createPrismaClient() {
@@ -33,19 +29,13 @@ function createPrismaClient() {
     ],
   });
 
-  // Log Prisma warnings and errors
+  // Log Prisma warnings and errors through Pino
   base.$on?.("warn", (e: { message: string }) => {
-    console.log(JSON.stringify({
-      level: 40, time: Date.now(), cat: "db",
-      msg: "prisma:warn", detail: e.message,
-    }));
+    logger.warn({ cat: "db" }, `prisma:warn ${e.message}`);
   });
 
   base.$on?.("error", (e: { message: string }) => {
-    console.log(JSON.stringify({
-      level: 50, time: Date.now(), cat: "db",
-      msg: "prisma:error", detail: e.message,
-    }));
+    logger.error({ cat: "db" }, `prisma:error ${e.message}`);
   });
 
   if (!LOG_QUERIES) return base;
@@ -60,12 +50,10 @@ function createPrismaClient() {
           return result;
         }).catch((err) => {
           const ms = Math.round(performance.now() - start);
-          console.log(JSON.stringify({
-            level: 50, time: Date.now(), cat: "db",
-            msg: `${model ?? "$raw"}.${operation} FAILED ${ms}ms`,
-            model: model ?? "$raw", operation, ms,
-            error: err instanceof Error ? err.message : String(err),
-          }));
+          logger.error(
+            { cat: "db", model: model ?? "$raw", operation, ms, error: err instanceof Error ? err.message : String(err) },
+            `${model ?? "$raw"}.${operation} FAILED ${ms}ms`,
+          );
           throw err;
         });
       },
