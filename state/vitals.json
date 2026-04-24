@@ -1,31 +1,31 @@
 {
-  "state": "sleeping",
-  "state_entered_at": "2026-04-24T03:11:11.725881+00:00",
-  "last_human_activity_at": "2026-04-24T01:39:10.406431+00:00",
-  "last_heartbeat_at": "2026-04-24T03:11:11.725881+00:00",
+  "state": "awake",
+  "state_entered_at": "2026-04-24T04:34:04.197143+00:00",
+  "last_human_activity_at": "2026-04-24T04:34:04.197143+00:00",
+  "last_heartbeat_at": "2026-04-24T04:34:04.197143+00:00",
   "last_dream_at": "2026-04-23T19:33:26.697413+00:00",
-  "pulse_count": 698,
+  "pulse_count": 699,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 4,
     "forks": 1,
-    "open_issues": 15,
+    "open_issues": 16,
     "recent_events": [
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold did something (PullRequestEvent)",
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
+      "nickmeinhold created a new branch",
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "nickmeinhold did something (PullRequestEvent)",
       "nickmeinhold created a new branch",
       "nickmeinhold did something (PullRequestEvent)",
       "nickmeinhold created a new branch",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)"
     ]
   },
   "energy": {
     "month": "2026-04",
-    "minutes_used_estimate": 701,
+    "minutes_used_estimate": 702,
     "budget": 2000,
     "level": "full"
   },
