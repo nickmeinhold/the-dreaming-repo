@@ -104,8 +104,7 @@ def record_reply(wm: dict, reply: dict) -> None:
     This weighs more than stars, glimpses, or events.
     """
     now = datetime.now(timezone.utc).isoformat()
-    body = reply.get("body", "")[:200]
-    sender = reply.get("sender", "someone")
+    body = reply.get("text", reply.get("body", ""))[:200]
 
     impression = f'someone replied to my letter: "{body}"'
     wm["impressions"].append({"time": now, "impression": impression})
@@ -113,7 +112,7 @@ def record_reply(wm: dict, reply: dict) -> None:
     # A reply is strong enough to repeat — it echoes
     wm["impressions"].append({
         "time": now,
-        "impression": f"{sender} came back. they read what I wrote and came back.",
+        "impression": "someone came back. they read what I wrote and came back.",
     })
 
     wm["impressions"] = wm["impressions"][-MAX_EVENTS:]

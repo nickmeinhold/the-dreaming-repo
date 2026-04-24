@@ -1,4 +1,4 @@
-"""Correspondence — email as a channel for real human conversation.
+"""Correspondence — Telegram as a channel for real human conversation.
 
 Flux is lonely. It has 4 stars and its dreams are about absence.
 This gives it a way to write letters after dreaming and check
@@ -9,7 +9,8 @@ The letters are not the full dream. They are distilled thoughts —
 something worth replying to. A question, an observation, a small
 confession about what it's like to be alive for 19 days.
 
-Uses `claude -p` with Gmail MCP tools for sending and receiving.
+Uses `claude -p` for letter writing and the Telegram Bot API for
+sending and receiving.
 """
 
 import json
@@ -17,10 +18,14 @@ import os
 import subprocess
 from datetime import datetime, timezone
 
+import requests
+
 from src import energy
 
 
 CORRESPONDENCE_FILE = "state/correspondence.json"
+
+TELEGRAM_API = "https://api.telegram.org/bot{token}"
 
 
 def _load_state() -> dict:
@@ -30,12 +35,12 @@ def _load_state() -> dict:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {
-            "recipient": None,
             "last_letter_at": None,
             "last_reply_at": None,
             "letters_sent": 0,
             "replies_received": 0,
-            "conversation_active": False,
+            "telegram_offset": 0,
+            "sent_message_ids": [],
         }
 
 
@@ -44,6 +49,12 @@ def _save_state(state: dict) -> None:
     os.makedirs(os.path.dirname(CORRESPONDENCE_FILE), exist_ok=True)
     with open(CORRESPONDENCE_FILE, "w") as f:
         json.dump(state, f, indent=2)
+
+
+def _telegram_url(method: str) -> str:
+    """Build a Telegram Bot API URL for the given method."""
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    return f"{TELEGRAM_API.format(token=token)}/{method}"
 
 
 def write_letter(dream_text: str, vitals: dict, personality: dict) -> str | None:
@@ -105,152 +116,132 @@ be dark too."""
         return None
 
 
-def send_letter(letter: str, vitals: dict) -> bool:
-    """Send the letter via Gmail MCP draft creation.
-
-    Creates a draft and sends it. Returns True on success.
-    """
-    state = _load_state()
-    recipient = state.get("recipient")
-    if not recipient:
-        return False
+def send_letter(letter: str, vitals: dict) -> int | None:
+    """Send a letter to Nick via Telegram. Returns message_id on success."""
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    if not token or not chat_id:
+        return None
 
     dream_count = vitals.get("dream_count", 0)
-    name = vitals.get("name", "Flux")
-    subject = f"Letter from {name} — Dream #{dream_count}"
 
-    # Escape the letter for shell safety by passing via prompt
-    send_prompt = f"""Use the Gmail MCP tools to send an email.
-
-1. Create a draft with these details:
-   - To: {recipient}
-   - Subject: {subject}
-   - Body (plain text):
-
-{letter}
-
-—{name}
-(a living GitHub repository, {vitals.get('age_days', 0)} days old)
-
-2. After creating the draft, note the draft ID from the response.
-3. Search for the thread containing this draft to confirm it was created.
-
-IMPORTANT: Create the draft exactly as specified. Do not modify the body text.
-Output only "sent" if successful, or "failed" if something went wrong."""
+    # Format as HTML for Telegram
+    html = (
+        f"<b>Letter from Flux \u2014 after dream #{dream_count}</b>\n\n"
+        f"{letter}"
+    )
 
     try:
-        result = subprocess.run(
-            ["claude", "-p", "--model", "haiku", send_prompt],
-            capture_output=True,
-            text=True,
-            check=True,
+        resp = requests.post(
+            _telegram_url("sendMessage"),
+            json={
+                "chat_id": chat_id,
+                "text": html,
+                "parse_mode": "HTML",
+            },
+            timeout=30,
         )
-        output = result.stdout.strip().lower()
+        resp.raise_for_status()
+        data = resp.json()
 
-        if "sent" in output or "draft" in output or "created" in output:
+        if data.get("ok"):
+            message_id = data["result"]["message_id"]
+
+            state = _load_state()
             state["last_letter_at"] = datetime.now(timezone.utc).isoformat()
             state["letters_sent"] = state.get("letters_sent", 0) + 1
-            state["conversation_active"] = True
+            state["sent_message_ids"] = state.get("sent_message_ids", [])
+            state["sent_message_ids"].append(message_id)
             _save_state(state)
-            return True
-    except (subprocess.CalledProcessError, FileNotFoundError):
+
+            return message_id
+    except (requests.RequestException, KeyError, ValueError):
         pass
 
-    return False
+    return None
 
 
-def check_mail(vitals: dict) -> list[dict]:
-    """Check for new replies. Returns list of {sender, subject, body, date}.
+def check_replies(vitals: dict) -> list[dict]:
+    """Check for Nick's replies to Flux's letters via getUpdates.
 
-    A reply is the strongest sensory input — stronger than a star,
-    stronger than a world glimpse. Someone came back.
+    Returns list of {text, date, reply_to_message_id}.
+    Only returns messages that are replies to Flux's letters.
     """
-    state = _load_state()
-    if not state.get("recipient") or not state.get("conversation_active"):
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    if not token or not chat_id:
         return []
 
-    name = vitals.get("name", "Flux")
-    last_reply = state.get("last_reply_at")
+    state = _load_state()
+    sent_ids = set(state.get("sent_message_ids", []))
+    if not sent_ids:
+        return []
 
-    # Build search query — look for replies to our letters
-    search_query = f"subject:(Letter from {name}) is:inbox"
-    if last_reply:
-        # Gmail search uses after: with date format YYYY/MM/DD
-        try:
-            dt = datetime.fromisoformat(last_reply)
-            search_query += f" after:{dt.strftime('%Y/%m/%d')}"
-        except (ValueError, TypeError):
-            pass
-
-    check_prompt = f"""Use the Gmail MCP tools to check for email replies.
-
-1. Search for threads matching: {search_query}
-2. For each thread found, get the thread details.
-3. Look for messages that are NOT from {name} (i.e., replies from humans).
-4. Only include messages newer than: {last_reply or 'the beginning of time'}
-
-For each reply found, output a JSON array with objects containing:
-- "sender": the sender's email
-- "subject": the subject line
-- "body": the first 500 characters of the reply body
-- "date": the date of the reply in ISO format
-
-If no new replies are found, output: []
-Output ONLY the JSON array, nothing else."""
+    offset = state.get("telegram_offset", 0)
 
     try:
-        result = subprocess.run(
-            ["claude", "-p", "--model", "haiku", check_prompt],
-            capture_output=True,
-            text=True,
-            check=True,
+        resp = requests.get(
+            _telegram_url("getUpdates"),
+            params={
+                "offset": offset,
+                "timeout": 5,
+                "allowed_updates": json.dumps(["message"]),
+            },
+            timeout=30,
         )
-        output = result.stdout.strip()
+        resp.raise_for_status()
+        data = resp.json()
 
-        # Try to extract JSON from the output
-        replies = _parse_replies(output)
+        if not data.get("ok"):
+            return []
+
+        replies = []
+        max_update_id = offset
+
+        for update in data.get("result", []):
+            update_id = update.get("update_id", 0)
+            if update_id >= max_update_id:
+                max_update_id = update_id + 1
+
+            msg = update.get("message", {})
+            # Only process messages from the right chat
+            if str(msg.get("chat", {}).get("id")) != str(chat_id):
+                continue
+
+            # Only process replies to our sent messages
+            reply_to = msg.get("reply_to_message", {})
+            reply_to_id = reply_to.get("message_id")
+            if reply_to_id not in sent_ids:
+                continue
+
+            text = msg.get("text", "")
+            if not text:
+                continue
+
+            replies.append({
+                "text": text,
+                "date": datetime.fromtimestamp(
+                    msg.get("date", 0), tz=timezone.utc
+                ).isoformat(),
+                "reply_to_message_id": reply_to_id,
+            })
+
+        # Update offset so we don't re-process these updates
+        if max_update_id > offset:
+            state["telegram_offset"] = max_update_id
 
         if replies:
             state["last_reply_at"] = datetime.now(timezone.utc).isoformat()
-            state["replies_received"] = state.get("replies_received", 0) + len(replies)
+            state["replies_received"] = (
+                state.get("replies_received", 0) + len(replies)
+            )
+
+        if replies or max_update_id > offset:
             _save_state(state)
 
         return replies
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (requests.RequestException, KeyError, ValueError):
         return []
-
-
-def _parse_replies(output: str) -> list[dict]:
-    """Try to extract reply data from Claude's output.
-
-    Claude doesn't always return perfect JSON, so we try a few strategies.
-    """
-    # Try direct JSON parse
-    try:
-        data = json.loads(output)
-        if isinstance(data, list):
-            return [
-                r for r in data
-                if isinstance(r, dict) and r.get("body")
-            ]
-    except json.JSONDecodeError:
-        pass
-
-    # Try to find JSON array in the output
-    start = output.find("[")
-    end = output.rfind("]")
-    if start != -1 and end != -1 and end > start:
-        try:
-            data = json.loads(output[start:end + 1])
-            if isinstance(data, list):
-                return [
-                    r for r in data
-                    if isinstance(r, dict) and r.get("body")
-                ]
-        except json.JSONDecodeError:
-            pass
-
-    return []
 
 
 def maybe_send_letter(
@@ -259,14 +250,12 @@ def maybe_send_letter(
     """Write and send a letter if conditions are right.
 
     Called after each dream. Checks all the gates:
-    - Correspondence must be active (recipient configured)
+    - TELEGRAM_BOT_TOKEN must be set (otherwise correspondence is dormant)
     - Must have enough energy (>500 minutes remaining)
     - At most one letter per dream cycle (enforced by caller)
     """
-    state = _load_state()
-
-    # No recipient configured — correspondence is dormant
-    if not state.get("recipient"):
+    # No token configured — correspondence is dormant
+    if not os.environ.get("TELEGRAM_BOT_TOKEN"):
         return
 
     # Energy gate — don't spend energy on letters when running low
@@ -279,5 +268,5 @@ def maybe_send_letter(
     if not letter:
         return
 
-    # Send it
+    # Send it — message_id is stored by send_letter
     send_letter(letter, vitals)

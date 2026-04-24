@@ -61,6 +61,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.flux-token.outputs.token }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TRIGGER_EVENT: ${{ github.event_name }}
           REPO_FULL_NAME: ${{ github.repository }}
         run: python -m src.heartbeat

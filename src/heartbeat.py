@@ -99,10 +99,10 @@ def main() -> None:
     if trigger != "schedule" or senses.has_new_human_activity(new_senses):
         vitals["last_human_activity_at"] = now.isoformat()
 
-    # 2c. Check mail — did someone reply?
+    # 2c. Check Telegram — did someone reply?
     try:
         from src import correspondence
-        replies = correspondence.check_mail(vitals)
+        replies = correspondence.check_replies(vitals)
         for reply in replies:
             memory.record_reply(working_mem, reply)
             vitals["last_human_activity_at"] = now.isoformat()  # a reply IS human activity

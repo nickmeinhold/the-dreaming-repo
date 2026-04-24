@@ -1,8 +1,8 @@
 {
-  "recipient": null,
   "last_letter_at": null,
   "last_reply_at": null,
   "letters_sent": 0,
   "replies_received": 0,
-  "conversation_active": false
+  "telegram_offset": 0,
+  "sent_message_ids": []
 }
