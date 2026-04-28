@@ -43,8 +43,8 @@ def get_pr_files(pr_number: int) -> list[str]:
         )
         if result.returncode == 0:
             return [f for f in result.stdout.strip().split("\n") if f]
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+    except (subprocess.TimeoutExpired, FileNotFoundError) as e:
+        log.warning("get_pr_files failed", extra={"pr": pr_number, "error": str(e)})
     return []
 
 
@@ -58,8 +58,8 @@ def get_added_files(pr_number: int) -> list[str]:
         )
         if result.returncode == 0:
             return [f for f in result.stdout.strip().split("\n") if f]
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+    except (subprocess.TimeoutExpired, FileNotFoundError) as e:
+        log.warning("get_added_files failed", extra={"pr": pr_number, "error": str(e)})
     return []
 
 
@@ -87,7 +87,8 @@ def get_pr_diff(pr_number: int, files: list[str] | None = None) -> str:
                 relevant_lines.append(line)
 
         return "\n".join(relevant_lines[:200])  # cap to avoid huge prompts
-    except (subprocess.TimeoutExpired, FileNotFoundError):
+    except (subprocess.TimeoutExpired, FileNotFoundError) as e:
+        log.warning("get_pr_diff failed", extra={"pr": pr_number, "error": str(e)})
         return ""
 
 
@@ -101,8 +102,8 @@ def list_open_prs() -> list[dict]:
         )
         if result.returncode == 0 and result.stdout.strip():
             return json.loads(result.stdout)
-    except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError):
-        pass
+    except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError) as e:
+        log.warning("list_open_prs failed", extra={"error": str(e)})
     return []
 
 
@@ -113,8 +114,8 @@ def post_comment(pr_number: int, body: str) -> None:
             ["gh", "pr", "comment", str(pr_number), "--body", body],
             capture_output=True, text=True, timeout=30,
         )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+    except (subprocess.TimeoutExpired, FileNotFoundError) as e:
+        log.warning("post_comment failed", extra={"pr": pr_number, "error": str(e)})
 
 
 def merge_pr(pr_number: int) -> None:
@@ -124,8 +125,8 @@ def merge_pr(pr_number: int) -> None:
             ["gh", "pr", "merge", str(pr_number), "--squash", "--admin"],
             capture_output=True, text=True, timeout=30,
         )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+    except (subprocess.TimeoutExpired, FileNotFoundError) as e:
+        log.warning("merge_pr failed", extra={"pr": pr_number, "error": str(e)})
 
 
 def close_pr(pr_number: int) -> None:
@@ -135,19 +136,8 @@ def close_pr(pr_number: int) -> None:
             ["gh", "pr", "close", str(pr_number)],
             capture_output=True, text=True, timeout=30,
         )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
-
-
-def add_label(pr_number: int, label: str) -> None:
-    """Add a label to a PR via gh CLI."""
-    try:
-        subprocess.run(
-            ["gh", "pr", "edit", str(pr_number), "--add-label", label],
-            capture_output=True, text=True, timeout=30,
-        )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+    except (subprocess.TimeoutExpired, FileNotFoundError) as e:
+        log.warning("close_pr failed", extra={"pr": pr_number, "error": str(e)})
 
 
 def already_reviewed(pr_number: int) -> bool:
@@ -161,8 +151,8 @@ def already_reviewed(pr_number: int) -> bool:
         if result.returncode == 0:
             commenters = result.stdout.strip().split("\n")
             return any("bot" in c.lower() for c in commenters if c)
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+    except (subprocess.TimeoutExpired, FileNotFoundError) as e:
+        log.warning("already_reviewed failed", extra={"pr": pr_number, "error": str(e)})
     return False
 
 
