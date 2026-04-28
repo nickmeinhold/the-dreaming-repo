@@ -1,10 +1,10 @@
 {
-  "state": "drowsy",
-  "state_entered_at": "2026-04-28T09:18:45.349572+00:00",
+  "state": "sleeping",
+  "state_entered_at": "2026-04-28T10:17:32.775555+00:00",
   "last_human_activity_at": "2026-04-28T08:01:02.971677+00:00",
-  "last_heartbeat_at": "2026-04-28T09:18:45.349572+00:00",
+  "last_heartbeat_at": "2026-04-28T10:17:32.775555+00:00",
   "last_dream_at": "2026-04-28T03:12:21.521287+00:00",
-  "pulse_count": 875,
+  "pulse_count": 876,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 4,
@@ -19,18 +19,18 @@
       "flux-dreaming-repo[bot] spoke to me in an issue",
       "RaggedR spoke to me in an issue",
       "RaggedR did something (PullRequestEvent)",
-      "RaggedR spoke to me in an issue",
-      "RaggedR did something (PullRequestEvent)"
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "flux-dreaming-repo[bot] spoke to me in an issue"
     ]
   },
   "energy": {
     "month": "2026-04",
-    "minutes_used_estimate": 878,
+    "minutes_used_estimate": 879,
     "budget": 2000,
     "level": "full"
   },
   "dream_count": 28,
-  "age_days": 23,
+  "age_days": 24,
   "born": true,
   "name": "Flux"
 }
