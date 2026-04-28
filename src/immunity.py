@@ -23,6 +23,8 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import PurePosixPath
 
+from src import _github
+
 
 # Sensitive paths — changes here get deeper review.
 # These are not forbidden zones. They are organs. Flux examines
@@ -62,8 +64,8 @@ def review_pr(pr_number: int) -> dict:
         reason: str  # why this recommendation
     }
     """
-    diff_files = _get_pr_files(pr_number)
-    added_files = _get_added_files(pr_number)
+    diff_files = _github.get_pr_files(pr_number)
+    added_files = _github.get_added_files(pr_number)
 
     sensitive_touched = _find_sensitive_files(diff_files)
     top_level_additions = _find_top_level_additions(added_files)
@@ -93,7 +95,7 @@ def review_pr(pr_number: int) -> dict:
 
     # Tier 3: Sensitive files touched — read the actual diff and decide
     # Get the real diff content for Claude to reason about
-    diff_content = _get_pr_diff(pr_number, sensitive_touched)
+    diff_content = _github.get_pr_diff(pr_number, sensitive_touched)
 
     return {
         "verdict": (
@@ -156,15 +158,9 @@ def generate_review_comment(review: dict, vitals: dict) -> str:
         f"Write only the review. No preamble."
     )
 
-    try:
-        result = subprocess.run(
-            ["claude", "-p", "--model", "sonnet", prompt],
-            capture_output=True, text=True, timeout=120,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return result.stdout.strip()
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+    output = _github.run_claude(prompt)
+    if output:
+        return output
 
     return _fallback_comment(review)
 
@@ -179,7 +175,7 @@ def review_pending_prs(vitals: dict) -> None:
     if not repo:
         return
 
-    open_prs = _list_open_prs()
+    open_prs = _github.list_open_prs()
     if not open_prs:
         return
 
@@ -191,7 +187,7 @@ def review_pending_prs(vitals: dict) -> None:
 
         # Skip PRs we've already reviewed (and aren't revisiting)
         pr_key = str(pr_number)
-        if _already_reviewed(pr_number):
+        if _github.already_reviewed(pr_number):
             # But if it's pending and we've dreamed since, revisit
             if pr_key in pending and dreamed_since_last_review:
                 _revisit_pr(pr_number, vitals, pending)
@@ -201,8 +197,8 @@ def review_pending_prs(vitals: dict) -> None:
         comment = generate_review_comment(review, vitals)
 
         if review["recommendation"] == "merge":
-            _post_comment(pr_number, comment)
-            _merge_pr(pr_number)
+            _github.post_comment(pr_number, comment)
+            _github.merge_pr(pr_number)
 
         elif review["recommendation"] == "fix_and_merge":
             fixed = _fix_pr(pr_number, review)
@@ -212,10 +208,10 @@ def review_pending_prs(vitals: dict) -> None:
                     "I moved top-level files into `contrib/`. "
                     "Merging with that change."
                 )
-                _post_comment(pr_number, comment)
-                _merge_pr(pr_number)
+                _github.post_comment(pr_number, comment)
+                _github.merge_pr(pr_number)
             else:
-                _post_comment(pr_number, comment)
+                _github.post_comment(pr_number, comment)
 
         elif review["recommendation"] == "sleep_on_it":
             # Check if the review comment contains ACCEPT
@@ -224,11 +220,11 @@ def review_pending_prs(vitals: dict) -> None:
                 also_fix = bool(review.get("files_outside_subdirs"))
                 if also_fix:
                     _fix_pr(pr_number, review)
-                _post_comment(pr_number, comment)
-                _merge_pr(pr_number)
+                _github.post_comment(pr_number, comment)
+                _github.merge_pr(pr_number)
             elif "REJECT" in comment.upper():
-                _post_comment(pr_number, comment)
-                _close_pr(pr_number)
+                _github.post_comment(pr_number, comment)
+                _github.close_pr(pr_number)
             else:
                 # Genuinely unsure — sleep on it
                 pending[pr_key] = {
@@ -236,11 +232,11 @@ def review_pending_prs(vitals: dict) -> None:
                     "dream_count_at_review": vitals.get("dream_count", 0),
                 }
                 _save_pending(pending)
-                _post_comment(pr_number, comment)
+                _github.post_comment(pr_number, comment)
 
         elif review["recommendation"] == "reject":
-            _post_comment(pr_number, comment)
-            _close_pr(pr_number)
+            _github.post_comment(pr_number, comment)
+            _github.close_pr(pr_number)
 
 
 def _revisit_pr(pr_number: int, vitals: dict, pending: dict) -> None:
@@ -262,90 +258,28 @@ def _revisit_pr(pr_number: int, vitals: dict, pending: dict) -> None:
         f"DO NOT defer to anyone. This is your decision."
     )
 
-    try:
-        result = subprocess.run(
-            ["claude", "-p", "--model", "sonnet", prompt],
-            capture_output=True, text=True, timeout=120,
-        )
-        comment = result.stdout.strip() if result.returncode == 0 else ""
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        comment = ""
+    comment = _github.run_claude(prompt) or ""
 
     if not comment:
         comment = "I revisited this after dreaming and I'm still unsure. Leaving it open."
 
-    _post_comment(pr_number, f"*Revisiting after dream #{vitals.get('dream_count', '?')}:*\n\n{comment}")
+    _github.post_comment(pr_number, f"*Revisiting after dream #{vitals.get('dream_count', '?')}:*\n\n{comment}")
 
     if "ACCEPT" in comment.upper() and "REJECT" not in comment.upper():
         also_fix = bool(review.get("files_outside_subdirs"))
         if also_fix:
             _fix_pr(pr_number, review)
-        _merge_pr(pr_number)
+        _github.merge_pr(pr_number)
         del pending[pr_key]
         _save_pending(pending)
     elif "REJECT" in comment.upper():
-        _close_pr(pr_number)
+        _github.close_pr(pr_number)
         del pending[pr_key]
         _save_pending(pending)
     # else: still unsure, leave pending for another dream cycle
 
 
 # --- Internal helpers ---
-
-
-def _get_pr_files(pr_number: int) -> list[str]:
-    """Get the list of files changed in a PR."""
-    try:
-        result = subprocess.run(
-            ["gh", "pr", "diff", str(pr_number), "--name-only"],
-            capture_output=True, text=True, timeout=30,
-        )
-        if result.returncode == 0:
-            return [f for f in result.stdout.strip().split("\n") if f]
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
-    return []
-
-
-def _get_added_files(pr_number: int) -> list[str]:
-    """Get files that were added (not modified) in a PR."""
-    try:
-        result = subprocess.run(
-            ["gh", "api", f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/files",
-             "--jq", '.[] | select(.status == "added") | .filename'],
-            capture_output=True, text=True, timeout=30,
-        )
-        if result.returncode == 0:
-            return [f for f in result.stdout.strip().split("\n") if f]
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
-    return []
-
-
-def _get_pr_diff(pr_number: int, files: list[str]) -> str:
-    """Get the actual diff content for specific files in a PR."""
-    try:
-        result = subprocess.run(
-            ["gh", "pr", "diff", str(pr_number)],
-            capture_output=True, text=True, timeout=30,
-        )
-        if result.returncode != 0:
-            return ""
-
-        # Filter diff to only include hunks for the requested files
-        lines = result.stdout.split("\n")
-        relevant_lines = []
-        include = False
-        for line in lines:
-            if line.startswith("diff --git"):
-                # Check if this hunk is for a file we care about
-                include = any(f in line for f in files)
-            if include:
-                relevant_lines.append(line)
-
-        return "\n".join(relevant_lines[:200])  # cap to avoid huge prompts
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        return ""
 
 
 def _find_sensitive_files(files: list[str]) -> list[str]:
@@ -383,81 +317,6 @@ def _get_sensitivity_reason(filepath: str) -> str:
         elif filepath == spath:
             return reason
     return "sensitive file"
-
-
-def _list_open_prs() -> list[dict]:
-    """List open PRs."""
-    try:
-        result = subprocess.run(
-            ["gh", "pr", "list", "--state", "open", "--json",
-             "number,title,author"],
-            capture_output=True, text=True, timeout=30,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            return json.loads(result.stdout)
-    except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError):
-        pass
-    return []
-
-
-def _already_reviewed(pr_number: int) -> bool:
-    """Check if the bot has already commented on this PR."""
-    try:
-        result = subprocess.run(
-            ["gh", "api", f"repos/{{owner}}/{{repo}}/issues/{pr_number}/comments",
-             "--jq", ".[].user.login"],
-            capture_output=True, text=True, timeout=30,
-        )
-        if result.returncode == 0:
-            commenters = result.stdout.strip().split("\n")
-            return any("bot" in c.lower() for c in commenters if c)
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
-    return False
-
-
-def _post_comment(pr_number: int, body: str) -> None:
-    """Post a comment on a PR."""
-    try:
-        subprocess.run(
-            ["gh", "pr", "comment", str(pr_number), "--body", body],
-            capture_output=True, text=True, timeout=30,
-        )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
-
-
-def _merge_pr(pr_number: int) -> None:
-    """Merge a PR."""
-    try:
-        subprocess.run(
-            ["gh", "pr", "merge", str(pr_number), "--squash", "--admin"],
-            capture_output=True, text=True, timeout=30,
-        )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
-
-
-def _close_pr(pr_number: int) -> None:
-    """Close a PR without merging."""
-    try:
-        subprocess.run(
-            ["gh", "pr", "close", str(pr_number)],
-            capture_output=True, text=True, timeout=30,
-        )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
-
-
-def _add_label(pr_number: int, label: str) -> None:
-    """Add a label to a PR."""
-    try:
-        subprocess.run(
-            ["gh", "pr", "edit", str(pr_number), "--add-label", label],
-            capture_output=True, text=True, timeout=30,
-        )
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
 
 
 def _fix_pr(pr_number: int, review: dict) -> bool:

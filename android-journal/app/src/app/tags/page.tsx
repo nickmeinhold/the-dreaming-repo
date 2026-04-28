@@ -1,15 +1,10 @@
-import { prisma } from "@/lib/db";
 import Link from "next/link";
+import { listTags } from "@/lib/queries/tags";
 
 export const dynamic = "force-dynamic";
 
 export default async function TagsPage() {
-  const tags = await prisma.tag.findMany({
-    include: {
-      _count: { select: { papers: true } },
-    },
-    orderBy: { slug: "asc" },
-  });
+  const tags = await listTags();
 
   // Sort by paper count descending for the cloud, alphabetical for the list
   const byCount = [...tags].sort((a, b) => b._count.papers - a._count.papers);
@@ -46,15 +41,17 @@ export default async function TagsPage() {
           {/* Alphabetical list */}
           <section>
             <h2 className="mb-4 font-serif text-xl font-semibold">All Tags</h2>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2" data-testid="tag-list">
               {tags.map((tag) => (
                 <Link
                   key={tag.slug}
                   href={`/tags/${tag.slug}`}
                   className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm hover:bg-border/20 no-underline"
+                  data-testid="tag-item"
+                  data-slug={tag.slug}
                 >
-                  <span className="text-foreground">{tag.label}</span>
-                  <span className="text-xs text-muted">{tag._count.papers}</span>
+                  <span className="text-foreground" data-testid="tag-label">{tag.label}</span>
+                  <span className="text-xs text-muted" data-testid="tag-count">{tag._count.papers}</span>
                 </Link>
               ))}
             </div>

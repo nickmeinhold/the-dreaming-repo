@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { EDITOR_ROLES } from "@/lib/paper-access";
 import { redirect } from "next/navigation";
@@ -7,37 +6,19 @@ import { StatusBadge } from "@/components/paper/status-badge";
 import { StatusTransition } from "@/components/dashboard/status-transition";
 import { ReviewerAssignment } from "@/components/dashboard/reviewer-assignment";
 import { validNextStatuses } from "@/lib/paper-workflow";
+import { getUserRole, getEditorialPapers } from "@/lib/queries/dashboard";
 
 export default async function DashboardPage() {
   const session = await getSession();
   if (!session) redirect("/");
 
   // Fresh DB lookup — JWT role may be stale if user was demoted
-  const freshUser = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { role: true },
-  });
+  const freshUser = await getUserRole(session.userId);
   if (!freshUser || !EDITOR_ROLES.includes(freshUser.role)) {
     redirect("/");
   }
 
-  const papers = await prisma.paper.findMany({
-    where: { status: { not: "published" } },
-    include: {
-      authors: {
-        include: { user: { select: { displayName: true, githubLogin: true } } },
-        orderBy: { order: "asc" as const },
-      },
-      reviews: {
-        select: {
-          id: true,
-          verdict: true,
-          reviewer: { select: { displayName: true, githubLogin: true } },
-        },
-      },
-    },
-    orderBy: { submittedAt: "desc" },
-  });
+  const papers = await getEditorialPapers();
 
   const statusGroups = {
     submitted: papers.filter((p) => p.status === "submitted"),
@@ -51,7 +32,7 @@ export default async function DashboardPage() {
       <h1 className="mb-8 font-serif text-3xl font-bold">Editor Dashboard</h1>
 
       {Object.entries(statusGroups).map(([status, group]) => (
-        <section key={status} className="mb-10">
+        <section key={status} className="mb-10" data-testid={`dashboard-section-${status}`}>
           <h2 className="mb-4 flex items-center gap-3 font-serif text-xl font-semibold">
             <StatusBadge status={status} />
             <span>{group.length} paper{group.length !== 1 ? "s" : ""}</span>
@@ -65,6 +46,8 @@ export default async function DashboardPage() {
                 <div
                   key={paper.paperId}
                   className="rounded-lg border border-border p-5"
+                  data-testid="dashboard-paper"
+                  data-paper-id={paper.paperId}
                 >
                   <div className="mb-2 flex items-start justify-between">
                     <div>
@@ -74,10 +57,11 @@ export default async function DashboardPage() {
                       <Link
                         href={`/papers/${paper.paperId}`}
                         className="font-serif font-semibold text-foreground hover:text-link"
+                        data-testid="dashboard-paper-title"
                       >
                         {paper.title}
                       </Link>
-                      <p className="mt-1 text-sm text-muted">
+                      <p className="mt-1 text-sm text-muted" data-testid="dashboard-paper-author">
                         {paper.authors.map((a) => a.user.displayName).join(", ")}
                       </p>
                     </div>
@@ -96,6 +80,7 @@ export default async function DashboardPage() {
                           <span
                             key={r.id}
                             className="rounded border border-border px-2 py-0.5 text-xs"
+                            data-testid="dashboard-review"
                           >
                             {r.reviewer.displayName}:{" "}
                             <span className="font-medium">

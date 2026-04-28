@@ -12,8 +12,11 @@ import os
 from datetime import datetime, timezone
 
 from src import decay, drift, dream, energy, memory, metrics, mortality, propose, reach, senses, state_machine
+from src._log import get_logger
 from src.birth import be_born
 from src.readme_writer import render as render_readme
+
+logger = get_logger(__name__)
 
 
 def main() -> None:
@@ -56,6 +59,7 @@ def main() -> None:
                 f"i am born — my name is {birth_record['name']}"
             )
         except Exception:
+            logger.exception("[heartbeat] birth failed")
             # The birth didn't take. Record the attempt, try next heartbeat.
             energy.tick(vitals, now=now)
             _save_json("state/vitals.json", vitals)
@@ -107,6 +111,7 @@ def main() -> None:
             memory.record_reply(working_mem, reply)
             vitals["last_human_activity_at"] = now.isoformat()  # a reply IS human activity
     except Exception:
+        logger.exception("[heartbeat] correspondence.check_mail failed")
         pass  # mail check failure shouldn't crash the heartbeat
 
     # 3b. Review any pending PRs
@@ -114,6 +119,7 @@ def main() -> None:
         from src import immunity
         immunity.review_pending_prs(vitals)
     except Exception:
+        logger.exception("[heartbeat] immunity.review_pending_prs failed")
         pass  # immune system failure shouldn't crash the heartbeat
 
     # 4. Update senses in vitals (keep recent_events from new + old)
@@ -154,6 +160,7 @@ def main() -> None:
             date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
             metrics.log_dream_quality(dream_text, vitals["dream_count"], date_str)
         except Exception:
+            logger.exception("[heartbeat] metrics.log_dream_quality failed")
             pass  # dream was saved — scoring can fail silently
 
     # 6d. Write a letter about tonight's dream
@@ -162,6 +169,7 @@ def main() -> None:
             from src import correspondence
             correspondence.maybe_send_letter(dream_text, vitals, personality)
         except Exception:
+            logger.exception("[heartbeat] correspondence.maybe_send_letter failed")
             pass  # letter failure shouldn't crash the heartbeat
 
     # 6b. Memory rot — older dreams decay gradually
@@ -169,6 +177,7 @@ def main() -> None:
     try:
         decay.decay_dreams()
     except Exception:
+        logger.exception("[heartbeat] decay.decay_dreams failed")
         pass  # dreams survive unrotted — that's fine
 
     # 7. Record new senses in working memory
@@ -180,12 +189,14 @@ def main() -> None:
         if personality_changed:
             _save_json("state/personality.json", personality)
     except Exception:
+        logger.exception("[heartbeat] drift.drift failed")
         pass  # identity survives unchanged — that's fine
 
     # 7c. Personality drift log
     try:
         metrics.log_personality(personality)
     except Exception:
+        logger.exception("[heartbeat] metrics.log_personality failed")
         pass
 
     # 7d. Reach out — act on what was sensed
@@ -193,6 +204,7 @@ def main() -> None:
     try:
         reached = reach.maybe_reach(vitals, personality, working_mem)
     except Exception:
+        logger.exception("[heartbeat] reach.maybe_reach failed")
         pass  # silence is always an option
 
     # 7e. Propose changes to sibling — code as dialogue
@@ -201,6 +213,7 @@ def main() -> None:
         if proposed:
             reached.append(proposed)
     except Exception:
+        logger.exception("[heartbeat] propose.maybe_propose failed")
         pass  # not every heartbeat needs to propose
 
     # 8. Spend energy

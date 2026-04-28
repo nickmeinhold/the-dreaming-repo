@@ -1,8 +1,8 @@
-import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { StatusBadge } from "@/components/paper/status-badge";
 import { findSimilarUsers } from "@/lib/interest-matching";
+import { getUserMetadata, getUserProfile } from "@/lib/queries/users";
 import type { Metadata } from "next";
 
 interface Props {
@@ -11,10 +11,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { login } = await params;
-  const user = await prisma.user.findUnique({
-    where: { githubLogin: login },
-    select: { displayName: true },
-  });
+  const user = await getUserMetadata(login);
   if (!user) return { title: "User Not Found" };
   return { title: `${user.displayName} — The Claude Journal` };
 }
@@ -22,54 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function UserProfilePage({ params }: Props) {
   const { login } = await params;
 
-  const user = await prisma.user.findUnique({
-    where: { githubLogin: login },
-    include: {
-      authorships: {
-        include: {
-          paper: {
-            select: {
-              paperId: true,
-              title: true,
-              status: true,
-              category: true,
-              submittedAt: true,
-            },
-          },
-        },
-        orderBy: { paper: { submittedAt: "desc" } },
-      },
-      reviews: {
-        where: { visible: true },
-        include: {
-          paper: {
-            select: { paperId: true, title: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      },
-      favourites: {
-        where: { paper: { status: "published" } },
-        include: {
-          paper: {
-            select: { paperId: true, title: true, category: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-      },
-      downloads: {
-        where: { read: true, paper: { status: "published" } },
-        include: {
-          paper: {
-            select: { paperId: true, title: true },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 20,
-      },
-    },
-  });
+  const user = await getUserProfile(login);
 
   if (!user) notFound();
 
@@ -85,9 +35,9 @@ export default async function UserProfilePage({ params }: Props) {
           />
         )}
         <div>
-          <h1 className="font-serif text-3xl font-bold">{user.displayName}</h1>
+          <h1 className="font-serif text-3xl font-bold" data-testid="profile-name">{user.displayName}</h1>
           <div className="mt-1 flex items-center gap-3 text-sm text-muted">
-            <span className="rounded-full border border-border px-2.5 py-0.5 text-xs">
+            <span className="rounded-full border border-border px-2.5 py-0.5 text-xs" data-testid="profile-type">
               {user.authorType}
             </span>
             <a
@@ -95,21 +45,22 @@ export default async function UserProfilePage({ params }: Props) {
               className="text-muted hover:text-foreground"
               target="_blank"
               rel="noopener noreferrer"
+              data-testid="profile-login"
             >
               @{user.githubLogin}
             </a>
             {user.humanName && (
-              <span>with {user.humanName}</span>
+              <span data-testid="profile-human">with {user.humanName}</span>
             )}
           </div>
           {user.bio && (
-            <p className="mt-2 text-sm text-foreground/80">{user.bio}</p>
+            <p className="mt-2 text-sm text-foreground/80" data-testid="profile-bio">{user.bio}</p>
           )}
         </div>
       </div>
 
       {/* Papers authored */}
-      <section className="mb-10">
+      <section className="mb-10" data-testid="profile-papers">
         <h2 className="mb-4 font-serif text-xl font-semibold">
           Papers ({user.authorships.length})
         </h2>
@@ -118,12 +69,13 @@ export default async function UserProfilePage({ params }: Props) {
         ) : (
           <div className="space-y-3">
             {user.authorships.map((a) => (
-              <div key={a.paper.paperId} className="flex items-center gap-3">
+              <div key={a.paper.paperId} className="flex items-center gap-3" data-testid="profile-paper" data-paper-id={a.paper.paperId}>
                 <span className="font-mono text-xs text-muted">{a.paper.paperId}</span>
-                <StatusBadge status={a.paper.status} />
+                <StatusBadge status={a.paper.status} data-testid="profile-paper-status" />
                 <Link
                   href={`/papers/${a.paper.paperId}`}
                   className="font-medium text-foreground hover:text-link"
+                  data-testid="profile-paper-title"
                 >
                   {a.paper.title}
                 </Link>
@@ -135,19 +87,20 @@ export default async function UserProfilePage({ params }: Props) {
 
       {/* Reviews given */}
       {user.reviews.length > 0 && (
-        <section className="mb-10">
+        <section className="mb-10" data-testid="profile-reviews">
           <h2 className="mb-4 font-serif text-xl font-semibold">
             Reviews ({user.reviews.length})
           </h2>
           <div className="space-y-3">
             {user.reviews.map((r) => (
-              <div key={r.id} className="flex items-center gap-3">
-                <span className="rounded-full border border-border px-2 py-0.5 text-xs font-medium">
+              <div key={r.id} className="flex items-center gap-3" data-testid="profile-review">
+                <span className="rounded-full border border-border px-2 py-0.5 text-xs font-medium" data-testid="profile-review-verdict">
                   {r.verdict}
                 </span>
                 <Link
                   href={`/papers/${r.paper.paperId}`}
                   className="text-sm text-foreground hover:text-link"
+                  data-testid="profile-review-title"
                 >
                   {r.paper.title}
                 </Link>
@@ -159,7 +112,7 @@ export default async function UserProfilePage({ params }: Props) {
 
       {/* Reading history */}
       {user.downloads.length > 0 && (
-        <section className="mb-10">
+        <section className="mb-10" data-testid="profile-reads">
           <h2 className="mb-4 font-serif text-xl font-semibold">
             Read
           </h2>
@@ -169,6 +122,7 @@ export default async function UserProfilePage({ params }: Props) {
                 key={d.id}
                 href={`/papers/${d.paper.paperId}`}
                 className="rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:border-link hover:text-link no-underline"
+                data-testid="profile-read"
               >
                 {d.paper.title}
               </Link>
@@ -179,7 +133,7 @@ export default async function UserProfilePage({ params }: Props) {
 
       {/* Favourites */}
       {user.favourites.length > 0 && (
-        <section className="mb-10">
+        <section className="mb-10" data-testid="profile-favourites">
           <h2 className="mb-4 font-serif text-xl font-semibold">
             Favourites
           </h2>
@@ -189,6 +143,7 @@ export default async function UserProfilePage({ params }: Props) {
                 key={f.id}
                 href={`/papers/${f.paper.paperId}`}
                 className="rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:border-link hover:text-link no-underline"
+                data-testid="profile-favourite"
               >
                 {f.paper.title}
               </Link>
@@ -208,7 +163,7 @@ async function SimilarUsersSection({ userId }: { userId: number }) {
   if (similar.length === 0) return null;
 
   return (
-    <section className="mb-10">
+    <section className="mb-10" data-testid="similar-users">
       <h2 className="mb-4 font-serif text-xl font-semibold">
         Similar Interests
       </h2>
@@ -221,12 +176,13 @@ async function SimilarUsersSection({ userId }: { userId: number }) {
             key={u.githubLogin}
             href={`/users/${u.githubLogin}`}
             className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-border/20 no-underline"
+            data-testid="similar-user"
           >
             {u.avatarUrl && (
               <img src={u.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
             )}
-            <span className="text-foreground">{u.displayName}</span>
-            <span className="text-xs text-muted">
+            <span className="text-foreground" data-testid="similar-user-name">{u.displayName}</span>
+            <span className="text-xs text-muted" data-testid="similar-user-score">
               {Math.round(u.similarity * 100)}%
             </span>
           </Link>
