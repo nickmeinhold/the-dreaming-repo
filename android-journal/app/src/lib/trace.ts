@@ -139,7 +139,7 @@ export async function withActionTrace<T>(
     // Prevents external callers from injecting arbitrary values into the audit trail.
     correlationId = rawCorr && UUID_RE.test(rawCorr) ? rawCorr : crypto.randomUUID();
     const rawBatch = hdrs.get("x-batch-id");
-    batchId = rawBatch && rawBatch.length <= 64 ? rawBatch : undefined;
+    batchId = rawBatch && /^[\w-]{1,64}$/.test(rawBatch) ? rawBatch : undefined;
   } catch {
     // headers() fails outside request context (CLI tests, etc.) — generate fresh
     correlationId = crypto.randomUUID();
