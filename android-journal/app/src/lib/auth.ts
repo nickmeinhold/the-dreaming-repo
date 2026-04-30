@@ -11,6 +11,7 @@ import { cookies } from "next/headers";
 import { getJwtSecret, COOKIE_NAME, SESSION_DURATION, SESSION_MAX_AGE } from "./constants";
 import { VALID_ROLES } from "./middleware/types";
 import type { Role } from "./middleware/types";
+import { logAuditEvent } from "./audit";
 
 export interface SessionPayload {
   userId: number;
@@ -56,15 +57,37 @@ export async function getSession(): Promise<SessionPayload | null> {
   try {
     const { payload } = await jwtVerify(token, getJwtSecret());
     const userId = payload.sub ? parseInt(payload.sub, 10) : NaN;
-    if (isNaN(userId)) return null;
-    if (!VALID_ROLES.includes(payload.role as Role)) return null;
+    if (isNaN(userId)) {
+      logAuditEvent({
+        action: "auth.token.invalid",
+        entity: "session",
+        entityId: "unknown",
+        details: JSON.stringify({ reason: "non-numeric subject" }),
+      });
+      return null;
+    }
+    if (!VALID_ROLES.includes(payload.role as Role)) {
+      logAuditEvent({
+        action: "auth.token.invalid",
+        entity: "session",
+        entityId: String(userId),
+        details: JSON.stringify({ reason: "invalid role", role: payload.role }),
+      });
+      return null;
+    }
 
     return {
       userId,
       githubLogin: payload.login as string,
       role: payload.role as Role,
     };
-  } catch {
+  } catch (err) {
+    logAuditEvent({
+      action: "auth.token.invalid",
+      entity: "session",
+      entityId: "unknown",
+      details: JSON.stringify({ reason: err instanceof Error ? err.message : "verification failed" }),
+    });
     return null;
   }
 }

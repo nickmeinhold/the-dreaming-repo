@@ -5,6 +5,57 @@ Used as the blueprint for CLI E2E tests and synthetic data requirements.
 
 ---
 
+## Dependency Poset
+
+The workflows form a partial order — some actions are prerequisites for others.
+The editorial **spine** (left) is a strict chain. The engagement **fan** (right)
+has genuine width — independent operations that only require published papers.
+The two subgraphs join at `publish` (a pushout).
+
+```
+                         user create
+                             │
+                ┌────────────┼────────────────┐
+                ▼            ▼                ▼
+          paper submit    paper list      tag list
+                │         (published)
+                ▼
+         editorial status
+        (submitted → under-review)
+                │
+          ┌─────┴──────┐
+          ▼            ▼
+    assign reviewer  editor dashboard
+          │
+          ▼
+    review submit
+          │
+          ▼
+    editorial status
+    (under-review → accepted)
+          │
+          ▼
+    editorial status ──────────────────► search
+    (accepted → published)               paper show
+          │                              paper download
+          │                                   │
+          ▼                                   ▼
+     note add ◄─────────────────────── read mark
+     favourite toggle                   favourite toggle
+          │                                   │
+          ▼                                   ▼
+     note reply                         user similar
+     note list                          read history
+     favourite list
+```
+
+**Co-Kleisli interpretation:** each arrow is `WS → S'` — it takes the current
+database state in context and produces a new state. The spine must be tested as
+a composite (W1). The fan operations can be tested independently, since they
+only depend on the shared context of "published papers exist."
+
+---
+
 ## 1. User Roles
 
 | Role | Users in Seed Data | Capabilities |

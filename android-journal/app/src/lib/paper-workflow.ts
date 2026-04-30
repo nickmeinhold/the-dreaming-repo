@@ -40,16 +40,18 @@ export async function transitionPaper(
 
     if (!paper) return err("Paper not found");
 
+    fromStatus = paper.status;
+
     if (!canTransition(paper.status, newStatus)) {
       return err(`Cannot transition from "${paper.status}" to "${newStatus}"`);
     }
 
-    fromStatus = paper.status;
-
     // Optimistic lock: only update if status hasn't changed since we read it
     const data: Record<string, unknown> = { status: newStatus };
+    let publishedAt: Date | null = null;
     if (newStatus === "published") {
-      data.publishedAt = new Date();
+      publishedAt = new Date();
+      data.publishedAt = publishedAt;
     }
 
     const { count } = await tx.paper.updateMany({
@@ -62,24 +64,64 @@ export async function transitionPaper(
     }
 
     // Make reviews visible on acceptance or publication
+    let reviewsRevealed = 0;
+    let totalReviews = 0;
+    let pendingReviews = 0;
     if (newStatus === "accepted" || newStatus === "published") {
-      await tx.review.updateMany({
+      const { count } = await tx.review.updateMany({
         where: { paperId: paper.id, verdict: { not: "pending" } },
         data: { visible: true },
       });
+      reviewsRevealed = count;
+      pendingReviews = await tx.review.count({
+        where: { paperId: paper.id, verdict: "pending" },
+      });
+      totalReviews = reviewsRevealed + pendingReviews;
     }
 
-    return ok({});
+    return ok({ reviewsRevealed, totalReviews, pendingReviews, publishedAt });
   });
 
   const actionResult = toActionResult(result);
 
-  if (actionResult.success && fromStatus) {
+  if (result.isOk() && fromStatus) {
     await logAuditEvent({
       action: "paper.transitioned",
       entity: "paper",
       entityId: paperId,
       details: JSON.stringify({ from: fromStatus, to: newStatus }),
+    });
+
+    if (result.value.publishedAt) {
+      await logAuditEvent({
+        action: "paper.published",
+        entity: "paper",
+        entityId: paperId,
+        details: JSON.stringify({ publishedAt: result.value.publishedAt.toISOString() }),
+      });
+    }
+
+    if (result.value.reviewsRevealed > 0) {
+      await logAuditEvent({
+        action: "reviews.revealed",
+        entity: "paper",
+        entityId: paperId,
+        details: JSON.stringify({
+          count: result.value.reviewsRevealed,
+          pending: result.value.pendingReviews,
+          total: result.value.totalReviews,
+          trigger: newStatus,
+        }),
+      });
+    }
+  }
+
+  if (result.isErr() && result.error.startsWith("Cannot transition")) {
+    await logAuditEvent({
+      action: "transition.rejected",
+      entity: "paper",
+      entityId: paperId,
+      details: JSON.stringify({ from: fromStatus, attempted: newStatus }),
     });
   }
 

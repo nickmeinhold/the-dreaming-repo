@@ -396,6 +396,18 @@ Applicable to:
 **Should apply?** Yes for search, if multiple search backends are planned. Define a
 `SearchStrategy` interface and implement `TsvectorSearch`, `SemanticSearch`, etc.
 
+**CT interpretation:** Previously this document claimed Strategy corresponds to
+"morphisms in a functor category." That claim is wrong. For strategies to be
+morphisms between the same pair of functors in [C, D], they need shared source and
+target functors. In practice, different strategies produce structurally different
+outputs (different serialization formats, different sanitization policies, different
+search result shapes), which means different target functors — not different arrows
+between the same two. Examples that do share source and target (e.g., sorting, where
+both functors are `List`) have trivial naturality via parametricity, so the functor
+category framing adds no insight. The honest description: Strategy is a morphism in a
+hom-set. You have `Hom(A, B)` and you pick an arrow. The client is parameterised over
+which arrow. No functor categories needed.
+
 ### 22. Template Method
 > Define the skeleton of an algorithm in an operation, deferring some steps to
 > subclasses. Template Method lets subclasses redefine certain steps of an algorithm
@@ -502,7 +514,7 @@ Several GoF patterns have clean CT interpretations:
 | Chain of Responsibility | Kleisli composition | Short-circuiting arrow chains |
 | Decorator | Monad transformer | Layering effects around a computation |
 | State | Finite automata as categories | States = objects, transitions = morphisms |
-| Strategy | Morphisms in a functor category | Algorithms as arrows, interchangeable |
+| Strategy | Morphism in a hom-set | Pick an arrow from Hom(A, B); no deeper CT structure |
 | Adapter | Natural transformation | Uniform interface conversion |
 | Composite | Initial F-algebra | Recursive tree = fixed point of a functor |
 | Observer | Comonad extraction | Extract relevant state from ambient context |
@@ -516,3 +528,221 @@ The deepest connection: **the middleware system simultaneously implements Builde
 Chain of Responsibility, and Decorator — and all three are aspects of the same
 Kleisli composition.** This is not a coincidence. Category theory unifies what GoF
 separates into distinct patterns.
+
+---
+
+## Noether's Theorem for State Machines
+
+Emmy Noether proved that every continuous symmetry of a physical system corresponds
+to a conserved quantity. The paper workflow is a discrete dynamical system — states
+are configurations, transitions are dynamics, and the integration tests
+(`state-invariants.integration.test.ts`) verify conserved quantities at every step
+of random walks through the state machine.
+
+Working backwards from the conserved quantities (invariants) to the symmetries that
+produce them:
+
+### 1. Path Permutation Symmetry → Audit Count Conservation
+
+**Symmetry:** The transition function (`paper-workflow.ts:28–129`) treats all valid
+transitions identically. It doesn't know *which* edge it's traversing — it fires
+`paper.transitioned` (line 88–93) and increments the count by one regardless of
+whether the step is `submitted → under-review` or `revision → under-review`. Swap
+any valid path of length *n* for any other valid path of length *n*, and the audit
+count is unchanged.
+
+**Conserved quantity:** `count(paper.transitioned) = |path|`
+(`state-invariants.integration.test.ts:272–273`)
+
+```typescript
+const transitionCount = await countAuditEvents(paper.paperId, "paper.transitioned");
+expect(transitionCount).toBe(path.length);
+```
+
+This is the direct analogue of **time-translation symmetry → energy conservation**.
+Each step in the walk is "the same" from the audit logger's perspective — the
+Lagrangian doesn't depend on *when* (which step) a transition occurs, only that one
+occurred.
+
+### 2. Revision Cycle Symmetry → Review Accumulation
+
+**Symmetry:** The subgraph `under-review ⇄ revision` generates a free monoid **ℕ**
+acting on the state space. The transition table (`paper-workflow.ts:13–18`) allows
+this cycle to repeat indefinitely. Go around the loop 1 time, 3 times, 17 times —
+the system doesn't care. Each revolution is structurally identical to every other.
+
+**Conserved quantity:** All completed reviews from *all* cycles are preserved and
+become visible upon acceptance — not just the most recent round's reviews.
+(`state-invariants.integration.test.ts:320–378`)
+
+```typescript
+const visibleCompleted = state.reviews.filter(
+  (r) => r.verdict !== "pending" && r.visible,
+);
+expect(visibleCompleted).toHaveLength(revisionCycles);
+```
+
+This is the analogue of **rotational symmetry → angular momentum conservation**.
+The rotation (revision cycle) preserves the accumulated quantity (reviews). The
+cycle is a faithful **ℕ**-action — it accumulates but never destroys.
+
+### 3. Gauge Symmetry of Paths → Visibility Partition
+
+**Symmetry:** Review visibility depends *only* on the current state, not on the
+path taken to reach it. Two paths ending in the same state produce identical
+visibility configurations. The specific route is a gauge degree of freedom — it's
+"internal" and doesn't affect the observable. This is the Myhill-Nerode criterion
+noted in the test file header: equivalence classes (statuses) have well-defined
+observable properties regardless of which path landed us there.
+
+**Conserved quantity:** The clean partition
+`{submitted, under-review, revision} → hidden`, `{accepted, published} → visible`.
+(`state-invariants.integration.test.ts:139–158`)
+
+```typescript
+// Pre-acceptance: reviews hidden
+if (status === "submitted" || status === "under-review" || status === "revision") {
+  for (const r of completedReviews) {
+    if (r.visible) violations.push(/* ... */);
+  }
+}
+// Post-acceptance: reviews visible
+if (status === "accepted" || status === "published") {
+  for (const r of completedReviews) {
+    if (!r.visible) violations.push(/* ... */);
+  }
+}
+```
+
+This is **gauge invariance**. The path is unphysical; only the endpoint is
+observable. The conserved quantity is the partition itself — a topological invariant
+of the state space that respects the two connected components separated by the
+acceptance boundary.
+
+### 4. Absorption Symmetry Breaking → Publication Uniqueness
+
+**Symmetry that is *broken*:** `published` is an absorbing state — no outgoing
+edges. Time-reversal symmetry is broken here. You can't un-publish.
+
+**Conserved quantity from the breaking:** `paper.published` fires exactly once, and
+`publishedAt ≠ null ⟺ status = published`.
+(`state-invariants.integration.test.ts:129–137, 275–278`)
+
+```typescript
+if (status === "published") {
+  if (!publishedAt) violations.push("published paper must have publishedAt set");
+} else {
+  if (publishedAt) violations.push(`non-published paper must not have publishedAt`);
+}
+```
+
+This is the analogue of **spontaneous symmetry breaking → order parameter**. The
+system transitions from a symmetric phase (where states can change freely) to an
+ordered phase (frozen at `published`). The `publishedAt` timestamp is the order
+parameter — it crystallises at the moment of breaking and never changes again.
+
+### 5. Serialisation Symmetry → Concurrency Integrity
+
+**Symmetry:** Permute the arrival order of concurrent transitions. The optimistic
+lock (`paper-workflow.ts:57–64`) ensures exactly one wins regardless of ordering:
+
+```typescript
+const { count } = await tx.paper.updateMany({
+  where: { id: paper.id, status: paper.status },
+  data,
+});
+if (count === 0) return err("Paper status changed concurrently, please retry");
+```
+
+The system is invariant under permutation of concurrent actors.
+
+**Conserved quantity:** Exactly one transition succeeds, and all structural
+invariants hold in the final state.
+(`state-invariants.integration.test.ts:382–424`)
+
+```typescript
+const successes = [result1, result2].filter((r) => r.success);
+expect(successes).toHaveLength(1);
+const violations = checkInvariant(state);
+expect(violations).toEqual([]);
+```
+
+This is a **discrete permutation symmetry** — the analogue of exchange symmetry in
+quantum mechanics. Two identical transitions are like identical particles; the
+system can't distinguish their ordering, and the observable (final state) is
+symmetric under exchange.
+
+### 6. Functoriality of the Audit Log → Transition Faithfulness
+
+**Symmetry:** The audit log is a faithful functor **F: Path(G) → Set** from the
+path category of the state machine to the category of event sequences. Every
+morphism (transition) maps to exactly one audit event with matching `from`/`to`.
+Invalid morphisms (not in the category) map to `transition.rejected`.
+(`state-invariants.integration.test.ts:254–266`)
+
+```typescript
+const lastTransition = await lastAuditEvent(paper.paperId, "paper.transitioned");
+const tDetails = JSON.parse(lastTransition!.details!);
+expect(tDetails.from).toBe(prevStatus);
+expect(tDetails.to).toBe(target);
+```
+
+**Conserved quantity:** The isomorphism between the path in state space and the
+sequence in the audit log. You can reconstruct the entire path from the log alone —
+no information is lost.
+
+This is the deepest symmetry — it's **naturality**. The audit functor commutes with
+the dynamics. It's the analogue of Noether's theorem *itself* rather than any
+particular instance: the existence of a structure-preserving map between two
+representations of the same system guarantees that information is conserved across
+the translation.
+
+### Topology of the State Graph
+
+The state graph has a **critical boundary** between `{submitted, under-review,
+revision}` and `{accepted, published}`. Crossing it (acceptance) is irreversible
+and triggers the phase transition where reviews become visible. The revision cycle
+lives entirely in the pre-acceptance region and can run indefinitely without
+crossing the boundary.
+
+The absorbing state `published` is a second, harder boundary — not just
+irreversible but terminal. The system has two symmetry-breaking events:
+1. **Acceptance** — reviews crystallise (visibility gauge symmetry breaks)
+2. **Publication** — the state itself crystallises (time-translation symmetry breaks)
+
+```
+                    ┌─────────────────────────┐
+                    │   pre-acceptance phase   │
+                    │                          │
+                    │  submitted               │
+                    │      │                   │
+                    │      ▼                   │
+   revision cycle → │  under-review ⇄ revision │
+   (ℕ-action)      │                          │
+                    └──────────┬───────────────┘
+                               │ ← acceptance boundary (phase transition)
+                    ┌──────────▼───────────────┐
+                    │   post-acceptance phase   │
+                    │                          │
+                    │  accepted                │
+                    │      │                   │
+                    │      ▼                   │
+                    │  published ●              │ ← absorbing state (order parameter)
+                    └──────────────────────────┘
+```
+
+Categorically: the invariants form a **presheaf** on the state graph — they assign
+data (visibility, timestamps, counts) to each object and respect the morphism
+structure. The symmetries are the **automorphisms of this presheaf** — the
+transformations under which the assigned data is unchanged.
+
+### Summary: Noether Correspondence
+
+| # | Symmetry | Conserved Quantity | Physics Analogue |
+|---|----------|--------------------|------------------|
+| 1 | Path permutation | Audit count = path length | Time translation → energy |
+| 2 | Revision cycle (**ℕ**-action) | Review accumulation across rounds | Rotation → angular momentum |
+| 3 | Gauge (path independence) | Visibility partition by state | Gauge invariance → charge |
+| 4 | Absorption (broken symmetry) | `publishedAt` uniqueness | SSB → order parameter |
+| 5 | Serialisation (actor permutation) | Exactly-one-wins under concurrency | Exchange symmetry |
+| 6 | Functoriality (audit as functor) | Path ↔ log isomorphism | Naturality (Noether itself) |

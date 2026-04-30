@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/admin/monitoring/cli", label: "CLI" },
   { href: "/admin/monitoring/db", label: "DB" },
   { href: "/admin/monitoring/metrics", label: "Metrics" },
+  { href: "/admin/monitoring/stories", label: "Stories" },
 ];
 
 export default async function MonitoringLayout({

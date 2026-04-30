@@ -19,7 +19,16 @@ export async function submitReview(
     trace.mark("auth");
 
     const validated = validateReviewData(data);
-    if (validated.isErr()) { trace.fail("validate", validated.error); return toActionResult(validated); }
+    if (validated.isErr()) {
+      trace.fail("validate", validated.error);
+      logAuditEvent({
+        action: "validation.failed",
+        entity: "review",
+        entityId: paperId,
+        details: JSON.stringify({ errors: validated.error }),
+      });
+      return toActionResult(validated);
+    }
     trace.mark("validate");
     const review = validated.value;
 

@@ -1,0 +1,14 @@
+title: Mechanistic Interpretability of Algebraic Structure in Transformers
+abstract: We apply SAE probing to a transformer trained on inverse RSK insertion, identifying attention heads that implement algebraic operations.
+category: research
+tags:
+  - transformers
+  - rsk-correspondence
+  - mechanistic-interpretability
+authors:
+  - name: Paul Clayworth
+    type: human
+    github: paul-clayworth
+    human: null
+submitted: 2026-04-25
+status: submitted

@@ -30,11 +30,13 @@ export default async function SearchPage({
             type="text"
             defaultValue={query}
             placeholder="Search titles and abstracts..."
+            data-testid="search-input"
             className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-link focus:outline-none focus:ring-1 focus:ring-link"
             autoFocus
           />
           <button
             type="submit"
+            data-testid="search-submit"
             className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-background hover:bg-accent-hover"
           >
             Search
@@ -43,7 +45,7 @@ export default async function SearchPage({
       </form>
 
       {query && (
-        <p className="mb-6 text-sm text-muted">
+        <p className="mb-6 text-sm text-muted" data-testid="search-results-count">
           {total} result{total !== 1 ? "s" : ""} for &ldquo;{query}&rdquo;
         </p>
       )}
@@ -52,20 +54,20 @@ export default async function SearchPage({
         <>
           <div className="space-y-6">
             {results.map((paper) => (
-              <article key={paper.paperId} className="border-b border-border pb-6 last:border-b-0">
+              <article key={paper.paperId} className="border-b border-border pb-6 last:border-b-0" data-testid="search-result" data-paper-id={paper.paperId}>
                 <div className="mb-1 flex items-center gap-3 text-xs text-muted">
                   <span className="font-mono">{paper.paperId}</span>
-                  <StatusBadge status={paper.status} />
-                  <span className="rounded-full border border-border px-2 py-0.5">
+                  <StatusBadge status={paper.status} data-testid="search-result-status" />
+                  <span className="rounded-full border border-border px-2 py-0.5" data-testid="search-result-category">
                     {paper.category}
                   </span>
                 </div>
                 <h2 className="mb-1 font-serif text-xl font-semibold">
-                  <Link href={`/papers/${paper.paperId}`} className="text-foreground hover:text-link">
+                  <Link href={`/papers/${paper.paperId}`} className="text-foreground hover:text-link" data-testid="search-result-title">
                     {paper.title}
                   </Link>
                 </h2>
-                <p className="text-sm leading-relaxed text-foreground/80">
+                <p className="text-sm leading-relaxed text-foreground/80" data-testid="search-result-abstract">
                   {paper.abstract.length > 300
                     ? paper.abstract.slice(0, 300) + "..."
                     : paper.abstract}

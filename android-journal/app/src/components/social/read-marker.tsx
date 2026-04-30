@@ -24,6 +24,7 @@ export function ReadMarker({ paperId, initialRead }: Props) {
     <button
       onClick={handleMark}
       disabled={loading || read}
+      data-testid="read-marker"
       className={`rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
         read
           ? "border-green-300 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-300"

@@ -37,6 +37,7 @@ export function ReviewerAssignment({ paperId }: Props) {
     return (
       <button
         onClick={() => setOpen(true)}
+        data-testid="assign-open"
         className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-border/30"
       >
         + Assign reviewer
@@ -51,12 +52,14 @@ export function ReviewerAssignment({ paperId }: Props) {
         value={login}
         onChange={(e) => setLogin(e.target.value)}
         placeholder="GitHub username"
+        data-testid="assign-input"
         className="w-40 rounded-md border border-border bg-background px-2 py-1 text-xs focus:border-link focus:outline-none"
         autoFocus
       />
       <button
         type="submit"
         disabled={loading}
+        data-testid="assign-submit"
         className="rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-background hover:bg-accent-hover disabled:opacity-50"
       >
         Assign
@@ -68,7 +71,7 @@ export function ReviewerAssignment({ paperId }: Props) {
       >
         Cancel
       </button>
-      {error && <span className="text-xs text-red-600">{error}</span>}
+      {error && <span className="text-xs text-red-600" data-testid="assign-error">{error}</span>}
     </form>
   );
 }

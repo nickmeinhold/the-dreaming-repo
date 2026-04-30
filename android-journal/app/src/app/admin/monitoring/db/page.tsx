@@ -39,9 +39,8 @@ export default async function DbPage() {
 
   // Also show overall trace timing for DB-heavy operations
   const dbTraces = traceEvents
-    .map((e) => ({ ...e, ...parseDetails(e.details) }))
-    .filter((e) => e.ms !== undefined && e.ms > 0)
-    .sort((a, b) => (b.ms ?? 0) - (a.ms ?? 0))
+    .filter((e) => e.durationMs != null && e.durationMs > 0)
+    .sort((a, b) => (b.durationMs ?? 0) - (a.durationMs ?? 0))
     .slice(0, 50);
 
   const totalOps = dbOps.length;
@@ -86,19 +85,22 @@ export default async function DbPage() {
         <div style={{ padding: "2rem", textAlign: "center", color: "#9ca3af", border: "1px dashed #d1d5db", borderRadius: "8px" }}>No traces yet</div>
       ) : (
         <div style={{ border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
-          {dbTraces.map((e) => (
+          {dbTraces.map((e) => {
+            const det = parseDetails(e.details);
+            const ms = e.durationMs ?? 0;
+            return (
             <div key={e.id} style={{ padding: "8px 12px", borderBottom: "1px solid #f3f4f6", fontSize: "0.8rem", display: "flex", gap: "10px", alignItems: "center" }}>
               <span style={{ color: "#9ca3af", minWidth: "55px" }}>{e.timestamp.toISOString().slice(11, 19)}</span>
               <span style={{
                 fontWeight: "bold", minWidth: "50px", textAlign: "right",
-                color: (e.ms ?? 0) > 200 ? "#dc2626" : (e.ms ?? 0) > 100 ? "#f59e0b" : "#059669",
+                color: ms > 200 ? "#dc2626" : ms > 100 ? "#f59e0b" : "#059669",
               }}>
-                {e.ms}ms
+                {ms}ms
               </span>
               <span>{e.action.replace("trace.", "")}</span>
-              {e.steps && (
+              {det.steps && (
                 <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>
-                  {e.steps.split(" → ").map((s: string, i: number) => {
+                  {det.steps.split(" → ").map((s: string, i: number) => {
                     const [name, status] = s.split(":");
                     return <span key={i}>{i > 0 && " → "}<span style={{ color: status === "err" ? "#dc2626" : "#9ca3af" }}>{name}</span></span>;
                   })}
@@ -108,7 +110,8 @@ export default async function DbPage() {
                 <a href={`/admin/monitoring/trace/${e.correlationId}`} style={{ marginLeft: "auto", color: "#6366f1", fontSize: "0.65rem", textDecoration: "none" }}>{e.correlationId.slice(0, 8)}</a>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </>

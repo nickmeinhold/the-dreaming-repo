@@ -20,9 +20,14 @@ function getClientIp(request: NextRequest): string | undefined {
 export async function withTrace(
   ctx: { request: NextRequest; _routeParams?: RouteParams },
 ): Promise<TraceContext & { _routeParams?: RouteParams }> {
-  const correlationId = crypto.randomUUID();
+  // Reuse incoming correlation ID if present (e.g. from GUI CLI's
+  // X-Correlation-Id header), otherwise generate a fresh one.
+  const correlationId =
+    ctx.request.headers.get("x-correlation-id") || crypto.randomUUID();
+  const batchId =
+    ctx.request.headers.get("x-batch-id") || undefined;
 
-  requestStore.enterWith({ correlationId, userId: null });
+  requestStore.enterWith({ correlationId, userId: null, batchId });
 
   return {
     request: ctx.request,

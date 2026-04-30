@@ -28,14 +28,15 @@ export function FavouriteButton({ paperId, initialFavourited, favouriteCount }: 
     <button
       onClick={handleToggle}
       disabled={loading}
+      data-testid="favourite-button"
       className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors disabled:opacity-50 ${
         favourited
           ? "border-link bg-link/10 text-link"
           : "border-border text-muted hover:border-foreground hover:text-foreground"
       }`}
     >
-      <span>{favourited ? "\u2605" : "\u2606"}</span>
-      <span>{count}</span>
+      <span data-testid="favourite-icon">{favourited ? "\u2605" : "\u2606"}</span>
+      <span data-testid="favourite-count">{count}</span>
     </button>
   );
 }

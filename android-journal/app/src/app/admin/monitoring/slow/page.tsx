@@ -8,24 +8,15 @@
 import { prisma } from "@/lib/db";
 
 export default async function SlowPage() {
-  // Get all trace events, extract ms from details, sort by slowest
-  const traceEvents = await prisma.auditLog.findMany({
-    where: { action: { startsWith: "trace." } },
-    orderBy: { timestamp: "desc" },
-    take: 500, // scan recent traces
+  // Get slowest trace events directly via durationMs column
+  const withTiming = await prisma.auditLog.findMany({
+    where: { action: { startsWith: "trace." }, durationMs: { gt: 0 } },
+    orderBy: { durationMs: "desc" },
+    take: 50,
   });
 
-  const withTiming = traceEvents
-    .map((e) => {
-      const det = parseDetails(e.details);
-      return { ...e, ms: det.ms ?? 0, steps: det.steps, traceStatus: det.status, error: det.error };
-    })
-    .filter((e) => e.ms > 0)
-    .sort((a, b) => b.ms - a.ms)
-    .slice(0, 50);
-
-  const avgMs = withTiming.length ? Math.round(withTiming.reduce((s, e) => s + e.ms, 0) / withTiming.length) : 0;
-  const slowCount = withTiming.filter((e) => e.ms > 100).length;
+  const avgMs = withTiming.length ? Math.round(withTiming.reduce((s, e) => s + (e.durationMs ?? 0), 0) / withTiming.length) : 0;
+  const slowCount = withTiming.filter((e) => (e.durationMs ?? 0) > 100).length;
 
   return (
     <>
@@ -38,28 +29,31 @@ export default async function SlowPage() {
         <div style={{ padding: "2rem", textAlign: "center", color: "#059669", border: "1px dashed #d1d5db", borderRadius: "8px" }}>No traced operations yet</div>
       ) : (
         <div style={{ border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
-          {withTiming.map((e) => (
+          {withTiming.map((e) => {
+            const det = parseDetails(e.details);
+            const ms = e.durationMs ?? 0;
+            return (
             <div key={e.id} style={{ padding: "8px 12px", borderBottom: "1px solid #f3f4f6", fontSize: "0.85rem", display: "flex", gap: "10px", alignItems: "center" }}>
               <span style={{ color: "#9ca3af", fontSize: "0.75rem", minWidth: "55px" }}>
                 {e.timestamp.toISOString().slice(11, 19)}
               </span>
               <span style={{
                 fontWeight: "bold", minWidth: "60px", textAlign: "right",
-                color: e.ms > 200 ? "#dc2626" : e.ms > 100 ? "#f59e0b" : "#059669",
+                color: ms > 200 ? "#dc2626" : ms > 100 ? "#f59e0b" : "#059669",
               }}>
-                {e.ms}ms
+                {ms}ms
               </span>
               <span>{e.action.replace("trace.", "")}</span>
               <span style={{
                 fontSize: "0.7rem", padding: "1px 6px", borderRadius: "3px",
-                backgroundColor: e.traceStatus === "ok" ? "#d1fae5" : "#fee2e2",
-                color: e.traceStatus === "ok" ? "#065f46" : "#991b1b",
+                backgroundColor: e.status === "ok" ? "#d1fae5" : "#fee2e2",
+                color: e.status === "ok" ? "#065f46" : "#991b1b",
               }}>
-                {e.traceStatus}
+                {e.status}
               </span>
-              {e.steps && (
+              {det.steps && (
                 <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>
-                  {e.steps.split(" → ").length} steps
+                  {det.steps.split(" → ").length} steps
                 </span>
               )}
               {e.correlationId && (
@@ -68,7 +62,8 @@ export default async function SlowPage() {
                 </a>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </>

@@ -1,0 +1,15 @@
+title: "Containers: An Expository Account for Computer Scientists"
+abstract: This paper provides a self-contained exposition of the theory of containers, originally developed by Abbott, Altenkirch, and Ghani. We present containers as a tool for representing and reasoning about data structures in a dependently-typed setting. All proofs are given in full, using a style accessible to computer scientists who may not have extensive experience with category theory. We include numerous examples from everyday programming and discuss the relationship to polynomial functors.
+category: expository
+tags:
+  - containers
+  - type-theory
+  - polynomial-functors
+  - expository
+authors:
+  - name: Neil Ghani
+    type: human
+    github: neil-ghani
+    human: null
+submitted: 2026-04-25
+status: submitted

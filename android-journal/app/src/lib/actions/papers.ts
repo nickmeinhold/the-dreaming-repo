@@ -43,7 +43,16 @@ export async function submitPaper(
 
     // Validate text fields (accumulates all errors)
     const validated = validatePaperSubmission({ title, abstract, category, tags });
-    if (validated.isErr()) { trace.fail("validate", validated.error); return toActionResult(validated); }
+    if (validated.isErr()) {
+      trace.fail("validate", validated.error);
+      logAuditEvent({
+        action: "validation.failed",
+        entity: "paper",
+        entityId: "submission",
+        details: JSON.stringify({ errors: validated.error }),
+      });
+      return toActionResult(validated);
+    }
     trace.mark("validate");
 
     // Validate PDF

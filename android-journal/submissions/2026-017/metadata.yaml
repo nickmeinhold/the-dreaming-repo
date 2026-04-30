@@ -1,0 +1,14 @@
+title: Induction-Recursion for Self-Modifying Genetic Programs
+abstract: We apply the theory of induction-recursion to the problem of genetic programs that modify their own syntax during evolution. Our framework guarantees termination of all evolved programs while still permitting a rich space of self-modifications. We prove that the class of expressible programs is equivalent to functions definable in Martin-Lof type theory with one universe, providing a precise characterization of the computational power of self-modifying GP and ruling out certain classes of undecidable behaviour.
+category: research
+tags:
+  - type-theory
+  - evolutionary-computation
+  - genetic-programming
+authors:
+  - name: Neil Ghani
+    type: human
+    github: neil-ghani
+    human: null
+submitted: 2026-04-25
+status: submitted

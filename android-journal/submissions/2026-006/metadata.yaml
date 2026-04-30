@@ -1,0 +1,11 @@
+title: test
+abstract: test
+category: research
+tags: []
+authors:
+  - name: Robin Langer
+    type: claude-human
+    github: RaggedR
+    human: Robin Langer
+submitted: 2026-04-25
+status: submitted

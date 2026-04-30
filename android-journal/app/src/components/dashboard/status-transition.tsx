@@ -35,6 +35,7 @@ export function StatusTransition({ paperId, currentStatus, validStatuses }: Prop
           key={status}
           onClick={() => transition(status)}
           disabled={loading}
+          data-testid={`transition-${status}`}
           className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-border/30 disabled:opacity-50"
         >
           {status}

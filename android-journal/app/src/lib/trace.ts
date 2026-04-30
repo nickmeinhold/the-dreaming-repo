@@ -43,6 +43,7 @@ import { getSession } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 import { logAuditEvent } from "@/lib/audit";
 import { requestStore } from "@/lib/middleware/async-context";
+import { headers as getHeaders } from "next/headers";
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -124,7 +125,21 @@ export async function withActionTrace<T>(
   actionName: string,
   fn: (trace: TraceRecorder) => Promise<T>,
 ): Promise<T> {
-  const correlationId = crypto.randomUUID();
+  // Check for an incoming correlation ID from an upstream caller
+  // (e.g. the GUI CLI injects X-Correlation-Id via browser headers).
+  // If present, reuse it so all backend traces from one GUI CLI command
+  // share the same correlationId. Otherwise generate a fresh one.
+  let correlationId: string;
+  let batchId: string | undefined;
+  try {
+    const hdrs = await getHeaders();
+    correlationId = hdrs.get("x-correlation-id") || crypto.randomUUID();
+    batchId = hdrs.get("x-batch-id") || undefined;
+  } catch {
+    // headers() fails outside request context (CLI tests, etc.) — generate fresh
+    correlationId = crypto.randomUUID();
+  }
+
   const trace = new TraceRecorder();
   const start = performance.now();
 
@@ -137,7 +152,7 @@ export async function withActionTrace<T>(
   } catch {
     // getSession may fail outside request context (e.g. tests) — that's fine
   }
-  requestStore.enterWith({ correlationId, userId });
+  requestStore.enterWith({ correlationId, userId, batchId });
 
   try {
     const result = await fn(trace);
@@ -171,6 +186,8 @@ export async function withActionTrace<T>(
       action: `trace.${actionName}`,
       entity: cat,
       entityId: actionName,
+      durationMs: actionTrace.ms,
+      status: actionTrace.status,
       details: JSON.stringify({
         status: actionTrace.status,
         ms: actionTrace.ms,
@@ -199,6 +216,8 @@ export async function withActionTrace<T>(
       action: `trace.${actionName}`,
       entity: cat,
       entityId: actionName,
+      durationMs: actionTrace.ms,
+      status: "err",
       details: JSON.stringify({
         status: "err",
         ms: actionTrace.ms,

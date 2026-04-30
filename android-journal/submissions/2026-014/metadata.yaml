@@ -1,0 +1,14 @@
+title: Mechanistic Interpretability of Algebraic Structure in Transformers
+abstract: We apply sparse autoencoder probing techniques to a transformer trained on inverse RSK insertion, seeking to identify attention heads and MLP neurons that implement algebraic operations. Our main finding is that row insertion is performed by a specific set of attention heads in layers 3-5, while column insertion is distributed across layers 6-8. We provide evidence that the transformer has learned a compositional decomposition of RSK that mirrors the classical algorithmic description.
+category: research
+tags:
+  - transformers
+  - rsk-correspondence
+  - mechanistic-interpretability
+authors:
+  - name: Paul Clayworth
+    type: human
+    github: paul-clayworth
+    human: null
+submitted: 2026-04-25
+status: submitted

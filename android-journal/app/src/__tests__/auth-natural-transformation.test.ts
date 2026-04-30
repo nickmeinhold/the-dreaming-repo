@@ -1,21 +1,25 @@
 /**
- * Auth Adapter — Natural Transformation Properties
+ * Auth Adapter — Equivariance Properties
  *
  * CATEGORY THEORY:
- *   The adapter toJournalUser is a natural transformation between
- *   the "GitHub user" functor and the "Journal user" functor.
+ *   The adapter toJournalUser is NOT a natural transformation — the
+ *   fallback `displayName = name ?? login` makes the set of compatible
+ *   transformations depend on the input value, violating the universal
+ *   quantifier that naturality requires.
  *
- *   Naturality condition: for compatible transformations f, g:
- *     toJournalUser(f(ext)) = g(toJournalUser(ext))
+ *   What it IS: an equivariant map with respect to field endomorphisms,
+ *   splitting into two regimes based on whether name is null.
+ *   The property-based tests verify this per-field equivariance
+ *   over arbitrary inputs and arbitrary string transforms.
  *
- *   The adapter commutes with structure-preserving transformations
- *   on both the external and internal representations.
+ *   See natural-transformation.test.ts for a genuine natural transformation.
  *
  * DESIGN PATTERNS (GoF):
  *   Adapter — convert GitHub's interface to Journal's interface
  */
 
 import { describe, it, expect } from "vitest";
+import { test as fcTest, fc } from "@fast-check/vitest";
 import {
   GitHubAuthAdapter,
   type GitHubUser,
@@ -130,6 +134,173 @@ describe("Naturality", () => {
     expect(second.avatarUrl).toBe(first.avatarUrl);
     expect(second.email).toBe(first.email);
   });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  NATURALITY — PROPERTY-BASED (∀ morphisms, not just one)
+// ═══════════════════════════════════════════════════════════
+
+// Arbitrary GitHubUser
+const arbGitHubUser: fc.Arbitrary<GitHubUser> = fc.record({
+  id: fc.integer({ min: 1, max: 999999 }),
+  login: fc.string({ minLength: 1, maxLength: 30 }).filter((s) => s.trim().length > 0),
+  name: fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: null }),
+  avatar_url: fc.option(fc.webUrl(), { nil: null }),
+  email: fc.option(fc.emailAddress(), { nil: null }),
+  bio: fc.option(fc.string({ maxLength: 200 }), { nil: null }),
+});
+
+// A "field morphism" is a pair (f, g) where f acts on GitHubUser,
+// g acts on UserUpsertData, and they're compatible with the adapter.
+// We generate these by picking a field and a string transformation,
+// then applying it to the corresponding fields on both sides.
+
+const arbStringTransform: fc.Arbitrary<(s: string) => string> = fc.oneof(
+  fc.constant((s: string) => s.toUpperCase()),
+  fc.constant((s: string) => s.toLowerCase()),
+  fc.constant((s: string) => s.slice(0, 3)),
+  fc.constant((s: string) => `prefix_${s}`),
+  fc.constant((s: string) => s.split("").reverse().join("")),
+);
+
+describe("Naturality — Property-Based", () => {
+  // ── Direct field correspondences ──────────────────────────
+  // These fields have a 1:1 mapping with no fallback logic,
+  // so ANY endomorphism on the source field is compatible.
+
+  fcTest.prop([arbGitHubUser, arbStringTransform])(
+    "naturality: login ↔ githubLogin (∀ users, ∀ transforms)",
+    (user, transform) => {
+      const f = (u: GitHubUser): GitHubUser => ({ ...u, login: transform(u.login) });
+      const g = (u: UserUpsertData): UserUpsertData => ({
+        ...u,
+        githubLogin: transform(u.githubLogin),
+        // When name is null, displayName comes from login — must track it
+        displayName: user.name === null ? transform(u.displayName) : u.displayName,
+      });
+
+      const lhs = adapter.toJournalUser(f(user));
+      const rhs = g(adapter.toJournalUser(user));
+      expect(lhs).toEqual(rhs);
+    },
+  );
+
+  fcTest.prop([arbGitHubUser, fc.integer({ min: 1, max: 999999 })])(
+    "naturality: id ↔ githubId (∀ users, ∀ id-transforms)",
+    (user, newId) => {
+      const f = (u: GitHubUser): GitHubUser => ({ ...u, id: newId });
+      const g = (u: UserUpsertData): UserUpsertData => ({ ...u, githubId: newId });
+
+      expect(adapter.toJournalUser(f(user))).toEqual(g(adapter.toJournalUser(user)));
+    },
+  );
+
+  fcTest.prop([arbGitHubUser, arbStringTransform])(
+    "naturality: email ↔ email (∀ users with email, ∀ transforms)",
+    (user, transform) => {
+      // Only test when email exists — null has no string to transform
+      fc.pre(user.email !== null);
+
+      const f = (u: GitHubUser): GitHubUser => ({
+        ...u,
+        email: u.email !== null ? transform(u.email) : null,
+      });
+      const g = (u: UserUpsertData): UserUpsertData => ({
+        ...u,
+        email: u.email !== null ? transform(u.email) : null,
+      });
+
+      expect(adapter.toJournalUser(f(user))).toEqual(g(adapter.toJournalUser(user)));
+    },
+  );
+
+  fcTest.prop([arbGitHubUser, arbStringTransform])(
+    "naturality: bio ↔ bio (∀ users with bio, ∀ transforms)",
+    (user, transform) => {
+      fc.pre(user.bio !== null);
+
+      const f = (u: GitHubUser): GitHubUser => ({
+        ...u,
+        bio: u.bio !== null ? transform(u.bio) : null,
+      });
+      const g = (u: UserUpsertData): UserUpsertData => ({
+        ...u,
+        bio: u.bio !== null ? transform(u.bio) : null,
+      });
+
+      expect(adapter.toJournalUser(f(user))).toEqual(g(adapter.toJournalUser(user)));
+    },
+  );
+
+  fcTest.prop([arbGitHubUser, arbStringTransform])(
+    "naturality: avatar_url ↔ avatarUrl (∀ users with avatar, ∀ transforms)",
+    (user, transform) => {
+      fc.pre(user.avatar_url !== null);
+
+      const f = (u: GitHubUser): GitHubUser => ({
+        ...u,
+        avatar_url: u.avatar_url !== null ? transform(u.avatar_url) : null,
+      });
+      const g = (u: UserUpsertData): UserUpsertData => ({
+        ...u,
+        avatarUrl: u.avatarUrl !== null ? transform(u.avatarUrl) : null,
+      });
+
+      expect(adapter.toJournalUser(f(user))).toEqual(g(adapter.toJournalUser(user)));
+    },
+  );
+
+  // ── The interesting case: name → displayName with fallback ─
+  // The name↔displayName mapping has a conditional: name ?? login.
+  // This means (f, g) are only compatible when f respects the
+  // fallback structure. We test both branches explicitly.
+
+  fcTest.prop([arbGitHubUser, arbStringTransform])(
+    "naturality: name → displayName (∀ users WITH name, ∀ transforms)",
+    (user, transform) => {
+      fc.pre(user.name !== null);
+
+      const f = (u: GitHubUser): GitHubUser => ({
+        ...u,
+        name: u.name !== null ? transform(u.name) : null,
+      });
+      const g = (u: UserUpsertData): UserUpsertData => ({
+        ...u,
+        displayName: transform(u.displayName),
+      });
+
+      expect(adapter.toJournalUser(f(user))).toEqual(g(adapter.toJournalUser(user)));
+    },
+  );
+
+  fcTest.prop([arbGitHubUser, arbStringTransform])(
+    "naturality: login → displayName (∀ users WITHOUT name, ∀ transforms)",
+    (user, transform) => {
+      fc.pre(user.name === null);
+
+      // When name is null, displayName = login. So transforming login
+      // must transform both githubLogin AND displayName on the other side.
+      const f = (u: GitHubUser): GitHubUser => ({ ...u, login: transform(u.login) });
+      const g = (u: UserUpsertData): UserUpsertData => ({
+        ...u,
+        githubLogin: transform(u.githubLogin),
+        displayName: transform(u.displayName),
+      });
+
+      expect(adapter.toJournalUser(f(user))).toEqual(g(adapter.toJournalUser(user)));
+    },
+  );
+
+  // ── Identity morphism ─────────────────────────────────────
+  // α_A ∘ id_A = id_{α(A)} — trivially true but worth stating
+
+  fcTest.prop([arbGitHubUser])(
+    "identity: adapter(id(user)) = id(adapter(user))",
+    (user) => {
+      const id = <T>(x: T): T => x;
+      expect(adapter.toJournalUser(id(user))).toEqual(id(adapter.toJournalUser(user)));
+    },
+  );
 });
 
 // ═══════════════════════════════════════════════════════════

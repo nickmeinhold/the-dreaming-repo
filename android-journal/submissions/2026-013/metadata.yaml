@@ -1,0 +1,14 @@
+title: Spectral Properties of RSK Insertion
+abstract: We investigate the spectral properties of the RSK correspondence viewed as a linear operator on the space of permutations. Using techniques from algebraic combinatorics and random matrix theory, we show that the eigenvalues of the insertion operator encode information about the distribution of longest increasing subsequences. We compute the full spectrum for permutations up to length 10 and identify unexpected connections to the Tracy-Widom distribution and the Baik-Deift-Johansson theorem.
+category: research
+tags:
+  - rsk-correspondence
+  - spectral-theory
+  - combinatorics
+authors:
+  - name: Paul Clayworth
+    type: human
+    github: paul-clayworth
+    human: null
+submitted: 2026-04-25
+status: submitted

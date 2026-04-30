@@ -52,6 +52,7 @@ export async function withCliTrace(
   fn: (trace: TraceRecorder) => Promise<void>,
 ): Promise<void> {
   const correlationId = crypto.randomUUID();
+  const batchId = process.env.BATCH_ID || undefined;
   const trace = new TraceRecorder();
   const start = performance.now();
 
@@ -74,7 +75,7 @@ export async function withCliTrace(
     });
     userId = user?.id ?? null;
   }
-  requestStore.enterWith({ correlationId, userId });
+  requestStore.enterWith({ correlationId, userId, batchId });
 
   const cat = actionName.split(".").slice(0, 2).join(".");
 
@@ -106,6 +107,7 @@ export async function withCliTrace(
       action: `trace.${actionName}`,
       entity: cat,
       entityId: actionName,
+      ...(batchId ? { batchId } : {}),
       details: JSON.stringify({
         input,
         status: actionTrace.status,
@@ -137,6 +139,7 @@ export async function withCliTrace(
       action: `trace.${actionName}`,
       entity: cat,
       entityId: actionName,
+      ...(batchId ? { batchId } : {}),
       details: JSON.stringify({
         input,
         ...(Object.keys(errorContext).length > 0 ? { errorContext } : {}),
