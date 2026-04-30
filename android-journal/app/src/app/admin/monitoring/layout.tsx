@@ -24,6 +24,7 @@ export default async function MonitoringLayout({
   const session = await getSession();
   if (!session) redirect("/");
 
+  // Re-read role from DB: JWT role may be stale if user was demoted since login
   const freshUser = await prisma.user.findUnique({
     where: { id: session.userId },
     select: { role: true },

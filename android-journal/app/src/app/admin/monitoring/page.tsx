@@ -7,7 +7,7 @@
 
 import { prisma } from "@/lib/db";
 
-const ERROR_ACTIONS = ["access.denied", "system.error", "auth.failed"];
+import { ERROR_ACTIONS } from "@/lib/constants";
 
 export default async function SummaryPage() {
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);

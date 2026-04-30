@@ -110,7 +110,10 @@ export function middleware(request: NextRequest) {
     return new NextResponse("Too Many Requests", { status: 429 });
   }
 
-  // CSRF check for non-GET API routes and server actions
+  // CSRF check for non-GET API routes.
+  // Note: Next.js 14+ enforces same-origin on Server Actions at the framework level
+  // (checking the Origin header before invoking the action). This middleware guard
+  // only covers /api/* routes explicitly; Server Actions are protected by Next.js itself.
   const isApi = path.startsWith("/api/");
   if (isApi && !isCsrfSafe(request)) {
     logRequest(method, path, 403, Date.now() - start, ip);

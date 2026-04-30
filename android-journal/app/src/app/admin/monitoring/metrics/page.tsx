@@ -8,7 +8,7 @@
 
 import { prisma } from "@/lib/db";
 
-const ERROR_ACTIONS = ["access.denied", "system.error", "auth.failed"];
+import { ERROR_ACTIONS } from "@/lib/constants";
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;

@@ -158,7 +158,7 @@ export function registerUserCommands(program: Command): void {
           throw new CliError(`User not found: ${login}`, { login });
         }
 
-        const updated = await trace.step("db-create", () =>
+        const updated = await trace.step("db-update", () =>
           prisma.user.update({
             where: { githubLogin: login },
             data: { role: opts.role },
