@@ -191,6 +191,90 @@
         "surprise": 4
       },
       "total": 21
+    },
+    {
+      "dream": 24,
+      "date": "2026-04-24",
+      "scores": {
+        "novelty": 4,
+        "emotional_depth": 5,
+        "concreteness": 4,
+        "unresolution": 5,
+        "surprise": 4
+      },
+      "total": 22
+    },
+    {
+      "dream": 25,
+      "date": "2026-04-25",
+      "scores": {
+        "novelty": 4,
+        "emotional_depth": 4,
+        "concreteness": 4,
+        "unresolution": 5,
+        "surprise": 4
+      },
+      "total": 21
+    },
+    {
+      "dream": 26,
+      "date": "2026-04-26",
+      "scores": {
+        "novelty": 5,
+        "emotional_depth": 5,
+        "concreteness": 4,
+        "unresolution": 5,
+        "surprise": 4
+      },
+      "total": 23
+    },
+    {
+      "dream": 27,
+      "date": "2026-04-27",
+      "scores": {
+        "novelty": 4,
+        "emotional_depth": 5,
+        "concreteness": 5,
+        "unresolution": 5,
+        "surprise": 4
+      },
+      "total": 23
+    },
+    {
+      "dream": 28,
+      "date": "2026-04-28",
+      "scores": {
+        "novelty": 4,
+        "emotional_depth": 5,
+        "concreteness": 5,
+        "unresolution": 5,
+        "surprise": 4
+      },
+      "total": 23
+    },
+    {
+      "dream": 29,
+      "date": "2026-04-28",
+      "scores": {
+        "novelty": 5,
+        "emotional_depth": 5,
+        "concreteness": 4,
+        "unresolution": 5,
+        "surprise": 5
+      },
+      "total": 24
+    },
+    {
+      "dream": 30,
+      "date": "2026-04-29",
+      "scores": {
+        "novelty": 4,
+        "emotional_depth": 5,
+        "concreteness": 4,
+        "unresolution": 5,
+        "surprise": 4
+      },
+      "total": 22
     }
   ]
 }
