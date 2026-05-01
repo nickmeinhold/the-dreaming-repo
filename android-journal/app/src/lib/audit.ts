@@ -9,16 +9,19 @@
 
 import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
-import { getCorrelationId, getCurrentUserId } from "@/lib/middleware/async-context";
+import { getCorrelationId, getCurrentUserId, getBatchId } from "@/lib/middleware/async-context";
 
 export interface AuditEvent {
   action: string;
   entity: string;
   entityId: string;
   details?: string;
+  batchId?: string;
   userId?: number | null;
   ip?: string;
   userAgent?: string;
+  durationMs?: number;
+  status?: string;
 }
 
 /**
@@ -37,9 +40,12 @@ export async function logAuditEvent(event: AuditEvent): Promise<void> {
         entityId: event.entityId,
         details: event.details ?? null,
         correlationId,
+        batchId: event.batchId ?? getBatchId() ?? null,
         userId,
         ip: event.ip ?? null,
         userAgent: event.userAgent ?? null,
+        durationMs: event.durationMs ?? null,
+        status: event.status ?? null,
         timestamp: new Date(),
       },
     });

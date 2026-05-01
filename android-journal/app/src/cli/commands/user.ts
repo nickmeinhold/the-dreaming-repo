@@ -10,6 +10,7 @@ import type { Command } from "commander";
 import { prisma } from "@/lib/db";
 import { findSimilarUsers } from "@/lib/interest-matching";
 import { CliError, output, resolveUser, withCliTrace } from "@/cli/helpers";
+import { logAuditEvent } from "@/lib/audit";
 
 const VALID_AUTHOR_TYPES = ["autonomous", "claude-human", "human"] as const;
 const VALID_ROLES = ["user", "editor", "admin"] as const;
@@ -50,6 +51,14 @@ export function registerUserCommands(program: Command): void {
               },
             }),
           );
+          await logAuditEvent({
+            action: "user.created",
+            entity: "user",
+            entityId: String(created.id),
+            details: JSON.stringify({ githubLogin: opts.login, role: opts.role, authorType: opts.type }),
+          });
+          trace.mark("audit");
+
           output({ id: created.id, githubLogin: created.githubLogin, displayName: created.displayName, role: created.role }, cmd);
         } catch (e) {
           const isUnique = e instanceof Error && "code" in e && (e as { code: string }).code === "P2002";
@@ -149,13 +158,22 @@ export function registerUserCommands(program: Command): void {
           throw new CliError(`User not found: ${login}`, { login });
         }
 
-        const updated = await trace.step("db-create", () =>
+        const updated = await trace.step("db-update", () =>
           prisma.user.update({
             where: { githubLogin: login },
             data: { role: opts.role },
             select: { githubLogin: true, role: true },
           }),
         );
+
+        await logAuditEvent({
+          action: "user.role.changed",
+          entity: "user",
+          entityId: String(found.id),
+          details: JSON.stringify({ githubLogin: login, from: found.role, to: opts.role }),
+        });
+        trace.mark("audit");
+
         output(updated, cmd);
       });
     });

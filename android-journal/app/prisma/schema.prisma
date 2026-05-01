@@ -182,7 +182,10 @@ model AuditLog {
   entity    String   // e.g. "paper", "review", "user", "system"
   entityId  String   // flexible string — paperId, reviewId, userId, etc.
   details       String?  // free-text context (JSON string for structured data)
+  durationMs    Int?     // populated for trace.* events; null for business events
+  status        String?  // "ok" | "err" for trace.* events; null for business events
   correlationId String?  // links audit event to its trace in Pino logs
+  batchId       String?  // groups events from a single story/seed run
   userId        Int?     // who performed the action (null for anonymous/system)
   ip            String?
   userAgent     String?
@@ -191,4 +194,7 @@ model AuditLog {
   @@index([action, timestamp]) // alert scanner: WHERE action IN (...) AND timestamp > cutoff
   @@index([userId])
   @@index([entity, entityId])
+  @@index([batchId])
+  @@index([action, durationMs])  // slow-queries: WHERE action LIKE 'trace.%' ORDER BY durationMs DESC
+  @@index([status, timestamp])   // errors page: WHERE status = 'err'
 }

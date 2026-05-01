@@ -75,18 +75,18 @@ export default async function CliPage({
                   <span style={{ fontFamily: "monospace", fontWeight: "bold", color: "#374151" }}>
                     $ journal {command.replace(/\./g, " ")}
                   </span>
-                  {det.status && (
+                  {e.status && (
                     <span style={{
                       fontSize: "0.7rem", padding: "1px 6px", borderRadius: "3px",
-                      backgroundColor: det.status === "ok" ? "#d1fae5" : "#fee2e2",
-                      color: det.status === "ok" ? "#065f46" : "#991b1b",
+                      backgroundColor: e.status === "ok" ? "#d1fae5" : "#fee2e2",
+                      color: e.status === "ok" ? "#065f46" : "#991b1b",
                     }}>
-                      {det.status}
+                      {e.status}
                     </span>
                   )}
-                  {det.ms !== undefined && (
-                    <span style={{ fontSize: "0.75rem", color: det.ms > 100 ? "#f59e0b" : "#9ca3af" }}>
-                      {det.ms}ms
+                  {e.durationMs != null && e.durationMs > 0 && (
+                    <span style={{ fontSize: "0.75rem", color: e.durationMs > 100 ? "#f59e0b" : "#9ca3af" }}>
+                      {e.durationMs}ms
                     </span>
                   )}
                   {e.userId && <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>user:{e.userId}</span>}

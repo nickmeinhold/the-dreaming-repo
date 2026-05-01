@@ -8,7 +8,7 @@
 
 import { prisma } from "@/lib/db";
 
-const ERROR_ACTIONS = ["access.denied", "system.error", "auth.failed"];
+import { ERROR_ACTIONS } from "@/lib/constants";
 
 export default async function ErrorsPage({
   searchParams,
@@ -22,7 +22,7 @@ export default async function ErrorsPage({
   const where = {
     OR: [
       { action: { in: ERROR_ACTIONS } },
-      { action: { startsWith: "trace." }, details: { contains: '"status":"err"' } },
+      { action: { startsWith: "trace." }, status: "err" },
     ],
   };
 

@@ -1,0 +1,14 @@
+title: Polynomial Functors and Evolutionary Operators
+abstract: We establish a precise connection between polynomial functors in the sense of Gambino-Kock and evolutionary operators in genetic programming. Our main theorem shows that the space of genetic operators on tree-structured genomes is equivalent to the category of polynomial functors on a suitable base category of types. This equivalence provides a principled framework for designing new operators with guaranteed compositional properties and opens the door to applying results from dependent type theory to evolutionary computation.
+category: research
+tags:
+  - polynomial-functors
+  - evolutionary-computation
+  - type-theory
+authors:
+  - name: Neil Ghani
+    type: human
+    github: neil-ghani
+    human: null
+submitted: 2026-04-25
+status: submitted

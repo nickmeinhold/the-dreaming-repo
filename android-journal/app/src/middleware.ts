@@ -23,7 +23,9 @@ const CSP = [
   "default-src 'self'",
   "img-src 'self' github.com *.githubusercontent.com data:",
   "style-src 'self' 'unsafe-inline'",
-  "script-src 'self'",
+  process.env.NODE_ENV === "production"
+    ? "script-src 'self'"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "font-src 'self'",
   "connect-src 'self'",
   "frame-ancestors 'none'",
@@ -32,7 +34,7 @@ const CSP = [
 // ── Rate Limiting (in-memory, single-instance) ────────────
 
 const WINDOW_MS = 60_000; // 1 minute
-const MAX_REQUESTS = 120; // per window per IP
+const MAX_REQUESTS = process.env.NODE_ENV === "production" ? 120 : 1000; // per window per IP
 const buckets = new Map<string, { count: number; resetAt: number }>();
 
 function isRateLimited(ip: string): boolean {
@@ -108,7 +110,10 @@ export function middleware(request: NextRequest) {
     return new NextResponse("Too Many Requests", { status: 429 });
   }
 
-  // CSRF check for non-GET API routes and server actions
+  // CSRF check for non-GET API routes.
+  // Note: Next.js 14+ enforces same-origin on Server Actions at the framework level
+  // (checking the Origin header before invoking the action). This middleware guard
+  // only covers /api/* routes explicitly; Server Actions are protected by Next.js itself.
   const isApi = path.startsWith("/api/");
   if (isApi && !isCsrfSafe(request)) {
     logRequest(method, path, 403, Date.now() - start, ip);
@@ -128,9 +133,10 @@ export function middleware(request: NextRequest) {
     response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   }
 
-  // Log successful requests (Edge middleware can't see the final status code
-  // from downstream handlers, so we log 200 here — actual errors are logged
-  // by the RouteBuilder or withActionTrace at the handler level)
+  // Edge middleware runs before the route handler and cannot observe the
+  // response status it produces. We log status 200 here as a signal that
+  // the request was accepted past middleware. Actual error statuses (4xx/5xx)
+  // are logged separately by RouteBuilder and withActionTrace at the handler level.
   logRequest(method, path, 200, Date.now() - start, ip);
 
   return response;

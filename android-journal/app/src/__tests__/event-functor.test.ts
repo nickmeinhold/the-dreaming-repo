@@ -18,7 +18,19 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
+
+vi.mock("@/lib/logger", () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    child: vi.fn(() => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() })),
+  },
+}));
+
 import { EventBus } from "@/lib/events/bus";
+import { logger } from "@/lib/logger";
 
 // ═══════════════════════════════════════════════════════════
 //  SUBSCRIPTION
@@ -140,16 +152,13 @@ describe("Error Isolation", () => {
   it("error in one handler doesn't prevent others from running", async () => {
     const bus = new EventBus();
     const results: string[] = [];
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-
     bus.on("paper.submitted", () => { results.push("before"); });
     bus.on("paper.submitted", () => { throw new Error("handler crash"); });
     bus.on("paper.submitted", () => { results.push("after"); });
 
     await bus.emit("paper.submitted", { paperId: "2026-001" });
     expect(results).toEqual(["before", "after"]);
-    expect(spy).toHaveBeenCalledOnce();
-    spy.mockRestore();
+    expect(logger.error).toHaveBeenCalled();
   });
 });
 

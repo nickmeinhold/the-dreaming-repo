@@ -38,7 +38,16 @@ export async function addNote(
     const session = auth.value;
 
     const contentResult = validateNoteContent(content);
-    if (contentResult.isErr()) { trace.fail("validate", contentResult.error); return toActionResult(contentResult); }
+    if (contentResult.isErr()) {
+      trace.fail("validate", contentResult.error);
+      logAuditEvent({
+        action: "validation.failed",
+        entity: "note",
+        entityId: paperId,
+        details: JSON.stringify({ errors: contentResult.error }),
+      });
+      return toActionResult(contentResult);
+    }
     trace.mark("validate");
 
     const paperResult = await trace.step("paper-lookup", () => requirePaper(paperId, session));

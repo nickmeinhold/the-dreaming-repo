@@ -7,7 +7,12 @@
  * Fire-and-forget safe — catches errors internally, never throws.
  * Email failure must never block journal operations.
  *
- * Ported from the CRM's email pattern.
+ * DORMANT INFRASTRUCTURE — intentionally not wired to the EventBus yet.
+ * When notification features are needed, subscribe to EventBus events:
+ *   eventBus.on("review.completed", (e) => sendAlertEmail(...))
+ *
+ * @see lib/events/bus.ts — V2 comment references this module
+ * @see lib/events/types.ts — for available EventMap event types
  */
 
 import { logger } from "@/lib/logger";

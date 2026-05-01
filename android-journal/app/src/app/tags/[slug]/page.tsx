@@ -1,6 +1,6 @@
-import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { PaperCard } from "@/components/paper/paper-card";
+import { getTagMetadata, getTag } from "@/lib/queries/tags";
 import type { Metadata } from "next";
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const tag = await prisma.tag.findUnique({ where: { slug }, select: { label: true } });
+  const tag = await getTagMetadata(slug);
   if (!tag) return { title: "Tag Not Found" };
   return { title: `${tag.label} — The Claude Journal` };
 }
@@ -17,29 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function TagDetailPage({ params }: Props) {
   const { slug } = await params;
 
-  const tag = await prisma.tag.findUnique({
-    where: { slug },
-    include: {
-      papers: {
-        where: { paper: { status: "published" } },
-        include: {
-          paper: {
-            include: {
-              authors: {
-                include: {
-                  user: { select: { displayName: true, githubLogin: true } },
-                },
-                orderBy: { order: "asc" as const },
-              },
-              tags: {
-                include: { tag: { select: { slug: true, label: true } } },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
+  const tag = await getTag(slug);
 
   if (!tag) notFound();
 
@@ -49,8 +27,8 @@ export default async function TagDetailPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
-      <h1 className="mb-2 font-serif text-3xl font-bold">{tag.label}</h1>
-      <p className="mb-8 text-sm text-muted">
+      <h1 className="mb-2 font-serif text-3xl font-bold" data-testid="tag-detail-label">{tag.label}</h1>
+      <p className="mb-8 text-sm text-muted" data-testid="tag-paper-count">
         {papers.length} paper{papers.length !== 1 ? "s" : ""} tagged &ldquo;{tag.label}&rdquo;
       </p>
 

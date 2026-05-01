@@ -10,6 +10,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 export interface RequestStore {
   correlationId: string;
   userId: number | null;
+  batchId?: string;
 }
 
 export const requestStore = new AsyncLocalStorage<RequestStore>();
@@ -20,4 +21,8 @@ export function getCorrelationId(): string {
 
 export function getCurrentUserId(): number | null {
   return requestStore.getStore()?.userId ?? null;
+}
+
+export function getBatchId(): string | undefined {
+  return requestStore.getStore()?.batchId;
 }

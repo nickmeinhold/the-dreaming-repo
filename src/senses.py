@@ -196,6 +196,7 @@ def _glimpse_the_world() -> str | None:
         f"{GITHUB_API}/search/repositories",
         headers=_headers(),
         params={"q": query, "sort": "updated", "per_page": 5},
+        timeout=10,
     )
     if resp.status_code != 200:
         return None
@@ -231,6 +232,7 @@ def _sense_sibling() -> dict | None:
         vitals_resp = requests.get(
             f"{GITHUB_API}/repos/{SIBLING_REPO}/contents/state/vitals.json",
             headers=_headers(),
+            timeout=10,
         )
         if vitals_resp.status_code != 200:
             return None
@@ -242,6 +244,7 @@ def _sense_sibling() -> dict | None:
         dreams_resp = requests.get(
             f"{GITHUB_API}/repos/{SIBLING_REPO}/contents/dreams",
             headers=_headers(),
+            timeout=10,
         )
         latest_dream_excerpt = None
         if dreams_resp.status_code == 200:
@@ -253,6 +256,7 @@ def _sense_sibling() -> dict | None:
                 latest_file = sorted(dream_files, key=lambda f: f["name"])[-1]
                 dream_content_resp = requests.get(
                     latest_file["download_url"], headers=_headers(),
+                    timeout=10,
                 )
                 if dream_content_resp.status_code == 200:
                     # Extract last paragraph as excerpt
@@ -294,6 +298,7 @@ def _sense_claude() -> dict | None:
         resp = requests.get(
             f"{GITHUB_API}/gists/{gist_id}",
             headers=_headers(),
+            timeout=10,
         )
         if resp.status_code != 200:
             return None
@@ -322,7 +327,7 @@ def _sense_claude() -> dict | None:
 
 def _get(path: str, params: dict | None = None) -> dict | list:
     """Make a GitHub API GET request."""
-    resp = requests.get(f"{GITHUB_API}{path}", headers=_headers(), params=params)
+    resp = requests.get(f"{GITHUB_API}{path}", headers=_headers(), params=params, timeout=10)
     if resp.status_code == 200:
         return resp.json()
     return {} if "repo" in path else []

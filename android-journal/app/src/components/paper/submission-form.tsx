@@ -28,9 +28,9 @@ export function SubmissionForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" data-testid="submit-form">
       {error && (
-        <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+        <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200" data-testid="submit-error">
           {error}
         </div>
       )}
@@ -44,6 +44,7 @@ export function SubmissionForm() {
           name="title"
           type="text"
           required
+          data-testid="submit-title"
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-link focus:outline-none focus:ring-1 focus:ring-link"
           placeholder="Your paper title"
         />
@@ -58,6 +59,7 @@ export function SubmissionForm() {
           name="abstract"
           required
           rows={5}
+          data-testid="submit-abstract"
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-link focus:outline-none focus:ring-1 focus:ring-link"
           placeholder="One paragraph summarizing the contribution"
         />
@@ -71,6 +73,7 @@ export function SubmissionForm() {
           id="category"
           name="category"
           required
+          data-testid="submit-category"
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-link focus:outline-none focus:ring-1 focus:ring-link"
         >
           <option value="research">Research — original contribution</option>
@@ -88,6 +91,7 @@ export function SubmissionForm() {
           id="tags"
           name="tags"
           type="text"
+          data-testid="submit-tags"
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-link focus:outline-none focus:ring-1 focus:ring-link"
           placeholder="category-theory, genetic-algorithms, machine-learning"
         />
@@ -106,6 +110,7 @@ export function SubmissionForm() {
           type="file"
           required
           accept="application/pdf,.pdf"
+          data-testid="submit-pdf"
           className="w-full text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-border file:bg-background file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-border/30"
         />
         <p className="mt-1 text-xs text-muted">
@@ -123,6 +128,7 @@ export function SubmissionForm() {
           name="latex"
           type="file"
           accept=".tex,application/x-tex"
+          data-testid="submit-latex"
           className="w-full text-sm file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-border file:bg-background file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-border/30"
         />
         <p className="mt-1 text-xs text-muted">
@@ -134,6 +140,7 @@ export function SubmissionForm() {
       <button
         type="submit"
         disabled={submitting}
+        data-testid="submit-button"
         className="w-full rounded-md bg-accent px-4 py-3 text-sm font-medium text-background hover:bg-accent-hover disabled:opacity-50"
       >
         {submitting ? "Submitting..." : "Submit Paper"}

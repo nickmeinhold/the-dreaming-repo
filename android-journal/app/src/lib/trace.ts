@@ -43,6 +43,7 @@ import { getSession } from "@/lib/auth";
 import { logger } from "@/lib/logger";
 import { logAuditEvent } from "@/lib/audit";
 import { requestStore } from "@/lib/middleware/async-context";
+import { headers as getHeaders } from "next/headers";
 
 // ── Types ──────────────────────────────────────────────────
 
@@ -124,12 +125,32 @@ export async function withActionTrace<T>(
   actionName: string,
   fn: (trace: TraceRecorder) => Promise<T>,
 ): Promise<T> {
-  const correlationId = crypto.randomUUID();
+  // Check for an incoming correlation ID from an upstream caller
+  // (e.g. the GUI CLI injects X-Correlation-Id via browser headers).
+  // If present, reuse it so all backend traces from one GUI CLI command
+  // share the same correlationId. Otherwise generate a fresh one.
+  let correlationId: string;
+  let batchId: string | undefined;
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  try {
+    const hdrs = await getHeaders();
+    const rawCorr = hdrs.get("x-correlation-id");
+    // Only trust correlation/batch IDs that look like UUIDs (max 36 chars).
+    // Prevents external callers from injecting arbitrary values into the audit trail.
+    correlationId = rawCorr && UUID_RE.test(rawCorr) ? rawCorr : crypto.randomUUID();
+    const rawBatch = hdrs.get("x-batch-id");
+    batchId = rawBatch && /^[\w-]{1,64}$/.test(rawBatch) ? rawBatch : undefined;
+  } catch {
+    // headers() fails outside request context (CLI tests, etc.) — generate fresh
+    correlationId = crypto.randomUUID();
+  }
+
   const trace = new TraceRecorder();
   const start = performance.now();
 
-  // Set up ALS — this is the key fix. After enterWith, all downstream
-  // logger calls and logAuditEvent calls get the correct correlationId.
+  // Set up ALS with .run() — creates an isolated async context so concurrent
+  // Server Actions don't contaminate each other's correlationId/userId.
+  // (enterWith would mutate the shared context — a correctness bug under load.)
   let userId: number | null = null;
   try {
     const session = await getSession();
@@ -137,76 +158,81 @@ export async function withActionTrace<T>(
   } catch {
     // getSession may fail outside request context (e.g. tests) — that's fine
   }
-  requestStore.enterWith({ correlationId, userId });
 
-  try {
-    const result = await fn(trace);
-    const ms = Math.round(performance.now() - start);
-    const steps = trace.getSteps();
-    const hasFailedStep = steps.some((s) => s.status === "err");
+  return requestStore.run({ correlationId, userId, batchId }, async () => {
+    try {
+      const result = await fn(trace);
+      const ms = Math.round(performance.now() - start);
+      const steps = trace.getSteps();
+      const hasFailedStep = steps.some((s) => s.status === "err");
 
-    const actionTrace: ActionTrace = {
-      action: actionName,
-      correlationId,
-      ms,
-      status: hasFailedStep ? "err" : "ok",
-      steps,
-    };
+      const actionTrace: ActionTrace = {
+        action: actionName,
+        correlationId,
+        ms,
+        status: hasFailedStep ? "err" : "ok",
+        steps,
+      };
 
-    // Derive category from action name (e.g. "paper.submit" → "paper")
-    const cat = actionName.split(".")[0];
+      // Derive category from action name (e.g. "paper.submit" → "paper")
+      const cat = actionName.split(".")[0];
 
-    if (hasFailedStep) {
-      const lastFail = steps.findLast((s) => s.status === "err");
-      actionTrace.error = lastFail?.error;
-      logger.warn({ cat, trace: actionTrace }, `${actionName} rejected`);
-    } else {
-      logger.info({ cat, trace: actionTrace }, `${actionName} completed`);
-    }
+      if (hasFailedStep) {
+        const lastFail = steps.findLast((s) => s.status === "err");
+        actionTrace.error = lastFail?.error;
+        logger.warn({ cat, trace: actionTrace }, `${actionName} rejected`);
+      } else {
+        logger.info({ cat, trace: actionTrace }, `${actionName} completed`);
+      }
 
-    _lastTrace = actionTrace;
+      _lastTrace = actionTrace;
 
-    // Store trace summary in AuditLog — makes traces queryable from dashboard
-    await logAuditEvent({
-      action: `trace.${actionName}`,
-      entity: cat,
-      entityId: actionName,
-      details: JSON.stringify({
+      // Store trace summary in AuditLog — makes traces queryable from dashboard
+      await logAuditEvent({
+        action: `trace.${actionName}`,
+        entity: cat,
+        entityId: actionName,
+        durationMs: actionTrace.ms,
         status: actionTrace.status,
-        ms: actionTrace.ms,
-        steps: steps.map((s) => `${s.name}:${s.status}`).join(" → "),
-        error: actionTrace.error,
-      }),
-    });
+        details: JSON.stringify({
+          status: actionTrace.status,
+          ms: actionTrace.ms,
+          steps: steps.map((s) => `${s.name}:${s.status}`).join(" → "),
+          error: actionTrace.error,
+        }),
+      });
 
-    return result;
-  } catch (err: unknown) {
-    const ms = Math.round(performance.now() - start);
-    const message = err instanceof Error ? err.message : String(err);
-    const actionTrace: ActionTrace = {
-      action: actionName,
-      correlationId,
-      ms,
-      status: "err",
-      steps: trace.getSteps(),
-      error: message,
-    };
-    const cat = actionName.split(".")[0];
-    logger.error({ cat, err, trace: actionTrace }, `${actionName} threw`);
-    _lastTrace = actionTrace;
-
-    await logAuditEvent({
-      action: `trace.${actionName}`,
-      entity: cat,
-      entityId: actionName,
-      details: JSON.stringify({
+      return result;
+    } catch (err: unknown) {
+      const ms = Math.round(performance.now() - start);
+      const message = err instanceof Error ? err.message : String(err);
+      const actionTrace: ActionTrace = {
+        action: actionName,
+        correlationId,
+        ms,
         status: "err",
-        ms: actionTrace.ms,
-        steps: actionTrace.steps.map((s) => `${s.name}:${s.status}`).join(" → "),
+        steps: trace.getSteps(),
         error: message,
-      }),
-    });
+      };
+      const cat = actionName.split(".")[0];
+      logger.error({ cat, err, trace: actionTrace }, `${actionName} threw`);
+      _lastTrace = actionTrace;
 
-    throw err;
-  }
+      await logAuditEvent({
+        action: `trace.${actionName}`,
+        entity: cat,
+        entityId: actionName,
+        durationMs: actionTrace.ms,
+        status: "err",
+        details: JSON.stringify({
+          status: "err",
+          ms: actionTrace.ms,
+          steps: actionTrace.steps.map((s) => `${s.name}:${s.status}`).join(" → "),
+          error: message,
+        }),
+      });
+
+      throw err;
+    }
+  });
 }

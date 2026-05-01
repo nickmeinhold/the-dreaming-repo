@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:integration:setup": "node scripts/setup-test-db.js",
     "test:integration": "npm run test:integration:setup && vitest run --config vitest.integration.config.ts",
+    "test:gui-integration": "vitest run --config vitest.gui-integration.config.ts",
     "test:all": "npm test && npm run test:integration"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "yaml": "^2.8.3"
   },
   "devDependencies": {
+    "@fast-check/vitest": "^0.4.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",
@@ -37,6 +39,7 @@
     "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "fast-check": "^4.7.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",

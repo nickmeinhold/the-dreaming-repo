@@ -64,7 +64,6 @@ export default async function ApiPage({
       ) : (
         <div style={{ border: "1px solid #e5e7eb", borderRadius: "8px", overflow: "hidden" }}>
           {events.map((e) => {
-            const det = tryParse(e.details);
             const rowStyle = { padding: "8px 12px", borderBottom: "1px solid #f3f4f6", fontSize: "0.8rem", display: "flex", gap: "8px", alignItems: "center" };
             const inner = (
               <>
@@ -78,12 +77,12 @@ export default async function ApiPage({
                   {e.action.replace("trace.", "")}
                 </span>
                 <span style={{ color: "#6b7280" }}>{e.entityId}</span>
-                {det?.status && (
-                  <span style={{ fontSize: "0.7rem", padding: "1px 4px", borderRadius: "3px", backgroundColor: det.status === "ok" ? "#d1fae5" : "#fee2e2", color: det.status === "ok" ? "#065f46" : "#991b1b" }}>
-                    {det.status}
+                {e.status && (
+                  <span style={{ fontSize: "0.7rem", padding: "1px 4px", borderRadius: "3px", backgroundColor: e.status === "ok" ? "#d1fae5" : "#fee2e2", color: e.status === "ok" ? "#065f46" : "#991b1b" }}>
+                    {e.status}
                   </span>
                 )}
-                {det?.ms !== undefined && <span style={{ fontSize: "0.7rem", color: det.ms > 100 ? "#f59e0b" : "#9ca3af" }}>{det.ms}ms</span>}
+                {e.durationMs != null && e.durationMs > 0 && <span style={{ fontSize: "0.7rem", color: e.durationMs > 100 ? "#f59e0b" : "#9ca3af" }}>{e.durationMs}ms</span>}
                 {e.userId && <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>user:{e.userId}</span>}
               </>
             );
@@ -111,7 +110,3 @@ export default async function ApiPage({
   );
 }
 
-function tryParse(d: string | null): { status?: string; ms?: number; error?: string; steps?: string } | null {
-  if (!d) return null;
-  try { return JSON.parse(d); } catch { return null; }
-}

@@ -8,7 +8,7 @@
 
 import { prisma } from "@/lib/db";
 
-const ERROR_ACTIONS = ["access.denied", "system.error", "auth.failed"];
+import { ERROR_ACTIONS } from "@/lib/constants";
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
@@ -27,7 +27,7 @@ export default async function MetricsPage({
 
   const events = await prisma.auditLog.findMany({
     where: { timestamp: { gte: since } },
-    select: { action: true, timestamp: true, details: true, userId: true },
+    select: { action: true, timestamp: true, details: true, userId: true, durationMs: true, status: true },
     orderBy: { timestamp: "asc" },
   });
 
@@ -38,20 +38,16 @@ export default async function MetricsPage({
   const uniqueUsers = new Set(events.filter((e) => e.userId).map((e) => e.userId)).size;
   const errorRate = total > 0 ? ((errorCount / total) * 100).toFixed(1) : "0.0";
 
-  // Extract timings from trace details
+  // Extract timings from real columns (durationMs, status)
   const timings: { action: string; ms: number; status: string }[] = [];
   for (const e of traceEvents) {
-    if (!e.details) continue;
-    try {
-      const det = JSON.parse(e.details);
-      if (typeof det.ms === "number" && det.ms > 0) {
-        timings.push({
-          action: e.action.replace("trace.", ""),
-          ms: det.ms,
-          status: det.status ?? "ok",
-        });
-      }
-    } catch { /* skip */ }
+    if (e.durationMs && e.durationMs > 0) {
+      timings.push({
+        action: e.action.replace("trace.", ""),
+        ms: e.durationMs,
+        status: e.status ?? "ok",
+      });
+    }
   }
 
   const allMs = timings.map((t) => t.ms).sort((a, b) => a - b);

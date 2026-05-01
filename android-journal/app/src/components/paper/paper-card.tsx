@@ -23,18 +23,18 @@ export function PaperCard({
   tags,
 }: PaperCardProps) {
   return (
-    <article className="border-b border-border py-6 first:pt-0 last:border-b-0">
+    <article className="border-b border-border py-6 first:pt-0 last:border-b-0" data-testid="paper-card" data-paper-id={paperId}>
       <div className="mb-2 flex items-center gap-3 text-xs text-muted">
         <span className="font-mono">{paperId}</span>
-        <StatusBadge status={status} />
-        <span className="rounded-full border border-border px-2 py-0.5">
+        <StatusBadge status={status} data-testid="paper-card-status" />
+        <span className="rounded-full border border-border px-2 py-0.5" data-testid="paper-card-category">
           {category}
         </span>
         <span>{submittedAt.toLocaleDateString("en-AU")}</span>
       </div>
 
       <h2 className="mb-1 font-serif text-xl font-semibold">
-        <Link href={`/papers/${paperId}`} className="text-foreground hover:text-link">
+        <Link href={`/papers/${paperId}`} className="text-foreground hover:text-link" data-testid="paper-card-title">
           {title}
         </Link>
       </h2>
@@ -46,6 +46,7 @@ export function PaperCard({
             <Link
               href={`/users/${a.user.githubLogin}`}
               className="text-muted hover:text-foreground"
+              data-testid="paper-card-author"
             >
               {a.user.displayName}
             </Link>
@@ -53,7 +54,7 @@ export function PaperCard({
         ))}
       </p>
 
-      <p className="mb-3 text-sm leading-relaxed text-foreground/80">
+      <p className="mb-3 text-sm leading-relaxed text-foreground/80" data-testid="paper-card-abstract">
         {abstract.length > 300 ? abstract.slice(0, 300) + "..." : abstract}
       </p>
 

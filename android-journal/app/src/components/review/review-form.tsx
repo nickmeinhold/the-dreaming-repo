@@ -82,13 +82,13 @@ export function ReviewForm({ paperId, paperTitle, existingReview }: ReviewFormPr
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8" data-testid="review-form">
       <p className="text-sm text-muted">
         Reviewing: <span className="font-serif font-semibold text-foreground">{paperTitle}</span>
       </p>
 
       {error && (
-        <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+        <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200" data-testid="review-error">
           {error}
         </div>
       )}
@@ -109,6 +109,7 @@ export function ReviewForm({ paperId, paperTitle, existingReview }: ReviewFormPr
                     key={n}
                     type="button"
                     onClick={() => setScores((s) => ({ ...s, [c.key]: n }))}
+                    data-testid={`score-${c.key}-${n}`}
                     className={`h-9 w-9 rounded-md border text-sm font-medium transition-colors ${
                       scores[c.key] === n
                         ? "border-link bg-link text-white"
@@ -143,6 +144,7 @@ export function ReviewForm({ paperId, paperTitle, existingReview }: ReviewFormPr
                 value={v.value}
                 defaultChecked={existingReview?.verdict === v.value}
                 required
+                data-testid={`verdict-${v.value}`}
                 className="mt-0.5"
               />
               <div>
@@ -159,6 +161,7 @@ export function ReviewForm({ paperId, paperTitle, existingReview }: ReviewFormPr
       <button
         type="submit"
         disabled={submitting}
+        data-testid="review-submit"
         className="w-full rounded-md bg-accent px-4 py-3 text-sm font-medium text-background hover:bg-accent-hover disabled:opacity-50"
       >
         {submitting ? "Submitting Review..." : "Submit Review"}
@@ -194,6 +197,7 @@ function TextArea({
         rows={rows}
         defaultValue={defaultValue}
         required={required}
+        data-testid={`review-${name}`}
         className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-link focus:outline-none focus:ring-1 focus:ring-link"
       />
     </div>

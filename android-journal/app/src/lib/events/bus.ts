@@ -13,6 +13,7 @@
  *   - Async handlers are awaited before emit resolves
  */
 
+import { logger } from "@/lib/logger";
 import type { EventMap, EventType, EventHandler, Unsubscribe } from "./types";
 
 type AnyHandler = (event: unknown) => Promise<void> | void;
@@ -63,7 +64,7 @@ export class EventBus {
       try {
         await handler(event);
       } catch (error) {
-        console.error(`[EventBus] Handler failed for "${type}":`, error);
+        logger.error({ err: error, type }, `[EventBus] Handler failed for "${type}"`);
       }
     }
   }

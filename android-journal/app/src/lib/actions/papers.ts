@@ -9,6 +9,7 @@ import { ok, err, toActionResult } from "@/lib/result";
 import { validatePaperSubmission } from "@/lib/validation/schemas";
 import { slugToLabel } from "@/lib/tags";
 import { logAuditEvent } from "@/lib/audit";
+import { logger } from "@/lib/logger";
 import { withActionTrace } from "@/lib/trace";
 
 export interface SubmitPaperResult {
@@ -43,7 +44,16 @@ export async function submitPaper(
 
     // Validate text fields (accumulates all errors)
     const validated = validatePaperSubmission({ title, abstract, category, tags });
-    if (validated.isErr()) { trace.fail("validate", validated.error); return toActionResult(validated); }
+    if (validated.isErr()) {
+      trace.fail("validate", validated.error);
+      logAuditEvent({
+        action: "validation.failed",
+        entity: "paper",
+        entityId: "submission",
+        details: JSON.stringify({ errors: validated.error }),
+      });
+      return toActionResult(validated);
+    }
     trace.mark("validate");
 
     // Validate PDF
@@ -129,7 +139,9 @@ export async function submitPaper(
           },
         });
       } catch (fileErr) {
-        await prisma.paper.delete({ where: { paperId } }).catch(() => {});
+        await prisma.paper.delete({ where: { paperId } }).catch((deleteErr) => {
+          logger.error({ err: deleteErr, paperId }, "compensating delete failed — zombie paper record may exist");
+        });
         throw fileErr;
       }
     });

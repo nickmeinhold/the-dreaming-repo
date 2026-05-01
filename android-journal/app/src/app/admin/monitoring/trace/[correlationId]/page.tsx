@@ -50,9 +50,9 @@ export default async function TracePage({
                     {e.action}
                   </span>
                   <span style={{ fontSize: "0.85rem", color: "#6b7280" }}>{e.entity}:{e.entityId}</span>
-                  {det.ms !== undefined && (
-                    <span style={{ fontSize: "0.8rem", color: det.ms > 100 ? "#f59e0b" : "#9ca3af", marginLeft: "auto" }}>
-                      {det.ms}ms
+                  {e.durationMs != null && e.durationMs > 0 && (
+                    <span style={{ fontSize: "0.8rem", color: e.durationMs > 100 ? "#f59e0b" : "#9ca3af", marginLeft: "auto" }}>
+                      {e.durationMs}ms
                     </span>
                   )}
                 </div>

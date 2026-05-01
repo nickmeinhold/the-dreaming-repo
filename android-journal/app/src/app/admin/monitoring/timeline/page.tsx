@@ -102,7 +102,7 @@ export default async function TimelinePage({
                     })}
                   </span>
                 )}
-                {det.ms !== undefined && <span style={{ fontSize: "0.7rem", color: det.ms > 100 ? "#f59e0b" : "#9ca3af" }}>{det.ms}ms</span>}
+                {e.durationMs != null && e.durationMs > 0 && <span style={{ fontSize: "0.7rem", color: e.durationMs > 100 ? "#f59e0b" : "#9ca3af" }}>{e.durationMs}ms</span>}
               </>
             );
             return e.correlationId ? (

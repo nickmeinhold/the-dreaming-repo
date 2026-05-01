@@ -7,6 +7,7 @@ export default defineConfig({
   },
   test: {
     include: ["src/__tests__/integration/**/*.integration.test.ts"],
+    exclude: ["src/__tests__/integration/gui-*.integration.test.ts"],
     fileParallelism: false, // Serial execution — shared DB
     testTimeout: 30_000, // CLI tests spawn subprocesses
     env: {

@@ -1,10 +1,8 @@
-import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { PaperCard } from "@/components/paper/paper-card";
 import Link from "next/link";
 import { EDITOR_ROLES } from "@/lib/paper-access";
-
-const PAGE_SIZE = 20;
+import { listPapers } from "@/lib/queries/papers";
 
 export default async function PapersPage({
   searchParams,
@@ -18,52 +16,27 @@ export default async function PapersPage({
 
   // Non-editors only see published papers
   const session = await getSession();
-  const isEditor = session && EDITOR_ROLES.includes(session.role);
-  const statusFilter = status && isEditor
-    ? { status }
-    : { status: "published" };
+  const isEditor = !!(session && EDITOR_ROLES.includes(session.role));
 
-  const where = {
-    ...(category && { category }),
-    ...statusFilter,
-  };
-
-  const [papers, total] = await Promise.all([
-    prisma.paper.findMany({
-      where,
-      include: {
-        authors: {
-          include: { user: { select: { displayName: true, githubLogin: true } } },
-          orderBy: { order: "asc" as const },
-        },
-        tags: {
-          include: { tag: { select: { slug: true, label: true } } },
-        },
-      },
-      orderBy: { submittedAt: "desc" },
-      take: PAGE_SIZE,
-      skip: (page - 1) * PAGE_SIZE,
-    }),
-    prisma.paper.count({ where }),
-  ]);
-
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const { papers, totalPages } = await listPapers({ page, category, status, isEditor });
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
       <div className="mb-8 flex items-center justify-between">
         <h1 className="font-serif text-3xl font-bold">Papers</h1>
         <div className="flex gap-2 text-sm">
-          <FilterLink href="/papers" label="All" active={!category} />
+          <FilterLink href="/papers" label="All" active={!category} testid="filter-all" />
           <FilterLink
             href="/papers?category=research"
             label="Research"
             active={category === "research"}
+            testid="filter-research"
           />
           <FilterLink
             href="/papers?category=expository"
             label="Expository"
             active={category === "expository"}
+            testid="filter-expository"
           />
         </div>
       </div>
@@ -99,17 +72,19 @@ export default async function PapersPage({
                 <Link
                   href={`/papers?page=${page - 1}${category ? `&category=${category}` : ""}`}
                   className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-border/30 no-underline"
+                  data-testid="page-prev"
                 >
                   Previous
                 </Link>
               )}
-              <span className="px-3 py-1.5 text-sm text-muted">
+              <span className="px-3 py-1.5 text-sm text-muted" data-testid="page-info">
                 Page {page} of {totalPages}
               </span>
               {page < totalPages && (
                 <Link
                   href={`/papers?page=${page + 1}${category ? `&category=${category}` : ""}`}
                   className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-border/30 no-underline"
+                  data-testid="page-next"
                 >
                   Next
                 </Link>
@@ -126,14 +101,17 @@ function FilterLink({
   href,
   label,
   active,
+  testid,
 }: {
   href: string;
   label: string;
   active: boolean;
+  testid?: string;
 }) {
   return (
     <Link
       href={href}
+      data-testid={testid}
       className={`rounded-full border px-3 py-1 text-xs no-underline ${
         active
           ? "border-foreground bg-foreground text-background"

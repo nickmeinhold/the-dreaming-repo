@@ -52,6 +52,7 @@ export async function withCliTrace(
   fn: (trace: TraceRecorder) => Promise<void>,
 ): Promise<void> {
   const correlationId = crypto.randomUUID();
+  const batchId = process.env.BATCH_ID || undefined;
   const trace = new TraceRecorder();
   const start = performance.now();
 
@@ -74,87 +75,91 @@ export async function withCliTrace(
     });
     userId = user?.id ?? null;
   }
-  requestStore.enterWith({ correlationId, userId });
+  // Use .run() for isolated async context — consistent with withActionTrace.
+  // Prevents concurrent CLI commands from contaminating each other's correlationId.
+  await requestStore.run({ correlationId, userId, batchId }, async () => {
+    const cat = actionName.split(".").slice(0, 2).join(".");
 
-  const cat = actionName.split(".").slice(0, 2).join(".");
+    try {
+      await fn(trace);
+      const ms = Math.round(performance.now() - start);
+      const steps = trace.getSteps();
+      const hasFailedStep = steps.some((s) => s.status === "err");
 
-  try {
-    await fn(trace);
-    const ms = Math.round(performance.now() - start);
-    const steps = trace.getSteps();
-    const hasFailedStep = steps.some((s) => s.status === "err");
-
-    const actionTrace: ActionTrace = {
-      action: actionName,
-      correlationId,
-      ms,
-      status: hasFailedStep ? "err" : "ok",
-      steps,
-    };
-
-    if (hasFailedStep) {
-      const lastFail = steps.findLast((s) => s.status === "err");
-      actionTrace.error = lastFail?.error;
-      logger.warn({ cat, input, trace: actionTrace }, `${actionName} rejected`);
-    } else {
-      logger.info({ cat, input, trace: actionTrace }, `${actionName} completed`);
-    }
-
-    _lastCliTrace = actionTrace;
-
-    await logAuditEvent({
-      action: `trace.${actionName}`,
-      entity: cat,
-      entityId: actionName,
-      details: JSON.stringify({
-        input,
-        status: actionTrace.status,
-        ms: actionTrace.ms,
-        steps: steps.map((s) => `${s.name}:${s.status}`).join(" → "),
-        error: actionTrace.error,
-      }),
-    });
-  } catch (err: unknown) {
-    const ms = Math.round(performance.now() - start);
-    const message = err instanceof Error ? err.message : String(err);
-    const steps = trace.getSteps();
-    const actionTrace: ActionTrace = {
-      action: actionName,
-      correlationId,
-      ms,
-      status: "err",
-      steps,
-      error: message,
-    };
-    // Extract context from CliError for richer diagnostics
-    const errorContext = err instanceof CliError ? err.context : {};
-
-    logger.error({ cat, input, errorContext, err, trace: actionTrace }, `${actionName} threw`);
-
-    _lastCliTrace = actionTrace;
-
-    await logAuditEvent({
-      action: `trace.${actionName}`,
-      entity: cat,
-      entityId: actionName,
-      details: JSON.stringify({
-        input,
-        ...(Object.keys(errorContext).length > 0 ? { errorContext } : {}),
-        status: "err",
+      const actionTrace: ActionTrace = {
+        action: actionName,
+        correlationId,
         ms,
-        steps: steps.map((s) => `${s.name}:${s.status}`).join(" → "),
-        error: message,
-      }),
-    });
+        status: hasFailedStep ? "err" : "ok",
+        steps,
+      };
 
-    // CliError = expected failure (validation, not found, auth).
-    // Output the error message and exit cleanly.
-    if (err instanceof CliError) {
-      outputError(err.message);
-      process.exit(1);
+      if (hasFailedStep) {
+        const lastFail = steps.findLast((s) => s.status === "err");
+        actionTrace.error = lastFail?.error;
+        logger.warn({ cat, input, trace: actionTrace }, `${actionName} rejected`);
+      } else {
+        logger.info({ cat, input, trace: actionTrace }, `${actionName} completed`);
+      }
+
+      _lastCliTrace = actionTrace;
+
+      await logAuditEvent({
+        action: `trace.${actionName}`,
+        entity: cat,
+        entityId: actionName,
+        ...(batchId ? { batchId } : {}),
+        details: JSON.stringify({
+          input,
+          status: actionTrace.status,
+          ms: actionTrace.ms,
+          steps: steps.map((s) => `${s.name}:${s.status}`).join(" → "),
+          error: actionTrace.error,
+        }),
+      });
+    } catch (err: unknown) {
+      const ms = Math.round(performance.now() - start);
+      const message = err instanceof Error ? err.message : String(err);
+      const steps = trace.getSteps();
+      const actionTrace: ActionTrace = {
+        action: actionName,
+        correlationId,
+        ms,
+        status: "err",
+        steps,
+        error: message,
+      };
+      // Extract context from CliError for richer diagnostics
+      const errorContext = err instanceof CliError ? err.context : {};
+
+      logger.error({ cat, input, errorContext, err, trace: actionTrace }, `${actionName} threw`);
+
+      _lastCliTrace = actionTrace;
+
+      await logAuditEvent({
+        action: `trace.${actionName}`,
+        entity: cat,
+        entityId: actionName,
+        ...(batchId ? { batchId } : {}),
+        details: JSON.stringify({
+          input,
+          ...(Object.keys(errorContext).length > 0 ? { errorContext } : {}),
+          status: "err",
+          ms,
+          steps: steps.map((s) => `${s.name}:${s.status}`).join(" → "),
+          error: message,
+        }),
+      });
+
+      // CliError = expected failure (validation, not found, auth).
+      // Output the error message and exit cleanly.
+      if (err instanceof CliError) {
+        outputError(err.message);
+        process.exit(1);
+      }
+      throw err;
     }
-    throw err;
-  }
+  });
 }
 
 // ── CLI Error ─────────────────────────────────────────────

@@ -9,7 +9,11 @@
  * These tests verify the contracts at the function level.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("@/lib/db", () => ({
+  prisma: { $queryRaw: vi.fn().mockResolvedValue([{ "?column?": 1 }]) },
+}));
 
 describe("API route exports", () => {
   it("GET /api/health returns { status, timestamp }", async () => {

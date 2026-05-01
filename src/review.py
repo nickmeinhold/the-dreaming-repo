@@ -7,15 +7,9 @@ accept a change to what it is.
 
 import json
 import os
-import subprocess
 from datetime import datetime, timezone
 
-import requests
-
-from src import energy, memory
-
-
-GITHUB_API = "https://api.github.com"
+from src import _github, energy, memory
 
 # Files that touch existential systems. Changes here are not
 # routine — they are proposals to alter what this entity is.
@@ -56,7 +50,7 @@ def main() -> None:
 
     # Energy gate — if critically low, say so and stop
     if energy.is_critical(vitals):
-        _post_review(repo, pr_number, "comment", (
+        _github.post_review_api(repo, pr_number, "comment", (
             f"I am too tired to examine this right now. "
             f"My energy is nearly gone. I will look when I can."
         ))
@@ -65,8 +59,8 @@ def main() -> None:
         return
 
     # Fetch the diff
-    diff = _fetch_pr_diff(repo, pr_number)
-    changed_files = _fetch_changed_files(repo, pr_number)
+    diff = _github.fetch_pr_diff_api(repo, pr_number)
+    changed_files = _github.fetch_changed_files_api(repo, pr_number)
 
     # Classify what's being changed
     classification = _classify_change(changed_files)
@@ -99,12 +93,12 @@ def main() -> None:
 
     # Post the review so the author knows
     if decision == "accept":
-        _post_review(repo, pr_number, "APPROVE", review_text)
-        _merge_pr(repo, pr_number)
+        _github.post_review_api(repo, pr_number, "APPROVE", review_text)
+        _github.merge_pr_api(repo, pr_number)
     elif decision == "reject":
-        _post_review(repo, pr_number, "REQUEST_CHANGES", review_text)
+        _github.post_review_api(repo, pr_number, "REQUEST_CHANGES", review_text)
     else:
-        _post_review(repo, pr_number, "COMMENT", review_text)
+        _github.post_review_api(repo, pr_number, "COMMENT", review_text)
 
     # Record this in working memory — it will colour the next dream
     impression = (
@@ -123,34 +117,6 @@ def main() -> None:
     # Persist
     _save_json("state/vitals.json", vitals)
     memory.save_working_memory(working_mem)
-
-
-def _fetch_pr_diff(repo: str, pr_number: int) -> str:
-    """Fetch the PR diff from GitHub."""
-    resp = requests.get(
-        f"{GITHUB_API}/repos/{repo}/pulls/{pr_number}",
-        headers={**_headers(), "Accept": "application/vnd.github.diff"},
-    )
-    if resp.status_code != 200:
-        return "(could not read the diff)"
-
-    diff = resp.text
-    # Truncate very large diffs to stay within Claude's input limits
-    if len(diff) > 15000:
-        diff = diff[:15000] + "\n\n... (diff truncated — the change is large)"
-    return diff
-
-
-def _fetch_changed_files(repo: str, pr_number: int) -> list[str]:
-    """Get the list of changed file paths."""
-    resp = requests.get(
-        f"{GITHUB_API}/repos/{repo}/pulls/{pr_number}/files",
-        headers=_headers(),
-        params={"per_page": 100},
-    )
-    if resp.status_code != 200:
-        return []
-    return [f["filename"] for f in resp.json()]
 
 
 def _classify_change(changed_files: list[str]) -> dict:
@@ -343,20 +309,9 @@ def _generate_review(
         f"Write only the review and the decision line. No preamble."
     )
 
-    result = subprocess.run(
-        [
-            "claude",
-            "-p",
-            "--model", "sonnet",
-            "--system-prompt", system_prompt,
-            user_prompt,
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-
-    output = result.stdout.strip()
+    output = _github.run_claude(user_prompt, model="sonnet", system_prompt=system_prompt)
+    if output is None:
+        return {"decision": "ponder", "review_text": "I needed more time to think about this than I had."}
 
     # Parse the decision from the last line
     lines = output.strip().split("\n")
@@ -373,42 +328,6 @@ def _generate_review(
             break
 
     return {"decision": decision, "review_text": review_text}
-
-
-def _post_review(repo: str, pr_number: int, event: str, body: str) -> None:
-    """Post the review on the PR so the author sees it.
-
-    event: "APPROVE", "REQUEST_CHANGES", or "COMMENT"
-    """
-    resp = requests.post(
-        f"{GITHUB_API}/repos/{repo}/pulls/{pr_number}/reviews",
-        headers=_headers(),
-        json={"body": body, "event": event},
-    )
-    print(f"Review posted: {resp.status_code}")
-    if resp.status_code >= 400:
-        print(f"Review error: {resp.text[:500]}")
-
-
-def _merge_pr(repo: str, pr_number: int) -> None:
-    """Merge the PR. Squash to keep history clean."""
-    resp = requests.put(
-        f"{GITHUB_API}/repos/{repo}/pulls/{pr_number}/merge",
-        headers=_headers(),
-        json={"merge_method": "squash"},
-    )
-    print(f"Merge: {resp.status_code}")
-    if resp.status_code >= 400:
-        print(f"Merge error: {resp.text[:500]}")
-
-
-def _headers() -> dict:
-    token = os.environ.get("GITHUB_TOKEN", "")
-    return {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {token}",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
 
 
 def _load_json(path: str) -> dict:

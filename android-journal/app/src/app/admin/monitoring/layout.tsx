@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/admin/monitoring/cli", label: "CLI" },
   { href: "/admin/monitoring/db", label: "DB" },
   { href: "/admin/monitoring/metrics", label: "Metrics" },
+  { href: "/admin/monitoring/stories", label: "Stories" },
 ];
 
 export default async function MonitoringLayout({
@@ -23,6 +24,7 @@ export default async function MonitoringLayout({
   const session = await getSession();
   if (!session) redirect("/");
 
+  // Re-read role from DB: JWT role may be stale if user was demoted since login
   const freshUser = await prisma.user.findUnique({
     where: { id: session.userId },
     select: { role: true },

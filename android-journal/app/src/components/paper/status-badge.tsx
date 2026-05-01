@@ -6,10 +6,10 @@ const STATUS_STYLES: Record<string, string> = {
   published: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
 };
 
-export function StatusBadge({ status }: { status: string }) {
+export function StatusBadge({ status, ...rest }: { status: string; "data-testid"?: string }) {
   const style = STATUS_STYLES[status] ?? "bg-gray-100 text-gray-800";
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${style}`}>
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${style}`} data-testid={rest["data-testid"]} data-status={status}>
       {status}
     </span>
   );
