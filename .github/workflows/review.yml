@@ -1,8 +1,15 @@
 name: examine a proposed change
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  # pull_request_target so that fork PRs get our App secrets (pull_request
+  # withholds them). SAFE here because we never check out fork code: the diff
+  # is fetched via the GitHub API in src/review.py, and the auto-fix path in
+  # src/immunity.py refuses to touch forks without maintainer_can_modify.
+  # Do NOT add steps that execute PR-head code (no `pip install` from the PR's
+  # requirements.txt, no running of the PR's scripts) — that would leak the
+  # App token to fork authors.
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
   workflow_dispatch:                # Manual trigger for existing PRs
     inputs:
@@ -59,25 +66,52 @@ jobs:
 
       - name: Resolve PR context
         id: pr
+        # Untrusted fork-controlled fields (title, body, author login) are
+        # passed via env: — never templated directly into shell. Under
+        # pull_request_target this matters: the App token is in env and a
+        # template like `echo "${{ github.event.pull_request.title }}"` would
+        # let a fork PR titled `$(curl ...)` exfiltrate it. Body is also
+        # written via printf %s rather than a static-delimiter heredoc to
+        # prevent heredoc-escape via a literal `PREOF` line in the body.
         env:
           GH_TOKEN: ${{ steps.flux-token.outputs.token }}
+          PR_NUMBER_FROM_EVENT: ${{ github.event.pull_request.number }}
+          PR_NUMBER_FROM_INPUT: ${{ github.event.inputs.pr_number }}
+          PR_AUTHOR_FROM_EVENT: ${{ github.event.pull_request.user.login }}
+          PR_TITLE_FROM_EVENT: ${{ github.event.pull_request.title }}
+          PR_BODY_FROM_EVENT: ${{ github.event.pull_request.body }}
+          REPO_FULL_NAME: ${{ github.repository }}
         run: |
-          PR_NUM="${{ github.event.pull_request.number || github.event.inputs.pr_number }}"
+          set -euo pipefail
+          PR_NUM="${PR_NUMBER_FROM_EVENT:-$PR_NUMBER_FROM_INPUT}"
+          # Validate: PR numbers are positive integers. Refuse anything else.
+          case "$PR_NUM" in
+            ''|*[!0-9]*) echo "invalid PR number: $PR_NUM" >&2; exit 1 ;;
+          esac
           echo "number=$PR_NUM" >> "$GITHUB_OUTPUT"
-          if [ -z "${{ github.event.pull_request.number }}" ]; then
+
+          if [ -z "$PR_NUMBER_FROM_EVENT" ]; then
             # Manual dispatch — fetch PR details from API
-            PR_JSON=$(gh pr view "$PR_NUM" --repo "${{ github.repository }}" --json title,body,author)
-            echo "author=$(echo "$PR_JSON" | jq -r '.author.login')" >> "$GITHUB_OUTPUT"
-            echo "title=$(echo "$PR_JSON" | jq -r '.title')" >> "$GITHUB_OUTPUT"
-            # Body can be multiline — write to file
-            echo "$PR_JSON" | jq -r '.body // ""' > /tmp/pr_body.txt
+            PR_JSON=$(gh pr view "$PR_NUM" --repo "$REPO_FULL_NAME" --json title,body,author)
+            AUTHOR=$(printf '%s' "$PR_JSON" | jq -r '.author.login')
+            TITLE=$(printf '%s' "$PR_JSON" | jq -r '.title')
+            printf '%s' "$PR_JSON" | jq -r '.body // ""' > /tmp/pr_body.txt
           else
-            echo "author=${{ github.event.pull_request.user.login }}" >> "$GITHUB_OUTPUT"
-            echo "title=${{ github.event.pull_request.title }}" >> "$GITHUB_OUTPUT"
-            cat <<'PREOF' > /tmp/pr_body.txt
-          ${{ github.event.pull_request.body }}
-          PREOF
+            AUTHOR="$PR_AUTHOR_FROM_EVENT"
+            TITLE="$PR_TITLE_FROM_EVENT"
+            printf '%s' "$PR_BODY_FROM_EVENT" > /tmp/pr_body.txt
           fi
+
+          echo "author=$AUTHOR" >> "$GITHUB_OUTPUT"
+          # Title is single-line per GitHub's data model, but write via the
+          # delimited multi-line form anyway with a random delimiter so the
+          # title can never break the GITHUB_OUTPUT format.
+          DELIM="GHA_OUTPUT_$(openssl rand -hex 16)"
+          {
+            printf 'title<<%s\n' "$DELIM"
+            printf '%s\n' "$TITLE"
+            printf '%s\n' "$DELIM"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Examine the change
         env:
