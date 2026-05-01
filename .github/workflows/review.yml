@@ -1,8 +1,15 @@
 name: examine a proposed change
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  # pull_request_target so that fork PRs get our App secrets (pull_request
+  # withholds them). SAFE here because we never check out fork code: the diff
+  # is fetched via the GitHub API in src/review.py, and the auto-fix path in
+  # src/immunity.py refuses to touch forks without maintainer_can_modify.
+  # Do NOT add steps that execute PR-head code (no `pip install` from the PR's
+  # requirements.txt, no running of the PR's scripts) — that would leak the
+  # App token to fork authors.
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
   workflow_dispatch:                # Manual trigger for existing PRs
     inputs:
