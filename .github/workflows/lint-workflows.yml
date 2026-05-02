@@ -6,14 +6,18 @@ name: lint workflows
 # script-injection / overly-permissive-token family.
 #
 # Uses zizmor (https://github.com/woodruffw/zizmor). Runs on PRs that
-# touch any workflow file. Fails the check on medium-or-higher findings.
+# touch any workflow file or the zizmor config itself. Fails the check on
+# high-or-higher findings (lower thresholds tracked as deferred follow-ups).
 # Stays as `pull_request` (not `pull_request_target`) — no secrets needed,
 # no fork-PR bypass desired; we want every fork PR linted before review.
 
 on:
   pull_request:
+    # Include the zizmor config itself in the trigger paths — otherwise a
+    # config-only PR can weaken the rules without ever firing the lint.
     paths:
       - '.github/workflows/**'
+      - '.github/zizmor.yml'
 
 permissions:
   contents: read
@@ -22,8 +26,30 @@ jobs:
   zizmor:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out base branch
+      - name: Check out PR
         uses: actions/checkout@v4
+        with:
+          # Need git history to fetch the base branch's zizmor config below.
+          fetch-depth: 0
+
+      - name: Fetch base branch's zizmor config
+        # CRITICAL: lint with the BASE branch's config, not the PR's. Without
+        # this, a PR can weaken `.github/zizmor.yml` (lower thresholds,
+        # ignore template-injection, etc.) in the same commit as a workflow
+        # bug that rule would catch — and pass under its own loosened policy.
+        # Reading the base config closes that bypass at PR time. (Repo
+        # policy / CODEOWNERS protection on .github/** is the defense-in-
+        # depth complement; tracked as a separate task.)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin "$BASE_REF"
+          if ! git show "origin/${BASE_REF}:.github/zizmor.yml" > /tmp/zizmor-base.yml 2>/dev/null; then
+            # Base branch has no config yet — use an empty one so zizmor's
+            # built-in defaults apply.
+            echo "rules: {}" > /tmp/zizmor-base.yml
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,8 +60,11 @@ jobs:
         run: pip install zizmor
 
       - name: Lint workflows
-        # min-severity high catches the script-injection / template-injection
-        # / pull_request_target misuse class. Two lower-severity findings
-        # (unpinned-uses, excessive-permissions) are deferred — see the
-        # comment block in .github/zizmor.yml.
-        run: zizmor --min-severity high .github/workflows
+        # --min-severity high catches the script-injection / template-
+        # injection / pull_request_target misuse class. Two lower-severity
+        # findings (unpinned-uses, excessive-permissions) are deferred — see
+        # the comment block in .github/zizmor.yml. Explicit `-c` makes
+        # zizmor use the base-branch config fetched above rather than auto-
+        # discovering the PR's `.github/zizmor.yml`, which closes the
+        # self-config bypass.
+        run: zizmor -c /tmp/zizmor-base.yml --min-severity high .github/workflows
