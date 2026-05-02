@@ -1,0 +1,21 @@
+# zizmor configuration for the-dreaming-repo.
+#
+# Workflow lint runs at --min-severity high to catch the script-injection
+# and pull_request_target misuse class that bit us on PR #23. The two
+# rules below are deliberately relaxed for now and tracked as separate
+# follow-ups (see TaskCreate output of the PR introducing this config):
+#
+#   - unpinned-uses: zizmor wants every action pinned to a commit SHA.
+#     Across 4 workflows that's a substantial change and a real ongoing
+#     maintenance burden (every dependabot bump becomes a SHA bump).
+#     Tracked as a separate follow-up so this PR stays small.
+#
+#   - excessive-permissions: workflows currently rely on default token
+#     permissions. Tightening to least-privilege per workflow is its own
+#     audit pass. Tracked as a separate follow-up.
+
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        "*": ref-pin
