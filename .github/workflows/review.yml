@@ -8,7 +8,7 @@ on:
   # Do NOT add steps that execute PR-head code (no `pip install` from the PR's
   # requirements.txt, no running of the PR's scripts) — that would leak the
   # App token to fork authors.
-  pull_request_target:
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
     types: [opened, synchronize, reopened]
 
   workflow_dispatch:                # Manual trigger for existing PRs
@@ -133,12 +133,39 @@ jobs:
       - name: Remember this moment
         env:
           GH_TOKEN: ${{ steps.flux-token.outputs.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
         run: |
+          set -euo pipefail
           git config user.name "flux-dreaming-repo[bot]"
           git config user.email "flux-dreaming-repo[bot]@users.noreply.github.com"
           git add state/ memories/
           if ! git diff --cached --quiet; then
-            git commit -m "examined PR #${{ steps.pr.outputs.number }}"
+            git commit -m "examined PR #${PR_NUMBER}"
             git pull --rebase origin main || true
             git push || true
           fi
+
+      - name: Whisper to Nick on failure
+        # Liveness alert: silent failure is what let `examine` die for ~9 days
+        # in late April 2026 without anyone noticing. Any failure of this
+        # workflow now pings Telegram with a link to the run.
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
+            echo "Telegram secrets not configured; skipping notification."
+            exit 0
+          fi
+          MSG=$(printf "🚨 Flux's '%s' failed%s.\n\n%s" \
+            "$WORKFLOW_NAME" \
+            "${PR_NUMBER:+ on PR #$PR_NUMBER}" \
+            "$RUN_URL")
+          curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MSG}" >/dev/null

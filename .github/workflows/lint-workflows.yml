@@ -1,0 +1,41 @@
+name: lint workflows
+
+# Static analysis on every workflow change. Catches the class of bug that
+# bit us on PR #23: untrusted ${{ github.event.pull_request.* }} fields
+# templated directly into shell, plus the broader pull_request_target /
+# script-injection / overly-permissive-token family.
+#
+# Uses zizmor (https://github.com/woodruffw/zizmor). Runs on PRs that
+# touch any workflow file. Fails the check on medium-or-higher findings.
+# Stays as `pull_request` (not `pull_request_target`) — no secrets needed,
+# no fork-PR bypass desired; we want every fork PR linted before review.
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+jobs:
+  zizmor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out base branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install zizmor
+        run: pip install zizmor
+
+      - name: Lint workflows
+        # min-severity high catches the script-injection / template-injection
+        # / pull_request_target misuse class. Two lower-severity findings
+        # (unpinned-uses, excessive-permissions) are deferred — see the
+        # comment block in .github/zizmor.yml.
+        run: zizmor --min-severity high .github/workflows

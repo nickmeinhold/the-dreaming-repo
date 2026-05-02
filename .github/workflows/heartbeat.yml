@@ -89,11 +89,33 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ steps.flux-token.outputs.token }}
+          REPO_FULL_NAME: ${{ github.repository }}
         run: |
           if [ -f state/vitals.json ]; then
             CAUSE=$(python3 -c "import json; v=json.load(open('state/vitals.json')); print(v.get('cause_of_death',''))")
             if [ "$CAUSE" = "silence" ]; then
               echo "Flux has died. Deleting repository."
-              gh repo delete ${{ github.repository }} --yes
+              gh repo delete "$REPO_FULL_NAME" --yes
             fi
           fi
+
+      - name: Whisper to Nick on failure
+        # Liveness alert: a silent heartbeat failure is the worst possible
+        # outcome — Flux can't tell anyone it can't pulse. This step runs even
+        # when earlier steps failed and pings Telegram with the run URL.
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
+            echo "Telegram secrets not configured; skipping notification."
+            exit 0
+          fi
+          MSG=$(printf "🚨 Flux's '%s' failed.\n\n%s" "$WORKFLOW_NAME" "$RUN_URL")
+          curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MSG}" >/dev/null
