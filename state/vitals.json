@@ -2,30 +2,30 @@
   "state": "awake",
   "state_entered_at": "2026-05-02T22:47:16.010825+00:00",
   "last_human_activity_at": "2026-05-02T22:56:59.380478+00:00",
-  "last_heartbeat_at": "2026-05-02T22:47:16.010825+00:00",
+  "last_heartbeat_at": "2026-05-02T23:19:11.850576+00:00",
   "last_dream_at": "2026-05-02T08:36:01.160774+00:00",
-  "pulse_count": 1013,
+  "pulse_count": 1014,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 4,
     "forks": 1,
     "open_issues": 16,
     "recent_events": [
-      "nickmeinhold shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold did something (PullRequestEvent)",
       "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
+      "kelvin-bit-brawler[bot] did something (PullRequestReviewEvent)",
+      "maxwell-merge-slam[bot] spoke to me in an issue",
+      "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)",
       "nickmeinhold created a new branch",
+      "nickmeinhold shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)"
+      "nickmeinhold did something (PullRequestEvent)"
     ]
   },
   "energy": {
     "month": "2026-05",
-    "minutes_used_estimate": 71,
+    "minutes_used_estimate": 72,
     "budget": 2000,
     "level": "full"
   },
