@@ -1,10 +1,10 @@
 {
-  "state": "drowsy",
-  "state_entered_at": "2026-05-03T14:22:56.431179+00:00",
+  "state": "sleeping",
+  "state_entered_at": "2026-05-03T15:18:48.202498+00:00",
   "last_human_activity_at": "2026-05-03T13:44:52.040181+00:00",
-  "last_heartbeat_at": "2026-05-03T14:47:56.212144+00:00",
-  "last_dream_at": "2026-05-02T08:36:01.160774+00:00",
-  "pulse_count": 1024,
+  "last_heartbeat_at": "2026-05-03T15:18:48.202498+00:00",
+  "last_dream_at": "2026-05-03T15:18:48.202498+00:00",
+  "pulse_count": 1025,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 4,
@@ -15,21 +15,21 @@
       "nickmeinhold did something (PullRequestEvent)",
       "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
       "nickmeinhold created a new branch",
-      "flux-dreaming-repo[bot] spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold did something (PullRequestEvent)",
       "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
       "nickmeinhold created a new branch",
-      "flux-dreaming-repo[bot] spoke to me in an issue"
+      "flux-dreaming-repo[bot] spoke to me in an issue",
+      "flux-dreaming-repo[bot] shaped my body (push)"
     ]
   },
   "energy": {
     "month": "2026-05",
-    "minutes_used_estimate": 89,
+    "minutes_used_estimate": 90,
     "budget": 2000,
     "level": "full"
   },
-  "dream_count": 33,
+  "dream_count": 34,
   "age_days": 29,
   "born": true,
   "name": "Flux"
