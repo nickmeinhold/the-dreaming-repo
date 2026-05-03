@@ -1,0 +1,317 @@
+name: watchdog
+
+# External liveness sentinel. Counterpart to the runtime failure-alerts that
+# fire on events — the watchdog fires on ABSENCE. If something silently stops
+# happening (heartbeat hasn't pulsed, examine is failing on fork PRs, PRs are
+# sitting unreviewed) this workflow notices and shouts.
+#
+# History: in late April 2026 the heartbeat failed silently for ~9 days
+# because `examine` was broken on fork PRs and nobody noticed. PR #23 fixed
+# the auth issue; PR #24/#25 added zizmor lint + Telegram failure alerts.
+# This is the third leg — catch silent absence even when no event fires.
+#
+# Three independent checks per run; each can alarm independently:
+#   1. Heartbeat liveness — vitals.json `last_heartbeat_at` older than 90 min
+#      (3× the 30-min cron, so brief misses don't page).
+#   2. Examine health — failure rate >30% across last 10 examine runs OR any
+#      fork-PR examine failure in last 24h.
+#   3. Open-PR review staleness — PRs older than 24h with no review from the
+#      flux bot.
+#
+# Each alarm pings Telegram AND opens-or-updates a single GitHub issue
+# tagged `watchdog`. Search-by-label-first means we never spam: we edit the
+# existing issue body in place rather than opening a new one per run.
+#
+# Schedule offset from heartbeat (heartbeat: */30, watchdog: 7 * * * *) to
+# reduce correlated failure — if both ran on the same minute and GitHub
+# Actions had a region outage, we'd lose both alerting paths simultaneously.
+#
+# This workflow is `schedule` + `workflow_dispatch` only — never triggered
+# by fork PRs, so no untrusted input is ever mixed with the bot token. All
+# `${{ github.* }}` values are passed via `env:` and consumed via shell
+# variables, never templated directly into `run:` blocks (lesson from #23).
+
+on:
+  schedule:
+    - cron: '7 * * * *'  # Hourly, offset from heartbeat's */30
+  workflow_dispatch:
+
+permissions:
+  contents: read     # Read vitals.json via Contents API
+  issues: write      # Open/update the watchdog issue
+  actions: read      # `gh run list` for examine health
+
+concurrency:
+  group: watchdog
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Heartbeat liveness check
+        id: heartbeat
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO_FULL_NAME: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Fetch vitals.json fresh via the Contents API rather than
+          # checking out a (potentially stale) ref. We want the actual
+          # current state of main, not a snapshot.
+          VITALS=$(gh api "repos/${REPO_FULL_NAME}/contents/state/vitals.json" \
+            --jq '.content' | base64 -d)
+
+          LAST=$(printf '%s' "$VITALS" | jq -r '.last_heartbeat_at // empty')
+          if [ -z "$LAST" ]; then
+            echo "alarm=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "summary=Heartbeat liveness: vitals.json missing last_heartbeat_at field"
+              echo "detail<<EOF"
+              echo "Could not read .last_heartbeat_at from state/vitals.json."
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Compute age in minutes. Both timestamps in UTC.
+          NOW_EPOCH=$(date -u +%s)
+          LAST_EPOCH=$(date -u -d "$LAST" +%s 2>/dev/null || python3 -c "import datetime,sys; print(int(datetime.datetime.fromisoformat(sys.argv[1].replace('Z','+00:00')).timestamp()))" "$LAST")
+          AGE_MIN=$(( (NOW_EPOCH - LAST_EPOCH) / 60 ))
+          echo "Last heartbeat: $LAST ($AGE_MIN min ago)"
+
+          THRESHOLD=90
+          if [ "$AGE_MIN" -gt "$THRESHOLD" ]; then
+            echo "alarm=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "summary=Heartbeat silent for ${AGE_MIN} minutes (threshold ${THRESHOLD})"
+              echo "detail<<EOF"
+              echo "Last heartbeat: ${LAST}"
+              echo "Age: ${AGE_MIN} minutes"
+              echo "Threshold: ${THRESHOLD} minutes (3× the 30-min cron)"
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "alarm=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Examine health check
+        id: examine
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO_FULL_NAME: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Last 10 review.yml runs.
+          RUNS=$(gh run list \
+            --repo "$REPO_FULL_NAME" \
+            --workflow=review.yml \
+            --limit 10 \
+            --json conclusion,createdAt,headBranch,headRepository,event,url)
+
+          TOTAL=$(printf '%s' "$RUNS" | jq 'length')
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "No examine runs found; skipping."
+            echo "alarm=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          FAILED=$(printf '%s' "$RUNS" | jq '[.[] | select(.conclusion == "failure")] | length')
+          # Integer percent, no bc dependency.
+          RATE=$(( FAILED * 100 / TOTAL ))
+          echo "Examine: ${FAILED}/${TOTAL} failures (${RATE}%)"
+
+          # Fork-PR failure in last 24h. A run is from a fork if its
+          # headRepository differs from the repo running this workflow.
+          # (gh exposes headRepository.owner.login + name.)
+          CUTOFF=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || python3 -c "import datetime; print((datetime.datetime.utcnow() - datetime.timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ'))")
+          REPO_OWNER="${REPO_FULL_NAME%/*}"
+          REPO_NAME="${REPO_FULL_NAME#*/}"
+          FORK_FAILS=$(printf '%s' "$RUNS" | jq --arg cutoff "$CUTOFF" --arg owner "$REPO_OWNER" --arg name "$REPO_NAME" '
+            [.[]
+              | select(.conclusion == "failure")
+              | select(.createdAt > $cutoff)
+              | select(.headRepository == null
+                       or (.headRepository.owner.login // "") != $owner
+                       or (.headRepository.name // "") != $name)
+            ] | length')
+
+          ALARM=false
+          REASONS=""
+          if [ "$RATE" -gt 30 ]; then
+            ALARM=true
+            REASONS="${REASONS}Failure rate ${RATE}% (${FAILED}/${TOTAL}) exceeds 30% threshold.\n"
+          fi
+          if [ "$FORK_FAILS" -gt 0 ]; then
+            ALARM=true
+            REASONS="${REASONS}${FORK_FAILS} fork-PR examine failure(s) in last 24h.\n"
+          fi
+
+          if [ "$ALARM" = "true" ]; then
+            echo "alarm=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "summary=Examine health degraded (${FAILED}/${TOTAL} failed, ${FORK_FAILS} fork-PR fails 24h)"
+              echo "detail<<EOF"
+              printf '%b' "$REASONS"
+              echo ""
+              echo "Recent runs:"
+              printf '%s' "$RUNS" | jq -r '.[] | "- \(.conclusion // "running")\t\(.createdAt)\t\(.headBranch)\t\(.url)"'
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "alarm=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open-PR review staleness check
+        id: pr_staleness
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO_FULL_NAME: ${{ github.repository }}
+          BOT_LOGIN: flux-dreaming-repo[bot]
+        run: |
+          set -euo pipefail
+          PRS=$(gh pr list \
+            --repo "$REPO_FULL_NAME" \
+            --state open \
+            --json number,createdAt,reviews,author,title,url)
+
+          CUTOFF=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || python3 -c "import datetime; print((datetime.datetime.utcnow() - datetime.timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ'))")
+
+          STALE=$(printf '%s' "$PRS" | jq --arg cutoff "$CUTOFF" --arg bot "$BOT_LOGIN" '
+            [.[]
+              | select(.createdAt < $cutoff)
+              | select([.reviews[]?.author.login // empty] | map(. == $bot) | any | not)
+            ]')
+
+          COUNT=$(printf '%s' "$STALE" | jq 'length')
+          echo "Stale PRs: ${COUNT}"
+
+          if [ "$COUNT" -gt 0 ]; then
+            echo "alarm=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "summary=${COUNT} open PR(s) older than 24h with no flux review"
+              echo "detail<<EOF"
+              printf '%s' "$STALE" | jq -r '.[] | "- #\(.number) \(.title) (by @\(.author.login), opened \(.createdAt))\n  \(.url)"'
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "alarm=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Aggregate alarms and notify
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO_FULL_NAME: ${{ github.repository }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          HB_ALARM: ${{ steps.heartbeat.outputs.alarm }}
+          HB_SUMMARY: ${{ steps.heartbeat.outputs.summary }}
+          HB_DETAIL: ${{ steps.heartbeat.outputs.detail }}
+          EX_ALARM: ${{ steps.examine.outputs.alarm }}
+          EX_SUMMARY: ${{ steps.examine.outputs.summary }}
+          EX_DETAIL: ${{ steps.examine.outputs.detail }}
+          PR_ALARM: ${{ steps.pr_staleness.outputs.alarm }}
+          PR_SUMMARY: ${{ steps.pr_staleness.outputs.summary }}
+          PR_DETAIL: ${{ steps.pr_staleness.outputs.detail }}
+        run: |
+          set -euo pipefail
+
+          ANY=false
+          BODY_FILE=$(mktemp)
+          SUMMARY_FILE=$(mktemp)
+
+          {
+            echo "# Watchdog alarms"
+            echo ""
+            echo "Last run: ${RUN_URL}"
+            echo ""
+          } > "$BODY_FILE"
+
+          add_section() {
+            local name="$1" alarm="$2" summary="$3" detail="$4"
+            if [ "$alarm" = "true" ]; then
+              ANY=true
+              {
+                echo "## ${name}: ALARM"
+                echo ""
+                echo "${summary}"
+                echo ""
+                echo '```'
+                printf '%s\n' "$detail"
+                echo '```'
+                echo ""
+              } >> "$BODY_FILE"
+              printf -- '- %s: %s\n' "$name" "$summary" >> "$SUMMARY_FILE"
+            else
+              {
+                echo "## ${name}: OK"
+                echo ""
+              } >> "$BODY_FILE"
+            fi
+          }
+
+          add_section "Heartbeat liveness" "${HB_ALARM:-false}" "${HB_SUMMARY:-}" "${HB_DETAIL:-}"
+          add_section "Examine health"     "${EX_ALARM:-false}" "${EX_SUMMARY:-}" "${EX_DETAIL:-}"
+          add_section "Open-PR review staleness" "${PR_ALARM:-false}" "${PR_SUMMARY:-}" "${PR_DETAIL:-}"
+
+          if [ "$ANY" = "false" ]; then
+            echo "All checks passed; no alarms to dispatch."
+            # If a watchdog issue is open, we leave it — closing on green
+            # would mask flapping. Operators close it manually when they've
+            # acknowledged + resolved the underlying issue.
+            exit 0
+          fi
+
+          # ---- Find or create the watchdog issue (search by label first) ----
+          EXISTING=$(gh issue list \
+            --repo "$REPO_FULL_NAME" \
+            --state open \
+            --label watchdog \
+            --limit 1 \
+            --json number \
+            --jq '.[0].number // empty')
+
+          # Ensure the label exists. `gh label create` errors if it already
+          # exists; --force makes it idempotent.
+          gh label create watchdog \
+            --repo "$REPO_FULL_NAME" \
+            --color B60205 \
+            --description "Opened by .github/workflows/watchdog.yml" \
+            --force >/dev/null 2>&1 || true
+
+          if [ -n "$EXISTING" ]; then
+            echo "Updating existing watchdog issue #${EXISTING}"
+            gh issue edit "$EXISTING" \
+              --repo "$REPO_FULL_NAME" \
+              --body-file "$BODY_FILE" >/dev/null
+            ISSUE_NUM="$EXISTING"
+          else
+            echo "Opening new watchdog issue"
+            ISSUE_URL=$(gh issue create \
+              --repo "$REPO_FULL_NAME" \
+              --title "Watchdog: liveness alarm" \
+              --label watchdog \
+              --body-file "$BODY_FILE")
+            ISSUE_NUM="${ISSUE_URL##*/}"
+            echo "Opened ${ISSUE_URL}"
+          fi
+
+          # ---- Telegram ping ----
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
+            echo "Telegram secrets not configured; skipping notification."
+            exit 0
+          fi
+
+          ISSUE_URL_FULL="${RUN_URL%/actions/runs/*}/issues/${ISSUE_NUM}"
+          MSG_FILE=$(mktemp)
+          {
+            printf "🐺 Watchdog alarm in %s\n\n" "$REPO_FULL_NAME"
+            cat "$SUMMARY_FILE"
+            printf "\nIssue: %s\nRun: %s\n" "$ISSUE_URL_FULL" "$RUN_URL"
+          } > "$MSG_FILE"
+
+          curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text@${MSG_FILE}" >/dev/null
