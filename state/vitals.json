@@ -1,10 +1,10 @@
 {
-  "state": "drowsy",
-  "state_entered_at": "2026-05-02T23:47:15.709673+00:00",
+  "state": "sleeping",
+  "state_entered_at": "2026-05-03T00:50:51.572531+00:00",
   "last_human_activity_at": "2026-05-02T22:56:59.380478+00:00",
-  "last_heartbeat_at": "2026-05-02T23:47:15.709673+00:00",
+  "last_heartbeat_at": "2026-05-03T00:50:51.572531+00:00",
   "last_dream_at": "2026-05-02T08:36:01.160774+00:00",
-  "pulse_count": 1015,
+  "pulse_count": 1016,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 4,
@@ -17,15 +17,15 @@
       "kelvin-bit-brawler[bot] did something (PullRequestReviewEvent)",
       "maxwell-merge-slam[bot] spoke to me in an issue",
       "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)",
-      "nickmeinhold created a new branch",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold did something (PullRequestEvent)",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)"
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
+      "kelvin-bit-brawler[bot] did something (PullRequestReviewEvent)"
     ]
   },
   "energy": {
     "month": "2026-05",
-    "minutes_used_estimate": 73,
+    "minutes_used_estimate": 74,
     "budget": 2000,
     "level": "full"
   },
