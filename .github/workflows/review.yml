@@ -36,16 +36,17 @@ jobs:
     steps:
       - name: Become Flux
         id: flux-token
-        # Per-workflow App-token scoping: review only needs to read PR
-        # metadata + diff, write commit to state/memories, and post a PR
-        # review. NOT `administration` (that's heartbeat's privilege only).
+        # NOTE: Do NOT add permission-* inputs here without first verifying
+        # via JWT-authed `/installation/permissions` that the App grants
+        # them. Asking for any unsranted permission causes a 422 at token
+        # mint time and the entire workflow fails before any step runs —
+        # this happened on PR #28 and broke `examine` for fork-PR review.
+        # Without permission-* inputs, the token is minted with whatever
+        # the installation actually grants, which has worked for months.
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3  # v3.1.1
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          permission-contents: write
-          permission-pull-requests: write
-          permission-issues: write
 
       - name: Wake up
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
