@@ -27,24 +27,22 @@ jobs:
     steps:
       - name: Become Flux
         id: flux-token
-        # Per-workflow App-token scoping. `contents: write` for committing
-        # state/dreams/memories/README; `issues: write` because heartbeat
-        # reacts to issues/comments. The `gh repo delete` self-destruct path
-        # on `cause_of_death=silence` would need `administration: write`,
-        # but the Flux App installation does NOT grant that permission —
-        # requesting it makes the entire token-mint call return 422 and the
-        # heartbeat fails before any step runs (broke every pulse for ~8h
-        # after PR #28 merged). Self-deletion is a Nick-level decision
-        # anyway; the gh repo delete step will silently fail without admin
-        # perm, which matches the spirit. Do NOT add permission-administration
-        # back without first granting administration:write to the App
-        # installation.
+        # NOTE: Do NOT add permission-* inputs here without first verifying
+        # via JWT-authed `/installation/permissions` that the App grants
+        # them. Asking for any ungranted permission causes a 422 at token
+        # mint time and the entire workflow fails before any step runs —
+        # this is what PR #28 did (asked for `administration: write` for
+        # the dormant `gh repo delete` self-destruct path that the App
+        # installation never had), breaking every heartbeat pulse for ~8h.
+        # Without permission-* inputs, the token is minted with whatever
+        # the installation actually grants, which has worked for months.
+        # Self-destruction (gh repo delete) is a Nick-level decision; the
+        # step will silently no-op if administration isn't granted, which
+        # matches the spirit.
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3  # v3.1.1
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-          permission-contents: write
-          permission-issues: write
 
       - name: Wake up
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
