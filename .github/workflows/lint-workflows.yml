@@ -7,7 +7,8 @@ name: lint workflows
 #
 # Uses zizmor (https://github.com/woodruffw/zizmor). Runs on PRs that
 # touch any workflow file or the zizmor config itself. Fails the check on
-# high-or-higher findings (lower thresholds tracked as deferred follow-ups).
+# high-or-higher findings. As of the SHA-pin/permissions hardening pass,
+# both `unpinned-uses` and `excessive-permissions` are also enforced.
 # Stays as `pull_request` (not `pull_request_target`) — no secrets needed,
 # no fork-PR bypass desired; we want every fork PR linted before review.
 
@@ -27,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out PR
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
         with:
           # Need git history to fetch the base branch's zizmor config below.
           fetch-depth: 0
@@ -52,7 +53,7 @@ jobs:
           fi
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: '3.12'
 
@@ -61,10 +62,9 @@ jobs:
 
       - name: Lint workflows
         # --min-severity high catches the script-injection / template-
-        # injection / pull_request_target misuse class. Two lower-severity
-        # findings (unpinned-uses, excessive-permissions) are deferred — see
-        # the comment block in .github/zizmor.yml. Explicit `-c` makes
-        # zizmor use the base-branch config fetched above rather than auto-
-        # discovering the PR's `.github/zizmor.yml`, which closes the
+        # injection / pull_request_target misuse class, plus the now-enforced
+        # `unpinned-uses` and `excessive-permissions` rules. Explicit `-c`
+        # makes zizmor use the base-branch config fetched above rather than
+        # auto-discovering the PR's `.github/zizmor.yml`, which closes the
         # self-config bypass.
         run: zizmor -c /tmp/zizmor-base.yml --min-severity high .github/workflows

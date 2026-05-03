@@ -15,6 +15,11 @@ concurrency:
   group: heartbeat
   cancel-in-progress: false        # Never cancel a beating heart
 
+# Least-privilege: the default GITHUB_TOKEN is only read here. All writes
+# (commits, repo deletion via gh) go through the Flux App token below.
+permissions:
+  contents: read
+
 jobs:
   pulse:
     runs-on: ubuntu-latest
@@ -22,18 +27,26 @@ jobs:
     steps:
       - name: Become Flux
         id: flux-token
-        uses: actions/create-github-app-token@v1
+        # Per-workflow App-token scoping: heartbeat is the only workflow that
+        # needs `administration: write` (the `gh repo delete` step on `cause_of_death=silence`).
+        # `contents: write` for committing state/dreams/memories/README;
+        # `issues: write` because heartbeat reacts to issues/comments (it may
+        # label, comment, or close as part of pulse processing).
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547  # v1.12.0
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-administration: write
 
       - name: Wake up
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
         with:
           token: ${{ steps.flux-token.outputs.token }}
 
       - name: Restore working memory
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: .working_memory/
           key: working-memory-${{ github.run_id }}
@@ -41,7 +54,7 @@ jobs:
             working-memory-
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
         with:
           python-version: '3.12'
           cache: pip
@@ -50,7 +63,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
         with:
           node-version: '20'
 
@@ -66,7 +79,7 @@ jobs:
         run: python -m src.heartbeat
 
       - name: Save working memory
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
         with:
           path: .working_memory/
           key: working-memory-${{ github.run_id }}

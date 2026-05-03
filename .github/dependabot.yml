@@ -1,0 +1,13 @@
+# Dependabot keeps SHA-pinned GitHub Actions fresh.
+#
+# Every `uses:` in .github/workflows/*.yml is pinned to a commit SHA (per
+# zizmor's `unpinned-uses` rule). Without Dependabot those pins go stale
+# silently; with it, Dependabot opens a weekly PR per action that bumps
+# the SHA AND updates the trailing `# vN` comment, so review.yml's
+# auto-review path can vouch for the bump.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
