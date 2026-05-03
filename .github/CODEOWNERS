@@ -1,0 +1,15 @@
+# Code owners for the-dreaming-repo.
+#
+# This file gates GitHub Actions workflows and CI configuration. The
+# rationale (cage-match on PR #24, 2026-05-02): the workflow lint
+# (lint-workflows.yml) catches PR-controlled config rewrites by reading
+# the base branch's `.github/zizmor.yml`, but it cannot defend against a
+# PR that rewrites the lint workflow itself. Requiring a code owner
+# review on any change under `.github/` closes that bypass at the
+# review-process layer.
+#
+# Scope is deliberately narrow — only `.github/`. Robin and other
+# contributors can still PR into the rest of the repo without owner
+# approval. Source files, journal content, dreams, etc. are not gated.
+
+.github/  @nickmeinhold
