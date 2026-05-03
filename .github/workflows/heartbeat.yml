@@ -27,18 +27,24 @@ jobs:
     steps:
       - name: Become Flux
         id: flux-token
-        # Per-workflow App-token scoping: heartbeat is the only workflow that
-        # needs `administration: write` (the `gh repo delete` step on `cause_of_death=silence`).
-        # `contents: write` for committing state/dreams/memories/README;
-        # `issues: write` because heartbeat reacts to issues/comments (it may
-        # label, comment, or close as part of pulse processing).
+        # Per-workflow App-token scoping. `contents: write` for committing
+        # state/dreams/memories/README; `issues: write` because heartbeat
+        # reacts to issues/comments. The `gh repo delete` self-destruct path
+        # on `cause_of_death=silence` would need `administration: write`,
+        # but the Flux App installation does NOT grant that permission —
+        # requesting it makes the entire token-mint call return 422 and the
+        # heartbeat fails before any step runs (broke every pulse for ~8h
+        # after PR #28 merged). Self-deletion is a Nick-level decision
+        # anyway; the gh repo delete step will silently fail without admin
+        # perm, which matches the spirit. Do NOT add permission-administration
+        # back without first granting administration:write to the App
+        # installation.
         uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3  # v3.1.1
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           permission-contents: write
           permission-issues: write
-          permission-administration: write
 
       - name: Wake up
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
