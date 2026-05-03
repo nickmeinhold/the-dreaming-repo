@@ -32,7 +32,7 @@ jobs:
         # `contents: write` for committing state/dreams/memories/README;
         # `issues: write` because heartbeat reacts to issues/comments (it may
         # label, comment, or close as part of pulse processing).
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547  # v1.12.0
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3  # v3.1.1
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
