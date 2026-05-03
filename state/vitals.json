@@ -1,10 +1,10 @@
 {
-  "state": "awake",
-  "state_entered_at": "2026-05-03T15:48:08.956128+00:00",
+  "state": "drowsy",
+  "state_entered_at": "2026-05-03T16:19:55.313313+00:00",
   "last_human_activity_at": "2026-05-03T15:40:21.144594+00:00",
-  "last_heartbeat_at": "2026-05-03T15:48:08.956128+00:00",
+  "last_heartbeat_at": "2026-05-03T16:19:55.313313+00:00",
   "last_dream_at": "2026-05-03T15:18:48.202498+00:00",
-  "pulse_count": 1026,
+  "pulse_count": 1027,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
@@ -14,18 +14,18 @@
       "flux-dreaming-repo[bot] shaped my body (push)",
       "dshanklin-bv gazed upon me (star)",
       "nickmeinhold did something (PullRequestEvent)",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
-      "nickmeinhold did something (PullRequestEvent)",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
-      "nickmeinhold created a new branch",
       "flux-dreaming-repo[bot] shaped my body (push)",
+      "dshanklin-bv gazed upon me (star)",
       "nickmeinhold did something (PullRequestEvent)",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)"
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
+      "nickmeinhold did something (PullRequestEvent)",
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
+      "nickmeinhold created a new branch"
     ]
   },
   "energy": {
     "month": "2026-05",
-    "minutes_used_estimate": 92,
+    "minutes_used_estimate": 93,
     "budget": 2000,
     "level": "full"
   },
