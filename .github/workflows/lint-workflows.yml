@@ -7,8 +7,11 @@ name: lint workflows
 #
 # Uses zizmor (https://github.com/woodruffw/zizmor). Runs on PRs that
 # touch any workflow file or the zizmor config itself. Fails the check on
-# high-or-higher findings. As of the SHA-pin/permissions hardening pass,
-# both `unpinned-uses` and `excessive-permissions` are also enforced.
+# medium-or-higher findings. As of the SHA-pin/permissions hardening pass,
+# both `unpinned-uses` and `excessive-permissions` are enforced; as of the
+# artipacked audit, every `actions/checkout` step has made a deliberate
+# `persist-credentials` decision (either false, or true with an inline
+# `# zizmor: ignore[artipacked]` justification).
 # Stays as `pull_request` (not `pull_request_target`) — no secrets needed,
 # no fork-PR bypass desired; we want every fork PR linted before review.
 
@@ -32,6 +35,10 @@ jobs:
         with:
           # Need git history to fetch the base branch's zizmor config below.
           fetch-depth: 0
+          # No git push or auth-needing step runs after checkout — zizmor is
+          # the only consumer of the working tree. Drop the persisted token
+          # so a hypothetical future upload-artifact can't leak it (artipacked).
+          persist-credentials: false
 
       - name: Fetch base branch's zizmor config
         # CRITICAL: lint with the BASE branch's config, not the PR's. Without
@@ -61,10 +68,10 @@ jobs:
         run: pip install zizmor
 
       - name: Lint workflows
-        # --min-severity high catches the script-injection / template-
+        # --min-severity medium catches the script-injection / template-
         # injection / pull_request_target misuse class, plus the now-enforced
-        # `unpinned-uses` and `excessive-permissions` rules. Explicit `-c`
-        # makes zizmor use the base-branch config fetched above rather than
-        # auto-discovering the PR's `.github/zizmor.yml`, which closes the
-        # self-config bypass.
-        run: zizmor -c /tmp/zizmor-base.yml --min-severity high .github/workflows
+        # `unpinned-uses`, `excessive-permissions`, and `artipacked` rules.
+        # Explicit `-c` makes zizmor use the base-branch config fetched above
+        # rather than auto-discovering the PR's `.github/zizmor.yml`, which
+        # closes the self-config bypass.
+        run: zizmor -c /tmp/zizmor-base.yml --min-severity medium .github/workflows

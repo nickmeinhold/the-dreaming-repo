@@ -45,6 +45,14 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Wake up
+        # zizmor: ignore[artipacked]
+        # persist-credentials stays at the default (true) because the later
+        # "Commit to long-term memory" step relies on the persisted git auth
+        # to `git pull --rebase` and `git push`. The persisted credential is
+        # the Flux App token (passed via `token:` below), not the default
+        # GITHUB_TOKEN — so artifact-leakage risk is bounded to the App token,
+        # which we deliberately use as the write identity. No upload-artifact
+        # steps run after checkout in this job.
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           token: ${{ steps.flux-token.outputs.token }}
