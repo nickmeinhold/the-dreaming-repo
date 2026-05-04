@@ -22,12 +22,18 @@ concurrency:
   group: review-${{ github.event.pull_request.number || github.event.inputs.pr_number }}
   cancel-in-progress: true         # If they push again, re-review from scratch
 
-# Least-privilege: default GITHUB_TOKEN is read-only. All writes (commit
-# state/, post review) go through the Flux App token. pull-requests:read so
-# we can resolve PR metadata via gh if needed.
+# Least-privilege: default GITHUB_TOKEN reads repo content / PR metadata
+# and writes issues (only used by the failure-alert step's dedupe path —
+# see "Whisper to Nick on failure" below). All other writes (commit state/,
+# post review) go through the Flux App token. issues:write is on the
+# default token deliberately: if the Flux App token mint fails, the alert
+# path must not depend on the same authority that just broke. Under
+# pull_request_target the default token runs in the BASE repo's trust
+# context, not the fork's — fork PRs cannot reach it.
 permissions:
   contents: read
   pull-requests: read
+  issues: write
 
 jobs:
   examine:
@@ -160,26 +166,77 @@ jobs:
           fi
 
       - name: Whisper to Nick on failure
-        # Liveness alert: silent failure is what let `examine` die for ~9 days
-        # in late April 2026 without anyone noticing. Any failure of this
-        # workflow now pings Telegram with a link to the run.
+        # Liveness alert with dedupe: silent failure let `examine` die for
+        # ~9 days in late April 2026 without anyone noticing. Any failure
+        # surfaces, but a single root cause (e.g. PR #28's permission
+        # regression triggering on every run) opens ONE issue + ONE Telegram
+        # ping, not N.
+        #
+        # Dedupe semantics (borrowed from watchdog.yml's open-or-update idiom):
+        # - First failure since last resolution → open a labeled issue AND
+        #   ping Telegram with the run URL.
+        # - Subsequent failures while the issue is open → append a "still
+        #   failing" comment (with PR # if known), suppress the Telegram ping.
+        # - Operator closes the issue when fixed; next failure re-pages.
+        #
+        # Trust-boundary note: uses the default GITHUB_TOKEN (independent of
+        # the Flux App token deliberately — if the App token mint fails this
+        # path must still work). Under pull_request_target the default token
+        # runs in the BASE repo trust context; the alert step uses only
+        # base-controlled vars (workflow name, run URL, validated PR number)
+        # — no fork-controlled fields reach gh/curl invocations.
         if: failure()
         env:
+          GH_TOKEN: ${{ github.token }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           WORKFLOW_NAME: ${{ github.workflow }}
+          REPO_FULL_NAME: ${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
+          ALERT_LABEL: alert-review
         run: |
           set -euo pipefail
-          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
-            echo "Telegram secrets not configured; skipping notification."
+
+          # Ensure the dedupe label exists (idempotent).
+          gh label create "$ALERT_LABEL" \
+            --repo "$REPO_FULL_NAME" \
+            --color B60205 \
+            --description "Open while ${WORKFLOW_NAME} is failing; close when resolved" \
+            --force >/dev/null 2>&1 || true
+
+          # Search for an existing open alert issue. Dedupe key.
+          EXISTING=$(gh issue list \
+            --repo "$REPO_FULL_NAME" \
+            --state open \
+            --label "$ALERT_LABEL" \
+            --limit 1 \
+            --json number \
+            --jq '.[0].number // empty')
+
+          PR_SUFFIX="${PR_NUMBER:+ on PR #$PR_NUMBER}"
+
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" \
+              --repo "$REPO_FULL_NAME" \
+              --body "Still failing${PR_SUFFIX}: ${RUN_URL}" >/dev/null
+            echo "Existing alert issue #${EXISTING} updated; Telegram suppressed (dedupe)."
             exit 0
           fi
-          MSG=$(printf "🚨 Flux's '%s' failed%s.\n\n%s" \
-            "$WORKFLOW_NAME" \
-            "${PR_NUMBER:+ on PR #$PR_NUMBER}" \
-            "$RUN_URL")
-          curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
-            --data-urlencode "text=${MSG}" >/dev/null
+
+          BODY=$(printf '🚨 `%s` is failing.\n\nFirst failed run%s: %s\n\nClose this issue when the underlying problem is resolved. Subsequent failures will be appended here as comments without paging Telegram again.' "$WORKFLOW_NAME" "$PR_SUFFIX" "$RUN_URL")
+          gh issue create \
+            --repo "$REPO_FULL_NAME" \
+            --title "${WORKFLOW_NAME} is failing" \
+            --label "$ALERT_LABEL" \
+            --body "$BODY" >/dev/null
+
+          if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+            MSG=$(printf "🚨 Flux's '%s' failed%s.\n\n%s" \
+              "$WORKFLOW_NAME" "$PR_SUFFIX" "$RUN_URL")
+            curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+              --data-urlencode "text=${MSG}" >/dev/null
+          else
+            echo "Telegram secrets not configured; skipping notification."
+          fi
