@@ -123,7 +123,12 @@ jobs:
 
           RUNS_RAW='[]'
           PAGE=1
-          MAX_PAGES=20  # safety cap; 20 * 100 = 2000 runs is far beyond any plausible 24h
+          # Safety cap: 20 * 100 = 2000 runs. This is a *bounded* guarantee,
+          # not unconditional — if review.yml ever exceeds 2000 runs in 24h
+          # the watchdog would silently truncate again. At that volume
+          # there are bigger problems, but emit a warning if we hit the cap
+          # so the truncation is at least visible in the run log.
+          MAX_PAGES=20
           while [ "$PAGE" -le "$MAX_PAGES" ]; do
             PAGE_JSON=$(gh api \
               "repos/${REPO_FULL_NAME}/actions/workflows/review.yml/runs?per_page=100&page=${PAGE}" \
@@ -141,7 +146,13 @@ jobs:
             fi
             RUNS_RAW=$(jq -n --argjson a "$RUNS_RAW" --argjson b "$PAGE_JSON" '$a + $b')
             # Stop once the oldest run on this page is past the cutoff AND
-            # we have enough runs for the failure-rate sample.
+            # we have enough runs for the failure-rate sample. The string
+            # comparison is well-defined ONLY because both sides are
+            # normalized UTC `YYYY-MM-DDTHH:MM:SSZ` (lexicographic order ==
+            # chronological order for fixed-width ISO-8601 Zulu). GitHub's
+            # `created_at` and our `CUTOFF_ISO` both satisfy this; if the
+            # API ever switches to offsets like `+00:00`, move the
+            # comparison into jq with `fromdateiso8601`.
             OLDEST=$(printf '%s' "$PAGE_JSON" | jq -r '.[-1].created_at')
             TOTAL_SO_FAR=$(printf '%s' "$RUNS_RAW" | jq 'length')
             if [ "$OLDEST" \< "$CUTOFF_ISO" ] && [ "$TOTAL_SO_FAR" -ge 10 ]; then
@@ -149,6 +160,9 @@ jobs:
             fi
             PAGE=$((PAGE + 1))
           done
+          if [ "$PAGE" -gt "$MAX_PAGES" ]; then
+            echo "::warning::Examine pagination hit MAX_PAGES=${MAX_PAGES} cap (${TOTAL_SO_FAR} runs collected); 24h window may be truncated."
+          fi
 
           # Failure rate is computed over the most recent 10 runs only —
           # spec says "10 runs", and a 24h window of failure-rate would
@@ -285,6 +299,11 @@ jobs:
           # issue title. Body has the per-section breakdowns; the title
           # gets the at-a-glance summary so the issues list shows what's
           # actually firing without requiring a click-through.
+          #
+          # Constraint: tags MUST NOT contain whitespace — the title
+          # builder relies on word-splitting `$FIRING` (see the unquoted
+          # expansion in the printf below). If you add a new section,
+          # use a hyphen or camelCase, never a space.
           FIRING=""
           BODY_FILE=$(mktemp)
           SUMMARY_FILE=$(mktemp)
