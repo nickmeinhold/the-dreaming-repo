@@ -149,39 +149,43 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Ensure the dedupe label exists (idempotent).
-          gh label create "$ALERT_LABEL" \
-            --repo "$REPO_FULL_NAME" \
-            --color B60205 \
-            --description "Open while ${WORKFLOW_NAME} is failing; close when resolved" \
-            --force >/dev/null 2>&1 || true
-
-          # Search for an existing open alert issue. This is the dedupe key.
+          # Search for an existing open alert issue. The dedupe key.
+          # Wrapped in set +e: if the Issues API is degraded we cannot
+          # determine dedupe state, but the alarm path must still fire —
+          # we treat list-failure as "no existing issue" and fall through
+          # to the Telegram-first branch.
+          set +e
           EXISTING=$(gh issue list \
             --repo "$REPO_FULL_NAME" \
             --state open \
             --label "$ALERT_LABEL" \
             --limit 1 \
             --json number \
-            --jq '.[0].number // empty')
+            --jq '.[0].number // empty' 2>/dev/null)
+          LIST_RC=$?
+          set -e
 
-          if [ -n "$EXISTING" ]; then
+          if [ "$LIST_RC" -eq 0 ] && [ -n "$EXISTING" ]; then
             # Already alerted — append a comment and suppress Telegram.
+            # The comment is best-effort: if it fails, the operator already
+            # has the original page, so silence here is acceptable.
             gh issue comment "$EXISTING" \
               --repo "$REPO_FULL_NAME" \
-              --body "Still failing: ${RUN_URL}" >/dev/null
-            echo "Existing alert issue #${EXISTING} updated; Telegram suppressed (dedupe)."
+              --body "Still failing: ${RUN_URL}" >/dev/null 2>&1 \
+              || echo "::warning::failed to append comment to alert issue #${EXISTING}"
+            echo "Alert issue #${EXISTING} updated; Telegram suppressed (dedupe)."
             exit 0
           fi
 
-          # First failure since last resolution — open issue + Telegram ping.
-          BODY=$(printf '🚨 `%s` is failing.\n\nFirst failed run: %s\n\nClose this issue when the underlying problem is resolved. Subsequent failures will be appended here as comments without paging Telegram again.' "$WORKFLOW_NAME" "$RUN_URL")
-          gh issue create \
-            --repo "$REPO_FULL_NAME" \
-            --title "${WORKFLOW_NAME} is failing" \
-            --label "$ALERT_LABEL" \
-            --body "$BODY" >/dev/null
-
+          # First failure since last resolution.
+          # ---- Telegram FIRST ----
+          # Telegram is the independent alarm path. Issue creation runs
+          # AFTER, so a GitHub Issues / labels API outage cannot silently
+          # suppress the page (this is the same ordering the watchdog
+          # workflow uses for the same reason). Without this ordering,
+          # `set -e` on a failed `gh issue create` would exit before the
+          # curl call and Nick would hear nothing — which is the exact
+          # silent-failure mode this whole step exists to prevent.
           if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
             MSG=$(printf "🚨 Flux's '%s' failed.\n\n%s" "$WORKFLOW_NAME" "$RUN_URL")
             curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
@@ -189,4 +193,25 @@ jobs:
               --data-urlencode "text=${MSG}" >/dev/null
           else
             echo "Telegram secrets not configured; skipping notification."
+          fi
+
+          # ---- Best-effort issue ops AFTER Telegram ----
+          # set +e so a labels-API blip cannot demote a successful page
+          # into a failed alert step.
+          set +e
+          gh label create "$ALERT_LABEL" \
+            --repo "$REPO_FULL_NAME" \
+            --color B60205 \
+            --description "Open while ${WORKFLOW_NAME} is failing; close when resolved" \
+            --force >/dev/null 2>&1
+          BODY=$(printf '🚨 `%s` is failing.\n\nFirst failed run: %s\n\nClose this issue when the underlying problem is resolved. Subsequent failures will be appended here as comments without paging Telegram again.' "$WORKFLOW_NAME" "$RUN_URL")
+          gh issue create \
+            --repo "$REPO_FULL_NAME" \
+            --title "${WORKFLOW_NAME} is failing" \
+            --label "$ALERT_LABEL" \
+            --body "$BODY" >/dev/null 2>&1
+          ISSUE_RC=$?
+          set -e
+          if [ "$ISSUE_RC" -ne 0 ]; then
+            echo "::warning::failed to open alert issue (rc=${ISSUE_RC}); Telegram already sent"
           fi
