@@ -5,9 +5,23 @@
 # silently; with it, Dependabot opens a weekly PR per action that bumps
 # the SHA AND updates the trailing `# vN` comment, so review.yml's
 # auto-review path can vouch for the bump.
+#
+# Grouping policy:
+#   - Minor + patch bumps batch into a single weekly PR per ecosystem.
+#     These are almost always safe (security patches, dep refreshes,
+#     no interface changes) and reviewing them one-by-one is just noise.
+#   - Major bumps stay separate. A v4 → v5 jump can change the runtime
+#     (Node 16 → 20 → 24), drop inputs, or alter default behaviour, so
+#     each one deserves its own PR — its own examine-by-Flux read of the
+#     diff and its own release-notes check.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      github-actions-minor-patch:
+        update-types:
+          - minor
+          - patch
