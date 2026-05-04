@@ -109,22 +109,46 @@ jobs:
           # rather than `gh run list --json` because the latter does NOT
           # expose head_repository, and we need it for fork-PR detection.
           #
-          # per_page=30 (not 10): the failure-rate metric still uses the
-          # most recent 10 (line below), but the fork-fail-in-24h check
-          # needs to see the full 24h window — on a busy day the 11th
-          # run can still be inside 24h and would be missed at per_page=10.
-          # 30 is a comfortable upper bound for 24h of examine activity
-          # on this repo without paginating.
-          RUNS_RAW=$(gh api \
-            "repos/${REPO_FULL_NAME}/actions/workflows/review.yml/runs?per_page=30" \
-            --jq '[.workflow_runs[] | {
-              conclusion,
-              created_at,
-              head_branch,
-              event,
-              url: .html_url,
-              head_repo_full_name: (.head_repository.full_name // null)
-            }]')
+          # We walk pages of the runs API client-side until we cross the
+          # 24h cutoff — the workflow-runs endpoint does NOT support a
+          # server-side `created` filter. Stopping early keeps the API
+          # cost bounded on quiet repos while guaranteeing the fork-fail-
+          # in-24h check sees every run in the window (the previous
+          # per_page=30 cap silently dropped the 31st+ run).
+          #
+          # We also keep collecting until we have at least 10 runs so the
+          # failure-rate metric (most-recent-10) still has its sample on
+          # very quiet days.
+          CUTOFF_ISO=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || python3 -c "import datetime; print((datetime.datetime.utcnow() - datetime.timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ'))")
+
+          RUNS_RAW='[]'
+          PAGE=1
+          MAX_PAGES=20  # safety cap; 20 * 100 = 2000 runs is far beyond any plausible 24h
+          while [ "$PAGE" -le "$MAX_PAGES" ]; do
+            PAGE_JSON=$(gh api \
+              "repos/${REPO_FULL_NAME}/actions/workflows/review.yml/runs?per_page=100&page=${PAGE}" \
+              --jq '[.workflow_runs[] | {
+                conclusion,
+                created_at,
+                head_branch,
+                event,
+                url: .html_url,
+                head_repo_full_name: (.head_repository.full_name // null)
+              }]')
+            PAGE_LEN=$(printf '%s' "$PAGE_JSON" | jq 'length')
+            if [ "$PAGE_LEN" -eq 0 ]; then
+              break
+            fi
+            RUNS_RAW=$(jq -n --argjson a "$RUNS_RAW" --argjson b "$PAGE_JSON" '$a + $b')
+            # Stop once the oldest run on this page is past the cutoff AND
+            # we have enough runs for the failure-rate sample.
+            OLDEST=$(printf '%s' "$PAGE_JSON" | jq -r '.[-1].created_at')
+            TOTAL_SO_FAR=$(printf '%s' "$RUNS_RAW" | jq 'length')
+            if [ "$OLDEST" \< "$CUTOFF_ISO" ] && [ "$TOTAL_SO_FAR" -ge 10 ]; then
+              break
+            fi
+            PAGE=$((PAGE + 1))
+          done
 
           # Failure rate is computed over the most recent 10 runs only —
           # spec says "10 runs", and a 24h window of failure-rate would
@@ -146,8 +170,7 @@ jobs:
           # head_repo_full_name differs from this repo (or is null, which
           # the API returns when the head repo has been deleted — treat
           # that as suspicious too).
-          CUTOFF=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || python3 -c "import datetime; print((datetime.datetime.utcnow() - datetime.timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ'))")
-          FORK_FAILS=$(printf '%s' "$RUNS_RAW" | jq --arg cutoff "$CUTOFF" --arg repo "$REPO_FULL_NAME" '
+          FORK_FAILS=$(printf '%s' "$RUNS_RAW" | jq --arg cutoff "$CUTOFF_ISO" --arg repo "$REPO_FULL_NAME" '
             [.[]
               | select(.conclusion == "failure")
               | select(.created_at > $cutoff)
@@ -257,6 +280,12 @@ jobs:
           set -euo pipefail
 
           ANY=false
+          # FIRING is a space-separated list of short alarm tags
+          # (heartbeat, examine, stale-PR) used to build a descriptive
+          # issue title. Body has the per-section breakdowns; the title
+          # gets the at-a-glance summary so the issues list shows what's
+          # actually firing without requiring a click-through.
+          FIRING=""
           BODY_FILE=$(mktemp)
           SUMMARY_FILE=$(mktemp)
 
@@ -268,7 +297,7 @@ jobs:
           } > "$BODY_FILE"
 
           add_section() {
-            local name="$1" alarm="$2" summary="$3" detail="$4" outcome="$5"
+            local name="$1" alarm="$2" summary="$3" detail="$4" outcome="$5" tag="$6"
             # If the check step itself didn't succeed, treat that as an
             # alarm — empty outputs from a failed step would otherwise
             # silently render as "OK" (the very class of bug this
@@ -276,6 +305,7 @@ jobs:
             # failure, cancelled, skipped.
             if [ "$outcome" != "success" ]; then
               ANY=true
+              FIRING="${FIRING}${tag} "
               {
                 echo "## ${name}: ALARM (check step ${outcome})"
                 echo ""
@@ -288,6 +318,7 @@ jobs:
             fi
             if [ "$alarm" = "true" ]; then
               ANY=true
+              FIRING="${FIRING}${tag} "
               {
                 echo "## ${name}: ALARM"
                 echo ""
@@ -307,9 +338,9 @@ jobs:
             fi
           }
 
-          add_section "Heartbeat liveness"        "${HB_ALARM:-false}" "${HB_SUMMARY:-}" "${HB_DETAIL:-}" "${HB_OUTCOME:-failure}"
-          add_section "Examine health"            "${EX_ALARM:-false}" "${EX_SUMMARY:-}" "${EX_DETAIL:-}" "${EX_OUTCOME:-failure}"
-          add_section "Open-PR review staleness"  "${PR_ALARM:-false}" "${PR_SUMMARY:-}" "${PR_DETAIL:-}" "${PR_OUTCOME:-failure}"
+          add_section "Heartbeat liveness"        "${HB_ALARM:-false}" "${HB_SUMMARY:-}" "${HB_DETAIL:-}" "${HB_OUTCOME:-failure}" "heartbeat"
+          add_section "Examine health"            "${EX_ALARM:-false}" "${EX_SUMMARY:-}" "${EX_DETAIL:-}" "${EX_OUTCOME:-failure}" "examine"
+          add_section "Open-PR review staleness"  "${PR_ALARM:-false}" "${PR_SUMMARY:-}" "${PR_DETAIL:-}" "${PR_OUTCOME:-failure}" "stale-PR"
 
           if [ "$ANY" = "false" ]; then
             echo "All checks passed; no alarms to dispatch."
@@ -365,16 +396,33 @@ jobs:
             --description "Opened by .github/workflows/watchdog.yml" \
             --force >/dev/null 2>&1
 
+          # Build the issue title from the firing checks so the issues
+          # list shows at a glance what's actually wrong (e.g.
+          # "Watchdog: heartbeat + examine alarm" rather than the
+          # previous static "Watchdog: liveness alarm"). Body still has
+          # the per-section breakdowns for the full picture.
+          # shellcheck disable=SC2086
+          TITLE_TAGS=$(printf '%s\n' $FIRING | paste -sd '+' - | sed 's/+/ + /g')
+          if [ -z "$TITLE_TAGS" ]; then
+            # Defensive: we only reach issue create/edit when ANY=true,
+            # so FIRING should always be non-empty. Fall back to the
+            # historical title rather than producing a malformed one.
+            ISSUE_TITLE="Watchdog: liveness alarm"
+          else
+            ISSUE_TITLE="Watchdog: ${TITLE_TAGS} alarm"
+          fi
+
           if [ -n "$EXISTING" ]; then
-            echo "Updating existing watchdog issue #${EXISTING}"
+            echo "Updating existing watchdog issue #${EXISTING} → ${ISSUE_TITLE}"
             gh issue edit "$EXISTING" \
               --repo "$REPO_FULL_NAME" \
+              --title "$ISSUE_TITLE" \
               --body-file "$BODY_FILE" >/dev/null
           else
-            echo "Opening new watchdog issue"
+            echo "Opening new watchdog issue: ${ISSUE_TITLE}"
             gh issue create \
               --repo "$REPO_FULL_NAME" \
-              --title "Watchdog: liveness alarm" \
+              --title "$ISSUE_TITLE" \
               --label watchdog \
               --body-file "$BODY_FILE"
           fi
