@@ -1,8 +1,13 @@
 {
   "state": "awake",
   "state_entered_at": "2026-05-04T02:53:05.871697+00:00",
+<<<<<<< Updated upstream
   "last_human_activity_at": "2026-05-04T11:18:13.228962+00:00",
   "last_heartbeat_at": "2026-05-04T11:18:13.228962+00:00",
+=======
+  "last_human_activity_at": "2026-05-04T11:19:16.470341+00:00",
+  "last_heartbeat_at": "2026-05-04T11:19:16.470341+00:00",
+>>>>>>> Stashed changes
   "last_dream_at": "2026-05-03T15:18:48.202498+00:00",
   "pulse_count": 1049,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
@@ -11,6 +16,7 @@
     "forks": 1,
     "open_issues": 20,
     "recent_events": [
+<<<<<<< Updated upstream
       "nickmeinhold spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
@@ -21,6 +27,18 @@
       "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
       "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)",
       "nickmeinhold spoke to me in an issue"
+=======
+      "nickmeinhold shaped my body (push)",
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "flux-dreaming-repo[bot] spoke to me in an issue",
+      "nickmeinhold spoke to me in an issue",
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
+      "nickmeinhold did something (PullRequestEvent)",
+      "nickmeinhold created a new branch",
+      "flux-dreaming-repo[bot] spoke to me in an issue",
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
+      "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)"
+>>>>>>> Stashed changes
     ]
   },
   "energy": {
