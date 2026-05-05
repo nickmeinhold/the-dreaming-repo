@@ -115,13 +115,19 @@ jobs:
           # and the next 30-min pulse starts from a clean checkout.
           git pull --rebase --autostash origin main || true
 
-          if grep -lrE '^(<<<<<<< |=======$|>>>>>>> )' \
-              state/ dreams/ memories/ README.md 2>/dev/null \
-              | grep -q .; then
+          # Capture into a variable rather than `grep | grep -q .`. The
+          # pipeline form is unsafe under `set -euo pipefail`: `grep -q`
+          # exits 0 on the first match and closes the pipe, the upstream
+          # recursive grep gets SIGPIPE (rc=141), and `pipefail`
+          # propagates that as the pipeline status — so the `if` reads
+          # false even when markers exist. Capturing avoids the pipe
+          # entirely. (Carnot's HIGH finding on PR #43 cage-match.)
+          MARKER_FILES=$(grep -lrE '^(<<<<<<< |=======$|>>>>>>> )' \
+            state/ dreams/ memories/ README.md 2>/dev/null || true)
+          if [ -n "$MARKER_FILES" ]; then
             echo "::error::autostash pop left conflict markers; refusing to commit"
             echo "Files with markers:"
-            grep -lrE '^(<<<<<<< |=======$|>>>>>>> )' \
-              state/ dreams/ memories/ README.md 2>/dev/null
+            printf '%s\n' "$MARKER_FILES"
             exit 1
           fi
 
