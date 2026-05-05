@@ -413,14 +413,40 @@ jobs:
           ISSUE_RC=$?
           set -e
 
-          # Final exit code: fail the run iff BOTH paths failed (Telegram
-          # was down/unconfigured AND the issue update failed). If at
-          # least one alerted, the watchdog has done its job.
-          # `deduped` counts as a successful Telegram outcome — it means
-          # we *intentionally* didn't page because the operator already
-          # has an open issue from a prior run, which itself implies a
-          # successful prior alert path.
-          if [ "$TG_OK" = "ok" ] || [ "$TG_OK" = "deduped" ] || [ "$ISSUE_RC" -eq 0 ]; then
+          # Deduped fallback: if we suppressed Telegram AND the issue
+          # update later failed, this run produced no record of its alarm
+          # state anywhere. Better to re-page than lose the signal — fall
+          # back to firing Telegram now. (Carnot's HIGH finding on PR #42
+          # cage-match: dedupe is acceptable BECAUSE the issue path
+          # records fresh details; if that path fails, the suppression
+          # premise no longer holds.)
+          if [ "$TG_OK" = "deduped" ] && [ "$ISSUE_RC" -ne 0 ]; then
+            echo "::warning::dedupe path's issue update failed (rc=${ISSUE_RC}); falling back to Telegram"
+            if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+              MSG_FILE=$(mktemp)
+              {
+                printf "🐺 Watchdog alarm in %s (deduped-fallback: issue update failed)\n\n" "$REPO_FULL_NAME"
+                cat "$SUMMARY_FILE"
+                printf "\nRun: %s\n" "$RUN_URL"
+              } > "$MSG_FILE"
+              if curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+                  --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+                  --data-urlencode "text@${MSG_FILE}" >/dev/null; then
+                TG_OK=fallback
+              fi
+            fi
+          fi
+
+          # Final exit code: fail the run iff every notification path
+          # produced no signal this run. `deduped` is success ONLY when
+          # paired with a successful issue update (the prior page +
+          # fresh body update form the complete operator notification).
+          # `fallback` covers the case where dedupe was right but the
+          # issue path failed and we re-paged Telegram instead.
+          if [ "$TG_OK" = "ok" ] \
+             || [ "$TG_OK" = "fallback" ] \
+             || { [ "$TG_OK" = "deduped" ] && [ "$ISSUE_RC" -eq 0 ]; } \
+             || [ "$ISSUE_RC" -eq 0 ]; then
             exit 0
           fi
           echo "::error::Both Telegram and issue notification paths failed."
