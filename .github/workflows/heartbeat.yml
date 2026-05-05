@@ -92,9 +92,39 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.flux-token.outputs.token }}
         run: |
+          set -euo pipefail
           git config user.name "flux-dreaming-repo[bot]"
           git config user.email "273547980+flux-dreaming-repo[bot]@users.noreply.github.com"
+
+          # `--autostash` silently leaves literal conflict markers
+          # (`<<<<<<<` / `=======` / `>>>>>>>`) in the working tree if
+          # the stash pop conflicts with rebased upstream changes. The
+          # previous `|| true` swallowed that failure; the next `git add`
+          # then unconditionally staged the broken files; commit + push
+          # landed conflict markers on main.
+          #
+          # On 2026-05-04 this lined up such that state/vitals.json on
+          # main carried conflict markers for ~14h, breaking watchdog's
+          # jq parse of the heartbeat-liveness check and triggering 33
+          # Telegram pings overnight.
+          #
+          # Defense: scan the tree for conflict markers AFTER the rebase
+          # and refuse to commit if any are present. Failing the heartbeat
+          # loudly is strictly better than polluting main — the failure-
+          # alert step fires (with dedupe via PR #40), Nick gets ONE page,
+          # and the next 30-min pulse starts from a clean checkout.
           git pull --rebase --autostash origin main || true
+
+          if grep -lrE '^(<<<<<<< |=======$|>>>>>>> )' \
+              state/ dreams/ memories/ README.md 2>/dev/null \
+              | grep -q .; then
+            echo "::error::autostash pop left conflict markers; refusing to commit"
+            echo "Files with markers:"
+            grep -lrE '^(<<<<<<< |=======$|>>>>>>> )' \
+              state/ dreams/ memories/ README.md 2>/dev/null
+            exit 1
+          fi
+
           git add state/ dreams/ memories/ README.md
           if ! git diff --cached --quiet; then
             COMMIT_MSG=$(cat state/.commit_message 2>/dev/null || echo "pulse")
