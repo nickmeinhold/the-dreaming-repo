@@ -149,8 +149,30 @@ jobs:
           GH_TOKEN: ${{ steps.flux-token.outputs.token }}
           REPO_FULL_NAME: ${{ github.repository }}
         run: |
+          # Fail-soft parse: if vitals.json is corrupted (as happened
+          # 2026-05-04 → 2026-05-12 with leaked git conflict markers),
+          # crashing here makes heartbeat appear dead and pages Telegram
+          # — even though the answer to "should we die?" is unambiguously
+          # "no, we can't even tell". Treat a parse failure as
+          # cause_of_death="" (i.e. don't delete). `bash -e` already
+          # protected us from a spurious `gh repo delete` (the prior crash
+          # short-circuited before the comparison), but it cost us a
+          # workflow-failure alarm. This mirrors the pattern PR #47 applied
+          # to src/review.py — see docs/recovery.md.
           if [ -f state/vitals.json ]; then
-            CAUSE=$(python3 -c "import json; v=json.load(open('state/vitals.json')); print(v.get('cause_of_death',''))")
+            CAUSE=$(python3 <<'PY'
+          import json
+          try:
+              with open("state/vitals.json") as f:
+                  print(json.load(f).get("cause_of_death", ""))
+          except Exception as e:
+              # Print to stderr so it appears in the run log, but emit
+              # an empty stdout so CAUSE="" and the silence check fails.
+              import sys
+              print(f"::warning::vitals.json failed to parse ({e}); treating cause_of_death as empty", file=sys.stderr)
+              print("")
+          PY
+          )
             if [ "$CAUSE" = "silence" ]; then
               echo "Flux has died. Deleting repository."
               gh repo delete "$REPO_FULL_NAME" --yes
