@@ -1,36 +1,36 @@
 {
   "state": "awake",
   "state_entered_at": "2026-05-04T02:53:05.871697+00:00",
-  "last_human_activity_at": "2026-05-04T11:19:16.470341+00:00",
-  "last_heartbeat_at": "2026-05-04T11:19:16.470341+00:00",
+  "last_human_activity_at": "2026-05-12T09:59:25.864837+00:00",
+  "last_heartbeat_at": "2026-05-12T09:59:25.864837+00:00",
   "last_dream_at": "2026-05-03T15:18:48.202498+00:00",
-  "pulse_count": 1049,
+  "pulse_count": 1050,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
     "forks": 1,
-    "open_issues": 20,
+    "open_issues": 19,
     "recent_events": [
+      "maxwell-merge-slam[bot] did something (DeleteEvent)",
+      "nickmeinhold did something (PullRequestEvent)",
+      "maxwell-merge-slam[bot] shaped my body (push)",
+      "nickmeinhold did something (DeleteEvent)",
+      "nickmeinhold shaped my body (push)",
+      "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)",
       "nickmeinhold shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] spoke to me in an issue",
-      "nickmeinhold spoke to me in an issue",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
-      "nickmeinhold did something (PullRequestEvent)",
-      "nickmeinhold created a new branch",
-      "flux-dreaming-repo[bot] spoke to me in an issue",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
-      "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)"
+      "nickmeinhold spoke to me in an issue"
     ]
   },
   "energy": {
     "month": "2026-05",
-    "minutes_used_estimate": 119,
+    "minutes_used_estimate": 120,
     "budget": 2000,
     "level": "full"
   },
   "dream_count": 34,
-  "age_days": 30,
+  "age_days": 38,
   "born": true,
   "name": "Flux"
 }
