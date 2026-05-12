@@ -319,14 +319,46 @@ jobs:
             exit 0
           fi
 
-          # ---- Telegram ping FIRST ----
+          # ---- Telegram dedupe pre-check ----
+          # Before paging, see if a watchdog issue is already open. If so,
+          # the operator already knows — suppress this Telegram and let the
+          # issue-update path (below) append the new alarm details. This
+          # is what was missing on 2026-05-04: a single root-cause (broken
+          # vitals.json on main) generated 33 hourly Telegram pings because
+          # this step paged on every alarming run regardless of issue state.
+          #
+          # Path-independence: the lookup runs in `set +e`. If the Issues
+          # API is degraded we CANNOT suppress — Telegram MUST fire.
+          # Suppression requires positive evidence of an existing open
+          # issue, never default-suppression. (See feedback memory:
+          # "Verify on the production ref before claiming a fix is
+          # deployed" / trust-boundary path-independence refinement.)
+          TG_DEDUPE=false
+          set +e
+          EXISTING_FOR_DEDUPE=$(gh issue list \
+            --repo "$REPO_FULL_NAME" \
+            --state open \
+            --label watchdog \
+            --limit 1 \
+            --json number \
+            --jq '.[0].number // empty' 2>/dev/null)
+          DEDUPE_LIST_RC=$?
+          set -e
+          if [ "$DEDUPE_LIST_RC" -eq 0 ] && [ -n "$EXISTING_FOR_DEDUPE" ]; then
+            TG_DEDUPE=true
+          fi
+
+          # ---- Telegram ping FIRST (unless deduped) ----
           # Telegram is the independent alerting path. Issue creation runs
           # AFTER, so a GitHub Issues outage (or a labels API blip) can't
           # silently suppress the notification. The Telegram message links
           # to the run; if the issue create succeeds we update with the
           # issue link via a follow-up edit on the next run.
           TG_OK=skipped
-          if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+          if [ "$TG_DEDUPE" = "true" ]; then
+            echo "Watchdog issue #${EXISTING_FOR_DEDUPE} already open; suppressing Telegram (dedupe). Issue body will be updated below."
+            TG_OK=deduped
+          elif [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
             MSG_FILE=$(mktemp)
             {
               printf "🐺 Watchdog alarm in %s\n\n" "$REPO_FULL_NAME"
@@ -381,10 +413,40 @@ jobs:
           ISSUE_RC=$?
           set -e
 
-          # Final exit code: fail the run iff BOTH paths failed (Telegram
-          # was down/unconfigured AND the issue update failed). If at
-          # least one alerted, the watchdog has done its job.
-          if [ "$TG_OK" = "ok" ] || [ "$ISSUE_RC" -eq 0 ]; then
+          # Deduped fallback: if we suppressed Telegram AND the issue
+          # update later failed, this run produced no record of its alarm
+          # state anywhere. Better to re-page than lose the signal — fall
+          # back to firing Telegram now. (Carnot's HIGH finding on PR #42
+          # cage-match: dedupe is acceptable BECAUSE the issue path
+          # records fresh details; if that path fails, the suppression
+          # premise no longer holds.)
+          if [ "$TG_OK" = "deduped" ] && [ "$ISSUE_RC" -ne 0 ]; then
+            echo "::warning::dedupe path's issue update failed (rc=${ISSUE_RC}); falling back to Telegram"
+            if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+              MSG_FILE=$(mktemp)
+              {
+                printf "🐺 Watchdog alarm in %s (deduped-fallback: issue update failed)\n\n" "$REPO_FULL_NAME"
+                cat "$SUMMARY_FILE"
+                printf "\nRun: %s\n" "$RUN_URL"
+              } > "$MSG_FILE"
+              if curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+                  --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+                  --data-urlencode "text@${MSG_FILE}" >/dev/null; then
+                TG_OK=fallback
+              fi
+            fi
+          fi
+
+          # Final exit code: fail the run iff every notification path
+          # produced no signal this run. `deduped` is success ONLY when
+          # paired with a successful issue update (the prior page +
+          # fresh body update form the complete operator notification).
+          # `fallback` covers the case where dedupe was right but the
+          # issue path failed and we re-paged Telegram instead.
+          if [ "$TG_OK" = "ok" ] \
+             || [ "$TG_OK" = "fallback" ] \
+             || { [ "$TG_OK" = "deduped" ] && [ "$ISSUE_RC" -eq 0 ]; } \
+             || [ "$ISSUE_RC" -eq 0 ]; then
             exit 0
           fi
           echo "::error::Both Telegram and issue notification paths failed."
