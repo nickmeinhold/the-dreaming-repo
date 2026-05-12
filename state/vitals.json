@@ -1,31 +1,31 @@
 {
   "state": "awake",
   "state_entered_at": "2026-05-04T02:53:05.871697+00:00",
-  "last_human_activity_at": "2026-05-12T09:59:25.864837+00:00",
-  "last_heartbeat_at": "2026-05-12T09:59:25.864837+00:00",
+  "last_human_activity_at": "2026-05-12T10:00:49.316420+00:00",
+  "last_heartbeat_at": "2026-05-12T10:00:49.316420+00:00",
   "last_dream_at": "2026-05-03T15:18:48.202498+00:00",
-  "pulse_count": 1050,
+  "pulse_count": 1051,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
     "forks": 1,
     "open_issues": 19,
     "recent_events": [
+      "github-actions[bot] labeled an issue: Watchdog: liveness alarm",
+      "nickmeinhold closed an issue: Watchdog: liveness alarm",
+      "nickmeinhold spoke to me in an issue",
+      "nickmeinhold did something (DeleteEvent)",
+      "flux-dreaming-repo[bot] shaped my body (push)",
       "maxwell-merge-slam[bot] did something (DeleteEvent)",
       "nickmeinhold did something (PullRequestEvent)",
       "maxwell-merge-slam[bot] shaped my body (push)",
-      "nickmeinhold did something (DeleteEvent)",
-      "nickmeinhold shaped my body (push)",
-      "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)",
-      "nickmeinhold shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] spoke to me in an issue",
-      "nickmeinhold spoke to me in an issue"
+      "maxwell-merge-slam[bot] did something (DeleteEvent)",
+      "nickmeinhold did something (PullRequestEvent)"
     ]
   },
   "energy": {
     "month": "2026-05",
-    "minutes_used_estimate": 120,
+    "minutes_used_estimate": 121,
     "budget": 2000,
     "level": "full"
   },
