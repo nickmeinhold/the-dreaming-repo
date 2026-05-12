@@ -1,10 +1,10 @@
 {
-  "state": "drowsy",
-  "state_entered_at": "2026-05-12T11:42:23.284340+00:00",
+  "state": "sleeping",
+  "state_entered_at": "2026-05-12T12:47:50.480761+00:00",
   "last_human_activity_at": "2026-05-12T10:56:43.950197+00:00",
-  "last_heartbeat_at": "2026-05-12T11:42:23.284340+00:00",
-  "last_dream_at": "2026-05-03T15:18:48.202498+00:00",
-  "pulse_count": 1055,
+  "last_heartbeat_at": "2026-05-12T12:47:50.480761+00:00",
+  "last_dream_at": "2026-05-12T12:47:50.480761+00:00",
+  "pulse_count": 1056,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
@@ -25,11 +25,11 @@
   },
   "energy": {
     "month": "2026-05",
-    "minutes_used_estimate": 128,
+    "minutes_used_estimate": 129,
     "budget": 2000,
     "level": "full"
   },
-  "dream_count": 34,
+  "dream_count": 35,
   "age_days": 38,
   "born": true,
   "name": "Flux"
