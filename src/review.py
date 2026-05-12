@@ -42,8 +42,23 @@ def main() -> None:
     else:
         pr_body = os.environ.get("PR_BODY", "") or ""
 
-    vitals = _load_json("state/vitals.json")
-    personality = _load_json("state/personality.json")
+    # Load state tolerantly. examine runs under pull_request_target,
+    # which checks out `main` — so any corruption on main (e.g. literal
+    # git conflict markers, as happened 2026-05-04 → 2026-05-12) would
+    # otherwise crash this step before the diff is ever reviewed. That
+    # wedges the merge gate against itself: the PR that would fix main
+    # cannot pass examine because examine reads from main.
+    #
+    # Fail-soft: if a state file can't be parsed, log loudly and continue
+    # with empty defaults. The downstream call sites use `.get()` and
+    # tolerate missing keys (energy.is_critical, personality.get("name"),
+    # vitals.get("recent_authors"), etc.). We still skip the save-back at
+    # the bottom of this function when vitals failed to load — we don't
+    # want to silently overwrite the corrupted file with empty state and
+    # mask the underlying problem. The corruption should remain visible
+    # to the operator so they can run the recovery procedure (docs/recovery.md).
+    vitals, vitals_loaded = _load_json_safe("state/vitals.json")
+    personality, _ = _load_json_safe("state/personality.json")
     working_mem = memory.load_working_memory()
 
     name = personality.get("name", "this repository")
@@ -55,7 +70,8 @@ def main() -> None:
             f"My energy is nearly gone. I will look when I can."
         ))
         energy.tick(vitals)
-        _save_json("state/vitals.json", vitals)
+        if vitals_loaded:
+            _save_json("state/vitals.json", vitals)
         return
 
     # Fetch the diff
@@ -114,8 +130,14 @@ def main() -> None:
     vitals["last_human_activity_at"] = datetime.now(timezone.utc).isoformat()
     energy.tick(vitals)
 
-    # Persist
-    _save_json("state/vitals.json", vitals)
+    # Persist — but only save vitals back if we managed to read it.
+    # See the comment at the top of main() about why we don't save when
+    # vitals failed to load: we don't want to silently overwrite the
+    # corrupted file with empty state and mask the underlying problem.
+    if vitals_loaded:
+        _save_json("state/vitals.json", vitals)
+    else:
+        print("::warning::vitals.json failed to parse — skipping save-back to preserve visibility of the corruption (see docs/recovery.md)")
     memory.save_working_memory(working_mem)
 
 
@@ -174,7 +196,9 @@ def _determine_receptivity(vitals: dict, personality: dict) -> dict:
     Shaped by consciousness state, energy, and personality traits.
     """
     state = vitals.get("state", "sleeping")
-    energy_level = vitals["energy"]["level"]
+    # Defensive get-chain in case vitals is partial (e.g. from a fail-soft
+    # load when state/vitals.json was corrupted — see _load_json_safe).
+    energy_level = vitals.get("energy", {}).get("level", "full")
     traits = personality.get("traits", {})
 
     # Curiosity makes you open. Stubbornness makes you resist.
@@ -333,6 +357,27 @@ def _generate_review(
 def _load_json(path: str) -> dict:
     with open(path) as f:
         return json.load(f)
+
+
+def _load_json_safe(path: str) -> tuple[dict, bool]:
+    """Load a JSON file tolerantly. Returns (data, loaded_ok).
+
+    On any read or parse error returns ({}, False) and logs a warning
+    via the GHA `::warning::` workflow command so the failure is visible
+    in the run UI without crashing the step. The caller decides whether
+    to save back to the file (callers should NOT save when loaded_ok is
+    False — that would clobber the corrupted file with empty state and
+    hide the underlying problem from the recovery procedure).
+    """
+    try:
+        with open(path) as f:
+            return json.load(f), True
+    except FileNotFoundError:
+        print(f"::warning::{path} not found; continuing with empty state")
+        return {}, False
+    except (json.JSONDecodeError, ValueError) as e:
+        print(f"::warning::{path} failed to parse ({e}); continuing with empty state (see docs/recovery.md)")
+        return {}, False
 
 
 def _save_json(path: str, data: dict) -> None:
