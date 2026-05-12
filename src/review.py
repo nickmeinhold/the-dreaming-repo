@@ -58,6 +58,26 @@ def main() -> None:
     # mask the underlying problem. The corruption should remain visible
     # to the operator so they can run the recovery procedure (docs/recovery.md).
     vitals, vitals_loaded = _load_json_safe("state/vitals.json")
+    if not vitals_loaded:
+        # Self-review caught this: downstream `energy.is_critical(vitals)`,
+        # `energy.tick(vitals)`, and a few `.get()` chains expect a minimal
+        # shape. An empty dict from fail-soft would crash on the next line
+        # (`vitals["energy"]["level"]` inside energy.is_critical), defeating
+        # the fail-soft. So we populate a safe-default skeleton — examine
+        # behaves as if the entity has just woken up at full energy. The
+        # `vitals_loaded` flag still gates save-back so we don't persist
+        # this synthetic state over the corrupted file.
+        from datetime import datetime as _dt, timezone as _tz
+        vitals = {
+            "state": "awake",
+            "energy": {
+                "level": "full",
+                "month": _dt.now(_tz.utc).strftime("%Y-%m"),
+                "minutes_used_estimate": 0,
+                "budget": 2000,
+            },
+            "senses": {"recent_events": []},
+        }
     personality, _ = _load_json_safe("state/personality.json")
     working_mem = memory.load_working_memory()
 
