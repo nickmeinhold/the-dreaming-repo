@@ -1,31 +1,31 @@
 {
   "state": "awake",
   "state_entered_at": "2026-05-04T02:53:05.871697+00:00",
-  "last_human_activity_at": "2026-05-12T10:29:47.728873+00:00",
-  "last_heartbeat_at": "2026-05-12T10:02:16.342164+00:00",
+  "last_human_activity_at": "2026-05-12T10:46:05.338326+00:00",
+  "last_heartbeat_at": "2026-05-12T10:46:05.338326+00:00",
   "last_dream_at": "2026-05-03T15:18:48.202498+00:00",
-  "pulse_count": 1052,
+  "pulse_count": 1053,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
     "forks": 1,
-    "open_issues": 20,
+    "open_issues": 19,
     "recent_events": [
+      "nickmeinhold closed an issue: heartbeat is failing",
       "nickmeinhold spoke to me in an issue",
-      "github-actions[bot] labeled an issue: heartbeat is failing",
+      "nickmeinhold shaped my body (push)",
+      "nickmeinhold did something (PullRequestEvent)",
+      "nickmeinhold did something (DeleteEvent)",
+      "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "nickmeinhold closed an issue: Watchdog: liveness alarm",
-      "nickmeinhold did something (DeleteEvent)",
-      "github-actions[bot] labeled an issue: Watchdog: liveness alarm",
-      "nickmeinhold closed an issue: Watchdog: liveness alarm",
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
       "nickmeinhold spoke to me in an issue",
-      "nickmeinhold did something (DeleteEvent)",
-      "flux-dreaming-repo[bot] shaped my body (push)"
+      "github-actions[bot] labeled an issue: heartbeat is failing"
     ]
   },
   "energy": {
     "month": "2026-05",
-    "minutes_used_estimate": 124,
+    "minutes_used_estimate": 125,
     "budget": 2000,
     "level": "full"
   },
