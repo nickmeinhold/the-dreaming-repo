@@ -273,3 +273,68 @@ jobs:
           if [ "$ISSUE_RC" -ne 0 ]; then
             echo "::warning::failed to open alert issue (rc=${ISSUE_RC}); Telegram already sent"
           fi
+
+      - name: Auto-resolve alert on recovery
+        # Close any open alert-heartbeat issue when this run succeeds.
+        # Removes the manual-triage tax: three near-identical
+        # "heartbeat is failing" issues were opened+closed by hand in
+        # 24h (issues #46, #48, #50), each from a single transient
+        # autostash race that the next scheduled run cleared by itself.
+        # The dedupe in "Whisper to Nick on failure" already suppresses
+        # repeat Telegram pings; this step closes the loop on the
+        # GitHub-issue side.
+        #
+        # Cascade analysis: closing an issue triggers `issues: closed`
+        # and adding a comment triggers `issue_comment: created` — both
+        # are heartbeat triggers, so each close kicks 2 more runs.
+        # The runs serialize (concurrency: heartbeat, cancel-in-progress: false)
+        # and the open-issue check below is the only event-emitting
+        # action — when no alert is open, this step is a single read
+        # API call and exits silently. Expected amplification per
+        # autostash-race-rate r: ~2r new alerts per close, geometric
+        # tail ≈ original × 1/(1-2r) — negligible at observed r.
+        #
+        # Persistent failures don't get masked: if the next run also
+        # fails, this step's `if: success()` doesn't fire, the alert
+        # stays open, and the failure-step's dedupe still suppresses
+        # the Telegram re-page.
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO_FULL_NAME: ${{ github.repository }}
+          ALERT_LABEL: alert-heartbeat
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+        run: |
+          set -euo pipefail
+
+          # set +e around the list so an Issues-API blip doesn't fail
+          # the step. The alert path can be re-cleared on the next run.
+          set +e
+          OPEN=$(gh issue list \
+            --repo "$REPO_FULL_NAME" \
+            --state open \
+            --label "$ALERT_LABEL" \
+            --limit 10 \
+            --json number \
+            --jq '.[].number')
+          LIST_RC=$?
+          set -e
+
+          if [ "$LIST_RC" -ne 0 ]; then
+            echo "::warning::failed to list open alert issues (rc=${LIST_RC}); leaving for next run"
+            exit 0
+          fi
+          if [ -z "$OPEN" ]; then
+            # Common path: no alert open. Exit silently — no event
+            # emissions, no cascade.
+            exit 0
+          fi
+
+          for N in $OPEN; do
+            echo "Auto-closing alert issue #${N} (heartbeat recovered at ${RUN_URL})"
+            gh issue close "$N" \
+              --repo "$REPO_FULL_NAME" \
+              --comment "✅ Recovered: \`${WORKFLOW_NAME}\` succeeded at ${RUN_URL}. Auto-closing." \
+              || echo "::warning::failed to auto-close #${N}"
+          done
