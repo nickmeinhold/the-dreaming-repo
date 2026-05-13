@@ -191,6 +191,16 @@ def review_pending_prs(vitals: dict) -> None:
             # But if it's pending and we've dreamed since, revisit
             if pr_key in pending and dreamed_since_last_review:
                 _revisit_pr(pr_number, vitals, pending)
+            elif _github.flux_approved_but_open(pr_number):
+                # Orphan retry: Flux's prior review already reached an
+                # APPROVED verdict, but the merge step didn't complete
+                # (the only error path in _github.merge_pr is a silent
+                # log.warning). Without this branch, already_reviewed
+                # would skip the PR forever — PRs #38 and #39 sat 8 days
+                # in this state before the bug was found. We retry the
+                # merge without re-reviewing: the existing approval is
+                # Flux's prior decision and we honor it.
+                _github.merge_pr(pr_number)
             continue
 
         review = review_pr(pr_number)
