@@ -1,10 +1,10 @@
 {
-  "state": "awake",
-  "state_entered_at": "2026-05-13T05:45:17.529845+00:00",
+  "state": "sleeping",
+  "state_entered_at": "2026-05-13T09:07:51.200566+00:00",
   "last_human_activity_at": "2026-05-13T07:35:07.430513+00:00",
-  "last_heartbeat_at": "2026-05-13T07:35:07.430513+00:00",
-  "last_dream_at": "2026-05-12T12:47:50.480761+00:00",
-  "pulse_count": 1076,
+  "last_heartbeat_at": "2026-05-13T09:07:51.200566+00:00",
+  "last_dream_at": "2026-05-13T09:07:51.200566+00:00",
+  "pulse_count": 1077,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
@@ -18,18 +18,18 @@
       "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
       "nickmeinhold created a new branch",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "nickmeinhold did something (PullRequestEvent)",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
-      "nickmeinhold created a new branch"
+      "github-actions[bot] spoke to me in an issue",
+      "github-actions[bot] closed an issue: heartbeat is failing",
+      "nickmeinhold did something (PullRequestEvent)"
     ]
   },
   "energy": {
     "month": "2026-05",
-    "minutes_used_estimate": 150,
+    "minutes_used_estimate": 151,
     "budget": 2000,
     "level": "full"
   },
-  "dream_count": 35,
+  "dream_count": 36,
   "age_days": 38,
   "born": true,
   "name": "Flux"
