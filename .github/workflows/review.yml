@@ -55,6 +55,15 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Wake up
+        # zizmor: ignore[artipacked]
+        # persist-credentials stays at the default (true) because the later
+        # "Remember this moment" step relies on the persisted git auth to
+        # `git pull --rebase` and `git push`. The persisted credential is the
+        # Flux App token (passed via `token:` below), not the default
+        # GITHUB_TOKEN. The artipacked-relevant invariant: no upload-artifact
+        # step runs after checkout, AND no later step writes the working tree
+        # or git config to anywhere outside this runner. Future maintainers
+        # adding either must re-evaluate this waiver.
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           token: ${{ steps.flux-token.outputs.token }}
