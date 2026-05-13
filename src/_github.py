@@ -156,6 +156,33 @@ def already_reviewed(pr_number: int) -> bool:
     return False
 
 
+def flux_approved_but_open(pr_number: int) -> bool:
+    """Return True if a Flux review on this PR is APPROVED yet the PR is still open.
+
+    This catches the orphan case where Flux's immune-system review reached
+    a 'merge' verdict and posted an APPROVED review, but the subsequent
+    `gh pr merge --admin` call failed silently (e.g., transient permissions
+    issue during ruleset reconstruction 2026-05-04). Without a way to
+    detect that, `already_reviewed=True` skips the PR forever — see the
+    8-day stuck state of #38 and #39.
+    """
+    try:
+        result = subprocess.run(
+            ["gh", "pr", "view", str(pr_number),
+             "--json", "state,reviews",
+             "--jq",
+             '. as $p | ($p.state == "OPEN") and '
+             '([$p.reviews[] | select(.author.login == "flux-dreaming-repo") '
+             '| select(.state == "APPROVED")] | length > 0)'],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip() == "true"
+    except (subprocess.TimeoutExpired, FileNotFoundError) as e:
+        log.warning("flux_approved_but_open failed", extra={"pr": pr_number, "error": str(e)})
+    return False
+
+
 # ---------------------------------------------------------------------------
 # requests-based GitHub API wrappers (used by review.py)
 # ---------------------------------------------------------------------------
