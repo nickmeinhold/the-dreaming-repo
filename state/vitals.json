@@ -2,9 +2,9 @@
   "state": "sleeping",
   "state_entered_at": "2026-05-13T15:30:18.658490+00:00",
   "last_human_activity_at": "2026-05-13T13:17:40.684438+00:00",
-  "last_heartbeat_at": "2026-05-13T16:24:33.104510+00:00",
+  "last_heartbeat_at": "2026-05-13T17:18:10.816133+00:00",
   "last_dream_at": "2026-05-13T09:07:51.200566+00:00",
-  "pulse_count": 1085,
+  "pulse_count": 1086,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
@@ -15,17 +15,17 @@
       "maxwell-merge-slam[bot] did something (PullRequestEvent)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "maxwell-merge-slam[bot] did something (PullRequestEvent)",
-      "nickmeinhold did something (PullRequestEvent)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "maxwell-merge-slam[bot] did something (PullRequestEvent)",
       "nickmeinhold did something (PullRequestEvent)",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
-      "flux-dreaming-repo[bot] shaped my body (push)"
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "maxwell-merge-slam[bot] did something (PullRequestEvent)",
+      "nickmeinhold did something (PullRequestEvent)"
     ]
   },
   "energy": {
     "month": "2026-05",
-    "minutes_used_estimate": 160,
+    "minutes_used_estimate": 161,
     "budget": 2000,
     "level": "full"
   },
