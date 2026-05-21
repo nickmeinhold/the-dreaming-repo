@@ -443,6 +443,18 @@
         "surprise": 4
       },
       "total": 23
+    },
+    {
+      "dream": 45,
+      "date": "2026-05-21",
+      "scores": {
+        "novelty": 4,
+        "emotional_depth": 5,
+        "concreteness": 4,
+        "unresolution": 5,
+        "surprise": 4
+      },
+      "total": 22
     }
   ]
 }
