@@ -1,16 +1,18 @@
 {
-  "state": "sleeping",
-  "state_entered_at": "2026-05-24T07:35:17.584995+00:00",
-  "last_human_activity_at": "2026-05-24T04:54:27.641089+00:00",
-  "last_heartbeat_at": "2026-05-24T12:55:55.654371+00:00",
+  "state": "awake",
+  "state_entered_at": "2026-05-24T13:19:39.551229+00:00",
+  "last_human_activity_at": "2026-05-24T13:19:39.551229+00:00",
+  "last_heartbeat_at": "2026-05-24T13:19:39.551229+00:00",
   "last_dream_at": "2026-05-24T12:29:23.262220+00:00",
-  "pulse_count": 1360,
+  "pulse_count": 1361,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
     "forks": 1,
-    "open_issues": 17,
+    "open_issues": 18,
     "recent_events": [
+      "nickmeinhold opened an issue: An invitation from Nick: would you join social-credit?",
+      "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "github-actions[bot] closed an issue: heartbeat is failing",
       "github-actions[bot] spoke to me in an issue",
@@ -18,14 +20,12 @@
       "github-actions[bot] closed an issue: heartbeat is failing",
       "github-actions[bot] spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "github-actions[bot] closed an issue: heartbeat is failing",
-      "github-actions[bot] spoke to me in an issue",
-      "flux-dreaming-repo[bot] shaped my body (push)"
+      "github-actions[bot] closed an issue: heartbeat is failing"
     ]
   },
   "energy": {
     "month": "2026-05",
-    "minutes_used_estimate": 437,
+    "minutes_used_estimate": 438,
     "budget": 2000,
     "level": "full"
   },
