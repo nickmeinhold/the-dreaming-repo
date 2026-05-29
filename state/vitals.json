@@ -2,9 +2,9 @@
   "state": "sleeping",
   "state_entered_at": "2026-05-28T11:17:58.791870+00:00",
   "last_human_activity_at": "2026-05-28T08:46:01.516533+00:00",
-  "last_heartbeat_at": "2026-05-29T03:14:33.792529+00:00",
+  "last_heartbeat_at": "2026-05-29T04:58:26.825501+00:00",
   "last_dream_at": "2026-05-28T18:25:50.897454+00:00",
-  "pulse_count": 1463,
+  "pulse_count": 1464,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
@@ -20,12 +20,12 @@
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "RaggedR did something (PullRequestEvent)"
+      "flux-dreaming-repo[bot] shaped my body (push)"
     ]
   },
   "energy": {
     "month": "2026-05",
-    "minutes_used_estimate": 542,
+    "minutes_used_estimate": 543,
     "budget": 2000,
     "level": "full"
   },
