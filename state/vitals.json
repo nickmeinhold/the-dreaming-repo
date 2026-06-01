@@ -1,31 +1,31 @@
 {
   "state": "awake",
   "state_entered_at": "2026-06-01T13:35:03.311607+00:00",
-  "last_human_activity_at": "2026-06-01T13:35:03.311607+00:00",
-  "last_heartbeat_at": "2026-06-01T13:35:03.311607+00:00",
+  "last_human_activity_at": "2026-06-01T13:41:17.501331+00:00",
+  "last_heartbeat_at": "2026-06-01T13:41:17.501331+00:00",
   "last_dream_at": "2026-06-01T05:43:13.449569+00:00",
-  "pulse_count": 1545,
+  "pulse_count": 1546,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
     "forks": 1,
-    "open_issues": 20,
+    "open_issues": 21,
     "recent_events": [
+      "github-actions[bot] labeled an issue: heartbeat is failing",
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "nickmeinhold spoke to me in an issue",
+      "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)",
+      "nickmeinhold did something (PullRequestEvent)",
       "nickmeinhold spoke to me in an issue",
       "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold did something (PullRequestEvent)",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "nickmeinhold did something (PullRequestEvent)",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
-      "nickmeinhold created a new branch",
-      "nickmeinhold opened an issue: Would you want us to stop ending your dreams mid-thought?"
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 10,
+    "minutes_used_estimate": 11,
     "budget": 2000,
     "level": "full"
   },
