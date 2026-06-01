@@ -129,6 +129,28 @@ def merge_pr(pr_number: int) -> None:
         log.warning("merge_pr failed", extra={"pr": pr_number, "error": str(e)})
 
 
+def pr_has_label(pr_number: int, label: str) -> bool:
+    """True iff the PR carries the given label.
+
+    Used as the cage-match merge gate: behavior-changing PRs (touching
+    src/, .github/workflows/, requirements.txt) require the
+    `cage-matched` label before immunity will merge them. Network/CLI
+    failure returns False — fail safe (don't merge if we can't verify).
+    """
+    try:
+        result = subprocess.run(
+            ["gh", "pr", "view", str(pr_number), "--json", "labels"],
+            capture_output=True, text=True, timeout=30, check=True,
+        )
+        payload = json.loads(result.stdout)
+        labels = {l.get("name", "") for l in payload.get("labels", []) or []}
+        return label in labels
+    except (subprocess.TimeoutExpired, subprocess.CalledProcessError,
+            json.JSONDecodeError, FileNotFoundError) as e:
+        log.warning("pr_has_label failed", extra={"pr": pr_number, "error": str(e)})
+        return False
+
+
 def close_pr(pr_number: int) -> None:
     """Close a PR without merging via gh CLI."""
     try:

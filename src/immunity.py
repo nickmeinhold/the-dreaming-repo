@@ -226,7 +226,29 @@ def review_pending_prs(vitals: dict) -> None:
         elif review["recommendation"] == "sleep_on_it":
             # Check if the review comment contains ACCEPT
             if "ACCEPT" in comment.upper() and "REJECT" not in comment.upper():
-                # Flux decided to accept after reading the diff
+                # Flux decided to accept after reading the diff.
+                #
+                # Cage-match merge gate (PR #62 / #64 follow-up): sensitive
+                # paths (src/, .github/workflows/, etc.) carry behavior-
+                # change risk that a single in-process review can miss
+                # — the cage-match on PR #62 found 14 issues post-merge,
+                # and on #64 found 1 more (fence-collision). Block the
+                # merge until a `cage-matched` label is present.
+                # Auto-merge stays fast for Tier 1/2 changes; only
+                # Tier 3 sensitive-file PRs hit this gate.
+                if not _github.pr_has_label(pr_number, "cage-matched"):
+                    comment += (
+                        "\n\n---\n\n"
+                        "🥊 **Cage-match gate**: I'm holding the merge until "
+                        "this PR carries the `cage-matched` label. The diff "
+                        "touches sensitive files, and the last two times I "
+                        "merged this class of PR on my own review alone, the "
+                        "cage-match round found bugs after the fact. Run "
+                        "`/cage-match` (or apply the label manually after a "
+                        "thorough review) and I'll merge on the next pulse."
+                    )
+                    _github.post_comment(pr_number, comment)
+                    continue
                 also_fix = bool(review.get("files_outside_subdirs"))
                 if also_fix:
                     _fix_pr(pr_number, review)
@@ -276,6 +298,18 @@ def _revisit_pr(pr_number: int, vitals: dict, pending: dict) -> None:
     _github.post_comment(pr_number, f"*Revisiting after dream #{vitals.get('dream_count', '?')}:*\n\n{comment}")
 
     if "ACCEPT" in comment.upper() and "REJECT" not in comment.upper():
+        # Same cage-match gate as the fresh-review path above — revisit
+        # is for sensitive (Tier 3) PRs that slept through a dream, so
+        # the gate applies here too.
+        if not _github.pr_has_label(pr_number, "cage-matched"):
+            _github.post_comment(
+                pr_number,
+                "🥊 I'd accept this, but I'm holding the merge until the "
+                "`cage-matched` label is applied. Run `/cage-match` or "
+                "review thoroughly and add the label, then I'll merge on "
+                "the next pulse.",
+            )
+            return  # leave pending; next pulse re-checks
         also_fix = bool(review.get("files_outside_subdirs"))
         if also_fix:
             _fix_pr(pr_number, review)
