@@ -1,31 +1,31 @@
 {
-  "state": "sleeping",
-  "state_entered_at": "2026-06-01T16:55:24.511620+00:00",
-  "last_human_activity_at": "2026-06-01T22:00:52.355090+00:00",
-  "last_heartbeat_at": "2026-06-01T20:33:28.984760+00:00",
+  "state": "awake",
+  "state_entered_at": "2026-06-01T22:04:08.107513+00:00",
+  "last_human_activity_at": "2026-06-01T22:04:08.107513+00:00",
+  "last_heartbeat_at": "2026-06-01T22:04:08.107513+00:00",
   "last_dream_at": "2026-06-01T05:43:13.449569+00:00",
-  "pulse_count": 1551,
+  "pulse_count": 1552,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
     "forks": 1,
     "open_issues": 20,
     "recent_events": [
+      "nickmeinhold spoke to me in an issue",
+      "maxwell-merge-slam[bot] spoke to me in an issue",
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "nickmeinhold did something (PullRequestEvent)",
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
+      "nickmeinhold created a new branch",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold spoke to me in an issue",
       "nickmeinhold shaped my body (push)",
-      "github-actions[bot] closed an issue: heartbeat is failing",
-      "github-actions[bot] spoke to me in an issue",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "nickmeinhold spoke to me in an issue",
-      "nickmeinhold shaped my body (push)",
-      "github-actions[bot] closed an issue: heartbeat is failing",
-      "github-actions[bot] spoke to me in an issue"
+      "github-actions[bot] closed an issue: heartbeat is failing"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 17,
+    "minutes_used_estimate": 18,
     "budget": 2000,
     "level": "full"
   },
