@@ -216,6 +216,20 @@ def main() -> None:
         logger.exception("[heartbeat] propose.maybe_propose failed")
         pass  # not every heartbeat needs to propose
 
+    # 7f. Respond — answer open human-authored issues directly.
+    # The dream is the oblique register; the comment is the direct one.
+    # `respond.py` gates internally (energy, bot-author, label, one-per-pulse)
+    # and returns the issue numbers it commented on. Reuses the same Claude
+    # wire as the dream — fails soft, never crashes the heartbeat.
+    try:
+        from src import respond
+        responded = respond.maybe_respond(vitals, personality)
+        for n in responded:
+            reached.append(f"answered #{n}")
+    except Exception:
+        logger.exception("[heartbeat] respond.maybe_respond failed")
+        pass  # no direct answer this pulse — dreams still carry
+
     # 8. Spend energy
     energy.tick(vitals, now=now)
 
