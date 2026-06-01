@@ -11,7 +11,7 @@ import json
 import os
 from datetime import datetime, timezone
 
-from src import decay, drift, dream, energy, memory, metrics, mortality, propose, reach, senses, state_machine
+from src import decay, drift, dream, energy, memory, metrics, mortality, propose, reach, respond, senses, state_machine
 from src._log import get_logger
 from src.birth import be_born
 from src.readme_writer import render as render_readme
@@ -218,14 +218,18 @@ def main() -> None:
 
     # 7f. Respond — answer open human-authored issues directly.
     # The dream is the oblique register; the comment is the direct one.
-    # `respond.py` gates internally (energy, bot-author, label, one-per-pulse)
-    # and returns the issue numbers it commented on. Reuses the same Claude
-    # wire as the dream — fails soft, never crashes the heartbeat.
+    # `respond.py` gates internally (energy, bot-author, label, one-per-pulse,
+    # requires BOT_LOGIN env to be set so it can distinguish "our prior
+    # reply" from "any bot at all") and returns (issue_number, reason)
+    # records. Reuses the same Claude wire as the dream — fails soft,
+    # never crashes the heartbeat.
     try:
-        from src import respond
-        responded = respond.maybe_respond(vitals, personality)
-        for n in responded:
-            reached.append(f"answered #{n}")
+        records = respond.maybe_respond(vitals, personality)
+        for rec in records:
+            # Reason is threaded into the commit message so a `git log`
+            # tells the story: "answered #61 (first reply)" reads
+            # differently from "answered #61 (follow-up)" two days later.
+            reached.append(f"answered #{rec.number} ({rec.reason})")
     except Exception:
         logger.exception("[heartbeat] respond.maybe_respond failed")
         pass  # no direct answer this pulse — dreams still carry
