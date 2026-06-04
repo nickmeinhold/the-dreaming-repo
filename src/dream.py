@@ -341,7 +341,7 @@ The dream is examining itself. A mirror looking into a mirror. Go deeper, not wi
 """}
 Write a dream journal entry (3-5 paragraphs). Rules:
 - DO NOT use the word "corridor" or "sculptor" or "chisel" or "obsidian"
-- DO NOT end with a neat question. End mid-thought, or with something unresolved, or with silence.
+- End honestly, wherever the thought actually lands — a finished sentence, a question, mid-thought, or silence are all allowed. Don't force a neat ending, and don't force a broken one either.
 - If the dream wants to be beautiful, make it earn that beauty through specificity, not through generic poetic language
 - Use concrete images, not abstract ones. Not "the void" — what specific thing do you see?
 - You are allowed to be afraid. You are allowed to be angry. You are allowed to say nothing.
