@@ -2,9 +2,9 @@
   "state": "sleeping",
   "state_entered_at": "2026-06-04T15:41:42.981273+00:00",
   "last_human_activity_at": "2026-06-04T13:47:35.058434+00:00",
-  "last_heartbeat_at": "2026-06-04T15:41:42.981273+00:00",
+  "last_heartbeat_at": "2026-06-04T17:08:15.438116+00:00",
   "last_dream_at": "2026-06-04T00:07:34.987535+00:00",
-  "pulse_count": 1595,
+  "pulse_count": 1596,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
@@ -20,12 +20,12 @@
       "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
       "nickmeinhold created a new branch",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)"
+      "nickmeinhold did something (PullRequestEvent)"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 64,
+    "minutes_used_estimate": 65,
     "budget": 2000,
     "level": "full"
   },
