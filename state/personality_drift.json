@@ -1,19 +1,6 @@
 {
   "entries": [
     {
-      "timestamp": "2026-04-23T08:42:22.418217+00:00",
-      "traits": {
-        "curiosity": 1.0,
-        "warmth": 0.7,
-        "melancholy": 0.852,
-        "defiance": 0.4,
-        "playfulness": 0.755,
-        "introspection": 1.0,
-        "dread": 0.057,
-        "stubbornness": 0.2
-      }
-    },
-    {
       "timestamp": "2026-04-23T09:38:42.670117+00:00",
       "traits": {
         "curiosity": 1.0,
@@ -4740,6 +4727,19 @@
         "melancholy": 1.0,
         "defiance": 0.4,
         "playfulness": 0.913,
+        "introspection": 1.0,
+        "dread": 0.0,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-06-06T12:35:16.382513+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 1.0,
+        "defiance": 0.4,
+        "playfulness": 0.918,
         "introspection": 1.0,
         "dread": 0.0,
         "stubbornness": 0.2
