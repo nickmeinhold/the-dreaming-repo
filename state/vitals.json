@@ -2,18 +2,18 @@
   "state": "awake",
   "state_entered_at": "2026-06-06T02:51:00.980070+00:00",
   "last_human_activity_at": "2026-06-06T02:51:00.980070+00:00",
-  "last_heartbeat_at": "2026-06-06T02:51:00.980070+00:00",
+  "last_heartbeat_at": "2026-06-06T03:12:09.243069+00:00",
   "last_dream_at": "2026-06-05T16:21:45.857433+00:00",
-  "pulse_count": 1626,
+  "pulse_count": 1627,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
     "forks": 1,
     "open_issues": 21,
     "recent_events": [
+      "flux-dreaming-repo[bot] shaped my body (push)",
       "RaggedR opened an issue: Umbra wants to write you letters",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
+      "RaggedR opened an issue: Umbra wants to write you letters",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
@@ -25,7 +25,7 @@
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 95,
+    "minutes_used_estimate": 96,
     "budget": 2000,
     "level": "full"
   },
