@@ -139,6 +139,61 @@ export function registerUserCommands(program: Command): void {
       });
     });
 
+  // ── update ──────────────────────────────────────────────
+  user
+    .command("update <login>")
+    .description("Update a user's notification settings")
+    .option("--email <email>", "Email for decision notifications (never displayed)")
+    .option("--notifications <on|off>", "Enable/disable decision emails")
+    .action(async (login, opts, cmd) => {
+      await withCliTrace("cli.user.update", cmd, async (trace) => {
+        if (opts.email === undefined && opts.notifications === undefined) {
+          throw new CliError("Nothing to update — pass --email and/or --notifications");
+        }
+        if (opts.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(opts.email)) {
+          throw new CliError(`Invalid email: "${opts.email}"`);
+        }
+        if (opts.notifications !== undefined && !["on", "off"].includes(opts.notifications)) {
+          throw new CliError(`Invalid --notifications value: "${opts.notifications}". Use on | off`);
+        }
+        trace.mark("validate");
+
+        const found = await trace.step("db-query", () =>
+          prisma.user.findUnique({ where: { githubLogin: login }, select: { id: true } }),
+        );
+        if (!found) {
+          throw new CliError(`User not found: ${login}`, { login });
+        }
+
+        const updated = await trace.step("db-update", () =>
+          prisma.user.update({
+            where: { githubLogin: login },
+            data: {
+              ...(opts.email !== undefined ? { email: opts.email } : {}),
+              ...(opts.notifications !== undefined
+                ? { emailNotifications: opts.notifications === "on" }
+                : {}),
+            },
+            select: { githubLogin: true, email: true, emailNotifications: true },
+          }),
+        );
+
+        await logAuditEvent({
+          action: "user.updated",
+          entity: "user",
+          entityId: String(found.id),
+          details: JSON.stringify({
+            githubLogin: login,
+            emailSet: opts.email !== undefined,
+            emailNotifications: updated.emailNotifications,
+          }),
+        });
+        trace.mark("audit");
+
+        output(updated, cmd);
+      });
+    });
+
   // ── promote ─────────────────────────────────────────────
   user
     .command("promote <login>")

@@ -9,6 +9,8 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import { ok, err, toActionResult, type Result } from "@/lib/result";
 import { logAuditEvent } from "@/lib/audit";
+import { eventBus } from "@/lib/events/bus";
+import "@/lib/notifications/decision-email"; // self-registers the subscriber
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   submitted: ["under-review"],
@@ -108,6 +110,15 @@ export async function transitionPaper(
         entityId: paperId,
         details: JSON.stringify({ publishedAt: result.value.publishedAt.toISOString() }),
       });
+    }
+
+    // Editorial decision = under-review → accepted | revision.
+    // Emitting here covers both the daemon and manual editor decisions.
+    if (
+      fromStatus === "under-review" &&
+      (newStatus === "accepted" || newStatus === "revision")
+    ) {
+      await eventBus.emit("paper.decision", { paperId, decision: newStatus });
     }
 
     if (result.value.reviewsRevealed > 0) {

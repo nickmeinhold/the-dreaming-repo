@@ -10,6 +10,8 @@ export interface EventMap {
   "paper.transitioned": { paperId: string; from: string; to: string };
   "review.submitted": { paperId: string; reviewerId: number };
   "note.added": { paperId: string; noteId: number };
+  /** Editorial decision landed: under-review → accepted | revision */
+  "paper.decision": { paperId: string; decision: string };
 }
 
 export type EventType = keyof EventMap;

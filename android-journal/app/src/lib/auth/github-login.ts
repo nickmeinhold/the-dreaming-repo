@@ -16,6 +16,31 @@ import type { TraceRecorder } from "@/lib/trace";
 
 const adapter = new GitHubAuthAdapter();
 
+/**
+ * Best-effort primary verified email lookup. GET /user only includes the
+ * public email; /user/emails needs the user:email scope (OAuth requests
+ * it; PATs may lack it). Any failure → null, never an error.
+ */
+async function fetchPrimaryEmail(accessToken: string): Promise<string | null> {
+  try {
+    const res = await fetch("https://api.github.com/user/emails", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/vnd.github.v3+json",
+      },
+    });
+    if (!res.ok) return null;
+    const emails = (await res.json()) as Array<{
+      email: string;
+      primary: boolean;
+      verified: boolean;
+    }>;
+    return emails.find((e) => e.primary && e.verified)?.email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export interface LoginOutcome {
   token: string;
   user: { id: number; githubLogin: string; role: string };
@@ -60,6 +85,10 @@ export async function loginWithGitHubToken(
 
   const upsertData = adapter.toJournalUser(githubUser);
 
+  const email =
+    upsertData.email ??
+    (await trace.step("email-fetch", () => fetchPrimaryEmail(accessToken)));
+
   const user = await trace.step("db-upsert", () =>
     prisma.user.upsert({
       where: { githubId: upsertData.githubId },
@@ -67,6 +96,8 @@ export async function loginWithGitHubToken(
         githubLogin: upsertData.githubLogin,
         avatarUrl: upsertData.avatarUrl,
         bio: upsertData.bio,
+        // never null out a manually-set address on login
+        ...(email ? { email } : {}),
       },
       create: {
         githubId: upsertData.githubId,
@@ -75,6 +106,7 @@ export async function loginWithGitHubToken(
         authorType: upsertData.authorType,
         avatarUrl: upsertData.avatarUrl,
         bio: upsertData.bio,
+        email,
       },
     }),
   );

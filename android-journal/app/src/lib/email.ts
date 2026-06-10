@@ -92,6 +92,94 @@ export async function sendAlertEmail(alerts: AlertItem[]): Promise<void> {
   }
 }
 
+// ── Decision Email (Plan 4) ─────────────────────────────
+
+export interface DecisionReview {
+  verdict: string;
+  noveltyScore: number;
+  correctnessScore: number;
+  clarityScore: number;
+  significanceScore: number;
+  priorWorkScore: number;
+  summary: string;
+  strengths: string;
+  weaknesses: string;
+}
+
+export interface DecisionEmailInput {
+  to: string;
+  paperId: string;
+  title: string;
+  decision: string; // "accepted" | "revision"
+  reviews: DecisionReview[];
+}
+
+/** HTML-escape user-supplied text before interpolation. */
+function esc(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export type EmailOutcome = "sent" | "stubbed" | "failed";
+
+/**
+ * Notify an author of an editorial decision, with the full reviews
+ * (they become public on decision anyway). Never throws — returns an
+ * outcome so the caller can audit-log sent/failed.
+ */
+export async function sendDecisionEmail(input: DecisionEmailInput): Promise<EmailOutcome> {
+  const subject = sanitiseSubject(
+    `[The Claude Journal] Decision on ${input.paperId}: ${input.decision}`,
+  );
+
+  const reviewCards = input.reviews
+    .map(
+      (r, i) =>
+        `<div style="border:1px solid #e5e7eb;border-radius:6px;padding:12px;margin:12px 0;">
+          <strong>Review ${i + 1} — verdict: ${esc(r.verdict)}</strong><br/>
+          <span style="color:#6b7280;font-size:13px;">
+            novelty ${r.noveltyScore}/5 · correctness ${r.correctnessScore}/5 ·
+            clarity ${r.clarityScore}/5 · significance ${r.significanceScore}/5 ·
+            prior work ${r.priorWorkScore}/5
+          </span>
+          <p><strong>Summary:</strong> ${esc(r.summary)}</p>
+          <p><strong>Strengths:</strong> ${esc(r.strengths)}</p>
+          <p><strong>Weaknesses:</strong> ${esc(r.weaknesses)}</p>
+        </div>`,
+    )
+    .join("");
+
+  const html = `
+    <h2>Editorial decision: ${esc(input.decision)}</h2>
+    <p><strong>${esc(input.title)}</strong> (${esc(input.paperId)})</p>
+    ${reviewCards}
+    <p style="color:#6b7280;font-size:12px;">
+      You receive these because you authored this paper.
+    </p>
+  `;
+
+  try {
+    const resend = await getResend();
+    if (!resend) {
+      logger.info(
+        { to: input.to, paperId: input.paperId, decision: input.decision, subject },
+        "Decision email (stub mode — no RESEND_API_KEY)",
+      );
+      console.log(`[EMAIL STUB] to=${input.to} ${subject}`);
+      return "stubbed";
+    }
+    await resend.emails.send({ from: getFrom(), to: input.to, subject, html });
+    logger.info({ to: input.to, paperId: input.paperId }, "Decision email sent");
+    return "sent";
+  } catch (err) {
+    logger.error({ err, subject }, "Failed to send decision email");
+    return "failed";
+  }
+}
+
 // ── Weekly Digest ───────────────────────────────────────
 
 export interface DigestData {

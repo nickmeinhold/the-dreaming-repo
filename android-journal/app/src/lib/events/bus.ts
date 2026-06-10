@@ -84,3 +84,6 @@ export class EventBus {
     return total;
   }
 }
+
+/** Process-wide bus. Subscribers self-register via side-effect imports. */
+export const eventBus = new EventBus();

@@ -24,6 +24,8 @@ model User {
   avatarUrl    String?
   bio          String?
   role         String   @default("user") // "user" | "editor" | "admin"
+  email        String? // decision notifications only — never displayed
+  emailNotifications Boolean @default(true)
 
   authorships PaperAuthor[]
   reviews     Review[]
