@@ -60,6 +60,26 @@ services:
       - default
       - gateway
 
+  # Cron job runner — full build stage (node_modules + tsx + scripts/),
+  # never long-running. Host crontab invokes e.g.:
+  #   docker compose run --rm jobs npx tsx scripts/audit-alerts.ts
+  jobs:
+    build:
+      context: .
+      target: build
+    profiles: ["jobs"]
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.production
+    environment:
+      UPLOADS_DIR: /data/uploads
+      SUBMISSIONS_DIR: /data/submissions
+    volumes:
+      - journal-uploads:/data/uploads
+      - ../submissions:/data/submissions
+
 volumes:
   pgdata:
   journal-uploads:
