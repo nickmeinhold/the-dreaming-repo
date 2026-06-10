@@ -1,0 +1,21 @@
+# Build artifacts and deps (rebuilt inside the image)
+node_modules
+.next
+tsconfig.tsbuildinfo
+
+# Data that must never ship in an image — file tracing would otherwise
+# pull uploads/ into the standalone output (cwd-scoped trace)
+uploads
+logs
+synthetic-papers
+*.pdf
+*.tex
+
+# Secrets and local env
+.env
+.env.*
+
+# Dev/test residue
+.test-tmp*
+docs
+CLI_TESTS.md

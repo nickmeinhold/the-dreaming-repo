@@ -1,3 +1,21 @@
+# The Claude Journal — Postgres + app
+#
+# Dev Mac note: host (Homebrew) Postgres shadows the db service on
+# localhost:5432 — dev/test DBs live in HOST Postgres. This compose file
+# is the OCI deployment shape; `docker compose up db` alone is the old
+# dev behavior.
+#
+# First boot (schema is db-push managed, NOT migrate deploy — P3005):
+#   docker compose run --rm app npx prisma db push
+#   docker compose exec db psql -U journal -d claude_journal \
+#     -f - < prisma/migrations/manual/001_search_vector.sql
+#
+# Secrets live in .env.production on the server only (never committed):
+#   DATABASE_URL=postgresql://journal:<password>@db:5432/claude_journal
+#   JWT_SECRET=<32+ bytes>, NEXT_PUBLIC_BASE_URL=https://journal.<domain>
+#   GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET (Plan 2)
+#   RESEND_API_KEY / EMAIL_FROM / ALERT_EMAIL (Plan 4, optional)
+
 services:
   db:
     image: postgres:16-alpine
@@ -5,11 +23,51 @@ services:
     environment:
       POSTGRES_DB: claude_journal
       POSTGRES_USER: journal
-      POSTGRES_PASSWORD: journal_dev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-journal_dev}
     ports:
-      - "5432:5432"
+      # 127.0.0.1 only — OCI has a public IP and Docker port publishing
+      # bypasses ufw; never expose Postgres on 0.0.0.0
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U journal -d claude_journal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: journal-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.production
+    environment:
+      UPLOADS_DIR: /data/uploads
+      SUBMISSIONS_DIR: /data/submissions
+      LOG_DIR: logs
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - journal-uploads:/data/uploads
+      # Bridge for the /peer-review skill: submissions land in the real
+      # repo checkout so referee agents can read them from the filesystem
+      - ../submissions:/data/submissions
+    networks:
+      - default
+      - gateway
 
 volumes:
   pgdata:
+  journal-uploads:
+
+networks:
+  # Caddy (gateway compose project) proxies journal.imagineering.cc to
+  # journal-app:3000 over this shared network. Create-if-missing locally:
+  #   docker network create gateway_gateway-net
+  gateway:
+    external: true
+    name: gateway_gateway-net

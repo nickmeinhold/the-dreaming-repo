@@ -41,7 +41,7 @@ function buildStream(): DestinationStream {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const path = require("node:path") as typeof import("node:path");
 
-  const dir = path.join(process.cwd(), LOG_DIR);
+  const dir = path.join(/* turbopackIgnore: true */ process.cwd(), LOG_DIR);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }

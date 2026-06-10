@@ -32,7 +32,16 @@ export async function transitionPaper(
 ): Promise<{ success: boolean; error?: string }> {
   let fromStatus: string | undefined;
 
-  const result: Result<Record<string, unknown>> = await prisma.$transaction(async (tx) => {
+  // type alias (not interface): toActionResult requires Record<string, unknown>
+  // compatibility, which interfaces lack (no implicit index signature)
+  type TransitionOutcome = {
+    reviewsRevealed: number;
+    totalReviews: number;
+    pendingReviews: number;
+    publishedAt: Date | null;
+  };
+
+  const result: Result<TransitionOutcome> = await prisma.$transaction(async (tx) => {
     const paper = await tx.paper.findUnique({
       where: { paperId },
       select: { id: true, status: true },
