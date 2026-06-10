@@ -19,6 +19,7 @@ export const GET = authRoute()
       where: { reviewerId: ctx.userId, verdict: "pending" },
       select: {
         createdAt: true,
+        round: true,
         paper: {
           select: {
             paperId: true,
@@ -35,6 +36,7 @@ export const GET = authRoute()
     return NextResponse.json({
       pending: reviews.map((r) => ({
         assignedAt: r.createdAt,
+        round: r.round,
         ...r.paper,
       })),
     });

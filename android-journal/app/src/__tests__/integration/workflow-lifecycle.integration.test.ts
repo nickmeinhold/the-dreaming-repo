@@ -156,13 +156,11 @@ describe("W1: full lifecycle — submit to published", () => {
 });
 
 describe("W2: revision cycle", () => {
-  test("revision cycle requires new reviewers", async () => {
+  test("revision cycle reopens reviews for the same referees", async () => {
     const editor = await createTestUser({ githubLogin: "rev-editor", role: "editor" });
     const author = await createTestUser({ githubLogin: "rev-author" });
     const rev1 = await createTestUser({ githubLogin: "rev-r1" });
     const rev2 = await createTestUser({ githubLogin: "rev-r2" });
-    const rev3 = await createTestUser({ githubLogin: "rev-r3" });
-    const rev4 = await createTestUser({ githubLogin: "rev-r4" });
 
     const pdfPath = resolve(TMP_DIR, "revision.pdf");
     writeFileSync(pdfPath, SYNTHETIC_PDF);
@@ -180,30 +178,36 @@ describe("W2: revision cycle", () => {
     await runCli("review", "submit", sub.paperId, ...REVIEW_MAJOR_REV, "--as", "rev-r1");
     await runCli("review", "submit", sub.paperId, ...REVIEW_MAJOR_REV, "--as", "rev-r2");
 
-    // Move to revision then back to under-review
+    // Move to revision then back to under-review — this reopens the
+    // existing reviews: verdicts reset to pending, round incremented
     await runCli("editorial", "status", sub.paperId, "revision", "--as", "rev-editor");
     await runCli("editorial", "status", sub.paperId, "under-review", "--as", "rev-editor");
 
-    // Re-assigning same reviewers should fail (unique constraint)
+    const reopened = await prisma.review.findMany({
+      where: { paper: { paperId: sub.paperId } },
+    });
+    expect(reopened).toHaveLength(2);
+    expect(reopened.every((r) => r.verdict === "pending" && r.round === 2)).toBe(true);
+
+    // Re-assigning same reviewers should fail (assignment persists across rounds)
     const { error: dupErr } = await runCliError(
       "editorial", "assign", sub.paperId, "rev-r1", "--as", "rev-editor",
     );
     expect(dupErr).toContain("Already assigned");
 
-    // Round 2: assign new reviewers
-    await runCli("editorial", "assign", sub.paperId, "rev-r3", "--as", "rev-editor");
-    await runCli("editorial", "assign", sub.paperId, "rev-r4", "--as", "rev-editor");
-    await runCli("review", "submit", sub.paperId, ...REVIEW_ACCEPT, "--as", "rev-r3");
-    await runCli("review", "submit", sub.paperId, ...REVIEW_ACCEPT, "--as", "rev-r4");
+    // Round 2: the SAME referees re-review the revised paper
+    await runCli("review", "submit", sub.paperId, ...REVIEW_ACCEPT, "--as", "rev-r1");
+    await runCli("review", "submit", sub.paperId, ...REVIEW_ACCEPT, "--as", "rev-r2");
 
-    // Accept — ALL non-pending reviews become visible (4 reviews)
+    // Accept — the round-2 reviews become visible
     await runCli("editorial", "status", sub.paperId, "accepted", "--as", "rev-editor");
 
     const reviews = await prisma.review.findMany({
       where: { paper: { paperId: sub.paperId } },
     });
     const visible = reviews.filter((r) => r.visible);
-    expect(visible).toHaveLength(4); // both rounds
+    expect(visible).toHaveLength(2);
+    expect(visible.every((r) => r.round === 2)).toBe(true);
 
     // Publish
     await runCli("editorial", "status", sub.paperId, "published", "--as", "rev-editor");

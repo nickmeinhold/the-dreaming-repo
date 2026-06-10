@@ -340,7 +340,7 @@ describe("reviews.revealed audit event", () => {
     expect(audits).toHaveLength(0);
   });
 
-  test("multiple revision cycles: reveals all accumulated reviews", async () => {
+  test("revision cycle: reopened and new reviews revealed on accept", async () => {
     const editor = await createTestUser({ role: "editor" });
     const author = await createTestUser();
     const paper = await createTestPaper(author.id, { status: "under-review" });
@@ -364,11 +364,17 @@ describe("reviews.revealed audit event", () => {
       role: "editor",
     });
 
-    // Revision cycle
+    // Revision cycle — reopens rev1's review (verdict → pending, round 2)
     await updatePaperStatus(paper.paperId, "revision");
     await updatePaperStatus(paper.paperId, "under-review");
 
-    // Round 2: second reviewer
+    // Round 2: rev1 re-reviews the revised paper
+    await prisma.review.update({
+      where: { paperId_reviewerId: { paperId: paper.id, reviewerId: rev1.id } },
+      data: { verdict: "accept", summary: "Concerns addressed" },
+    });
+
+    // Round 2: second reviewer joins
     const rev2 = await createTestUser();
     await prisma.review.create({
       data: {

@@ -122,6 +122,7 @@ model Review {
   questions         String
   connections       String
   verdict           String // "accept" | "minor-revision" | "major-revision" | "reject"
+  round             Int      @default(1) // review round; resets to pending each resubmission, round 5+ may accept
   buildOn           String? // "Would I build on this?"
   visible           Boolean  @default(false) // public only after paper is accepted
 

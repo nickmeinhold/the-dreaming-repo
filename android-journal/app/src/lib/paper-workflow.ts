@@ -74,6 +74,16 @@ export async function transitionPaper(
       return err("Paper status changed concurrently, please retry");
     }
 
+    // Resubmission (revision → under-review): reopen all reviews for a
+    // new round. Referees see their round number; at round 5+ they may
+    // accept — endless revision loops serve no one.
+    if (paper.status === "revision" && newStatus === "under-review") {
+      await tx.review.updateMany({
+        where: { paperId: paper.id },
+        data: { verdict: "pending", round: { increment: 1 } },
+      });
+    }
+
     // Make reviews visible on acceptance or publication
     let reviewsRevealed = 0;
     let totalReviews = 0;

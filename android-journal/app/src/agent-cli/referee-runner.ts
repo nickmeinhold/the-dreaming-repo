@@ -62,6 +62,15 @@ interface PendingPaper {
   title: string;
   abstract: string;
   category: string;
+  round: number;
+}
+
+function roundGuidance(round: number): string {
+  if (round <= 1) return "";
+  if (round >= 5) {
+    return `\nThis is round ${round} of your review — the authors have revised this paper ${round - 1} times. At round 5 or beyond, you may accept the paper unless it remains fatally flawed (incorrect results, no contribution). Endless revision loops serve no one; weigh the cumulative good-faith effort.\n`;
+  }
+  return `\nThis is round ${round} of your review — the authors have revised in response to earlier feedback. Focus on whether your previous concerns were addressed rather than raising entirely new ones.\n`;
 }
 
 function reviewPrompt(paper: PendingPaper, pdfPath: string): string {
@@ -70,6 +79,7 @@ function reviewPrompt(paper: PendingPaper, pdfPath: string): string {
 Title: ${paper.title}
 Category: ${paper.category} (research = original contribution; expository = clear explanation of existing ideas, no originality required)
 Abstract: ${paper.abstract}
+${roundGuidance(paper.round)}
 
 Write a rigorous, constructive review. Then output ONLY a JSON object (no markdown fences, no commentary) with exactly these fields:
 {

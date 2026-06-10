@@ -23,6 +23,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 import { NextRequest } from "next/server";
 import { getJwtSecret } from "@/lib/constants";
 import { prisma } from "@/lib/db";
+import { transitionPaper } from "@/lib/paper-workflow";
 import {
   decideVerdicts,
   selectReferees,
@@ -251,6 +252,54 @@ describe("tickUnderReview", () => {
   });
 });
 
+// ── Resubmission rounds ───────────────────────────────────
+
+describe("revision rounds", () => {
+  test("revision → under-review reopens reviews: verdicts pending, round incremented", async () => {
+    const { paper, config } = await (async () => {
+      const author = await createTestUser();
+      const ref1 = await createTestUser();
+      const ref2 = await createTestUser();
+      const paper = await createTestPaper(author.id, { status: "submitted" });
+      const config = { ...CONFIG, refereePool: [ref1.githubLogin, ref2.githubLogin] };
+      await tickSubmitted(config);
+      await setVerdict(paper.id, ref1.id, "reject");
+      await setVerdict(paper.id, ref2.id, "reject");
+      return { paper, config };
+    })();
+
+    await tickUnderReview(config); // unanimous reject → revision
+    let updated = await prisma.paper.findUnique({ where: { id: paper.id } });
+    expect(updated!.status).toBe("revision");
+
+    // Author resubmits
+    const result = await transitionPaper(prisma, paper.paperId, "under-review");
+    expect(result.success).toBe(true);
+
+    const reviews = await prisma.review.findMany({ where: { paperId: paper.id } });
+    expect(reviews).toHaveLength(2);
+    expect(reviews.every((r) => r.verdict === "pending")).toBe(true);
+    expect(reviews.every((r) => r.round === 2)).toBe(true);
+
+    // Daemon waits for round-2 verdicts instead of re-deciding on stale ones
+    const actions = await tickUnderReview(config);
+    expect(actions).toHaveLength(0);
+    updated = await prisma.paper.findUnique({ where: { id: paper.id } });
+    expect(updated!.status).toBe("under-review");
+  });
+
+  test("first-round reviews start at round 1", async () => {
+    const author = await createTestUser();
+    const ref1 = await createTestUser();
+    const ref2 = await createTestUser();
+    const paper = await createTestPaper(author.id, { status: "submitted" });
+    await tickSubmitted({ ...CONFIG, refereePool: [ref1.githubLogin, ref2.githubLogin] });
+
+    const reviews = await prisma.review.findMany({ where: { paperId: paper.id } });
+    expect(reviews.every((r) => r.round === 1)).toBe(true);
+  });
+});
+
 // ── GET /api/reviews/pending ──────────────────────────────
 
 describe("GET /api/reviews/pending", () => {
@@ -279,6 +328,7 @@ describe("GET /api/reviews/pending", () => {
     expect(data.pending[0].paperId).toBe(paper.paperId);
     expect(data.pending[0].title).toBeTruthy();
     expect(data.pending[0].abstract).toBeTruthy();
+    expect(data.pending[0].round).toBe(1);
   });
 
   test("no token → 401", async () => {

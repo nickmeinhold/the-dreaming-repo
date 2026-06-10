@@ -244,6 +244,15 @@ describe("State Invariants — all valid paths", () => {
           `step ${i}: transition to "${target}" failed: ${result.error}`,
         ).toBe(true);
 
+        // Resubmission reopens reviews (verdict → pending, round++).
+        // Model the referee promptly re-reviewing the revised paper.
+        if (prevStatus === "revision" && target === "under-review") {
+          await prisma.review.update({
+            where: { paperId_reviewerId: { paperId: paper.id, reviewerId: reviewer.id } },
+            data: { verdict: "accept" },
+          });
+        }
+
         state = await loadPaperState(paper.paperId);
         violations = checkInvariant(state);
         expect(
@@ -317,60 +326,69 @@ describe("State Invariants — all valid paths", () => {
   );
 });
 
-describe("State Invariants — revision cycle accumulation", () => {
+describe("State Invariants — revision rounds", () => {
   fcTest.prop([fc.integer({ min: 1, max: 4 })], { numRuns: 10 })(
-    "all reviews visible after acceptance regardless of revision count",
-    async (revisionCycles) => {
+    "same referee re-reviews each round; round counts resubmissions",
+    async (reviewRounds) => {
       await cleanDatabase();
 
       const author = await createTestUser();
+      const reviewer = await createTestUser();
       const paper = await createTestPaper(author.id);
-      const reviewers: number[] = [];
 
-      // submitted → under-review
+      // submitted → under-review, round 1 review
       await transitionPaper(prisma, paper.paperId, "under-review");
+      await prisma.review.create({
+        data: {
+          paperId: paper.id,
+          reviewerId: reviewer.id,
+          noveltyScore: 3,
+          correctnessScore: 3,
+          clarityScore: 3,
+          significanceScore: 3,
+          priorWorkScore: 3,
+          summary: "Round 1 review",
+          strengths: "Good",
+          weaknesses: "Needs work",
+          questions: "",
+          connections: "",
+          verdict: reviewRounds === 1 ? "accept" : "major-revision",
+          visible: false,
+        },
+      });
 
-      // Each revision cycle adds a new reviewer with a completed review
-      for (let round = 0; round < revisionCycles; round++) {
-        const rev = await createTestUser();
-        reviewers.push(rev.id);
+      // Each further round: revision cycle reopens the review
+      // (verdict → pending, round++), then the same referee re-reviews
+      for (let round = 2; round <= reviewRounds; round++) {
+        await transitionPaper(prisma, paper.paperId, "revision");
+        await transitionPaper(prisma, paper.paperId, "under-review");
 
-        await prisma.review.create({
+        const reopened = await prisma.review.findUniqueOrThrow({
+          where: { paperId_reviewerId: { paperId: paper.id, reviewerId: reviewer.id } },
+        });
+        expect(reopened.verdict).toBe("pending");
+        expect(reopened.round).toBe(round);
+
+        await prisma.review.update({
+          where: { paperId_reviewerId: { paperId: paper.id, reviewerId: reviewer.id } },
           data: {
-            paperId: paper.id,
-            reviewerId: rev.id,
-            noveltyScore: 3,
-            correctnessScore: 3,
-            clarityScore: 3,
-            significanceScore: 3,
-            priorWorkScore: 3,
-            summary: `Round ${round + 1} review`,
-            strengths: "Good",
-            weaknesses: "Needs work",
-            questions: "",
-            connections: "",
-            verdict: round < revisionCycles - 1 ? "major-revision" : "accept",
-            visible: false,
+            summary: `Round ${round} review`,
+            verdict: round === reviewRounds ? "accept" : "major-revision",
           },
         });
-
-        // Cycle through revision unless this is the last round
-        if (round < revisionCycles - 1) {
-          await transitionPaper(prisma, paper.paperId, "revision");
-          await transitionPaper(prisma, paper.paperId, "under-review");
-        }
       }
 
-      // Accept — all completed reviews from all rounds should become visible
+      // Accept — the current (final-round) review becomes visible
       await transitionPaper(prisma, paper.paperId, "accepted");
 
-      const state = await loadPaperState(paper.paperId);
-      const visibleCompleted = state.reviews.filter(
-        (r) => r.verdict !== "pending" && r.visible,
-      );
-      expect(visibleCompleted).toHaveLength(revisionCycles);
+      const review = await prisma.review.findUniqueOrThrow({
+        where: { paperId_reviewerId: { paperId: paper.id, reviewerId: reviewer.id } },
+      });
+      expect(review.visible).toBe(true);
+      expect(review.round).toBe(reviewRounds);
 
       // Full invariant check
+      const state = await loadPaperState(paper.paperId);
       const violations = checkInvariant(state);
       expect(violations, "invariant violated after acceptance").toEqual([]);
     },
