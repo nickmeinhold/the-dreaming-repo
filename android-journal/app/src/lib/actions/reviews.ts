@@ -3,11 +3,9 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { ok, err, toActionResult } from "@/lib/result";
-import { validateReviewData, type ValidatedReviewData } from "@/lib/validation/schemas";
+import { validateReviewData } from "@/lib/validation/schemas";
 import { logAuditEvent } from "@/lib/audit";
 import { withActionTrace } from "@/lib/trace";
-
-export type { ValidatedReviewData as ReviewData };
 
 export async function submitReview(
   paperId: string,
