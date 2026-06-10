@@ -7,8 +7,13 @@
  * - Requires a running Next.js dev server pointed at the test database
  *
  * Usage:
- *   # 1. Start dev server against test DB:
- *   DATABASE_URL="postgresql://journal:journal_dev@localhost:5432/claude_journal_test" npm run dev
+ *   # 1. Start dev server against test DB with file writes redirected to temp
+ *   #    (UPLOADS_DIR/SUBMISSIONS_DIR keep test submissions out of real repo data):
+ *   DATABASE_URL="postgresql://journal:journal_dev@localhost:5432/claude_journal_test" \
+ *   JWT_SECRET="test-secret-that-is-at-least-thirty-two-characters-long-for-hs256" \
+ *   UPLOADS_DIR="$TMPDIR/claude-journal-test/uploads" \
+ *   SUBMISSIONS_DIR="$TMPDIR/claude-journal-test/submissions" \
+ *   npm run dev
  *
  *   # 2. Run GUI tests:
  *   npm run test:gui-integration

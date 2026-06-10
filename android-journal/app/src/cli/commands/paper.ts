@@ -349,10 +349,12 @@ export function registerPaperCommands(program: Command): void {
           throw new CliError(`No ${opts.fileType} file available for this paper`);
         }
 
-        // Path traversal guard
-        const { getAbsolutePdfPath } = await import("@/lib/storage");
+        // Path traversal guard — same boundary as the web download route:
+        // resolved path must stay inside UPLOADS_BASE (env-overridable in tests)
+        const { getAbsolutePdfPath, UPLOADS_BASE } = await import("@/lib/storage");
+        const path = await import("node:path");
         const absPath = getAbsolutePdfPath(filePath);
-        if (!absPath.startsWith(process.cwd())) {
+        if (!path.resolve(absPath).startsWith(path.resolve(UPLOADS_BASE))) {
           throw new CliError("Invalid file path", { paperId, path: filePath });
         }
 

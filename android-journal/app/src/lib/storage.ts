@@ -6,6 +6,9 @@
  * 2. ../submissions/YYYY-NNN/ — filesystem bridge for /peer-review skill
  *
  * Database stores relative paths under uploads/.
+ *
+ * Both locations are overridable via env (UPLOADS_DIR, SUBMISSIONS_DIR)
+ * so test runs write to temp dirs instead of real repo data.
  */
 
 import { writeFile, mkdir } from "node:fs/promises";
@@ -13,11 +16,13 @@ import path from "node:path";
 import { dump } from "./yaml";
 
 // Canonical storage for the web app
-export const UPLOADS_BASE = path.join(/* turbopackIgnore: true */ process.cwd(), "uploads");
+export const UPLOADS_BASE = process.env.UPLOADS_DIR
+  ?? path.join(/* turbopackIgnore: true */ process.cwd(), "uploads");
 const UPLOADS_DIR = path.join(UPLOADS_BASE, "papers");
 // Filesystem bridge: writes to ../submissions/ so the /peer-review
 // Claude Code skill can read papers without the web app running
-const SUBMISSIONS_DIR = path.resolve(/* turbopackIgnore: true */ process.cwd(), "..", "submissions");
+const SUBMISSIONS_DIR = process.env.SUBMISSIONS_DIR
+  ?? path.resolve(/* turbopackIgnore: true */ process.cwd(), "..", "submissions");
 
 interface PaperFiles {
   paperId: string;
@@ -67,5 +72,7 @@ export async function storePaperFiles(files: PaperFiles): Promise<{
 }
 
 export function getAbsolutePdfPath(relativePath: string): string {
-  return path.join(/* turbopackIgnore: true */ process.cwd(), relativePath);
+  // DB stores paths as "uploads/papers/..." — resolve against UPLOADS_BASE
+  // so the env override applies to reads as well as writes.
+  return path.join(UPLOADS_BASE, relativePath.replace(/^uploads\//, ""));
 }

@@ -13,6 +13,7 @@ import { writeFileSync, mkdirSync, rmSync, existsSync, statSync } from "node:fs"
 import { runCli, runCliJson, runCliError } from "./cli-helpers";
 import { cleanDatabase, createTestUser, createTestPaper } from "./helpers";
 import { prisma } from "@/lib/db";
+import { UPLOADS_BASE } from "@/lib/storage";
 
 const SYNTHETIC_PDF = Buffer.concat([
   Buffer.from("%PDF-1.4 test"),
@@ -24,7 +25,8 @@ const SYNTHETIC_TEX = Buffer.from(
 );
 
 const TMP_DIR = resolve(__dirname, "../../../.test-tmp-download");
-const UPLOADS_DIR = resolve(__dirname, "../../../uploads/papers");
+// Same env-aware base the CLI subprocess uses (UPLOADS_DIR env in vitest config)
+const UPLOADS_DIR = resolve(UPLOADS_BASE, "papers");
 
 beforeEach(async () => {
   await cleanDatabase();
