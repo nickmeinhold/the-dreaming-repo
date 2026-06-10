@@ -207,6 +207,11 @@ paper
 const review = program.command("review").description("Peer reviews");
 
 review
+  .command("pending")
+  .description("List my pending review assignments")
+  .action(async () => emit(await request("GET", "/api/reviews/pending")));
+
+review
   .command("submit <paperId>")
   .description("Submit a review (JSON: scores, summary, ..., verdict)")
   .requiredOption("--file <path>", "JSON file with the review fields")
