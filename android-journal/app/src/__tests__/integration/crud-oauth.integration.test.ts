@@ -93,11 +93,13 @@ function mockGitHubResponses(
 
   // First call: token exchange
   mockFetch.mockResolvedValueOnce({
+    ok: true,
     json: () => Promise.resolve(tokenData),
   });
 
-  // Second call: user profile
+  // Second call: user profile (loginWithGitHubToken checks .ok, like real Response)
   mockFetch.mockResolvedValueOnce({
+    ok: true,
     json: () => Promise.resolve(userData),
   });
 

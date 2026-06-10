@@ -7,7 +7,7 @@
  */
 
 import { SignJWT, jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getJwtSecret, COOKIE_NAME, SESSION_DURATION, SESSION_MAX_AGE } from "./constants";
 import { VALID_ROLES } from "./middleware/types";
 import type { Role } from "./middleware/types";
@@ -44,7 +44,16 @@ export async function createSession(payload: SessionPayload): Promise<string> {
 
 export async function getSession(): Promise<SessionPayload | null> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
+  let token = cookieStore.get(COOKIE_NAME)?.value;
+
+  // Agent CLIs send the same session JWT as `Authorization: Bearer <jwt>`
+  // (no cookie jar in a script). Header auth is inherently CSRF-immune.
+  if (!token) {
+    const authHeader = (await headers()).get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.slice("Bearer ".length);
+    }
+  }
 
   if (!token) {
     // Dev bypass: auto-login as DEV_USER_ID when no session exists

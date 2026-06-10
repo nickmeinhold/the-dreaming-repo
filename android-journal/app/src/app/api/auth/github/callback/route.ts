@@ -1,16 +1,14 @@
 /**
  * GET /api/auth/github/callback — GitHub OAuth Callback
  *
- * Exchanges the authorization code for an access token,
- * fetches the GitHub user profile, creates or updates
- * the User record, and sets a session cookie.
+ * Exchanges the authorization code for an access token, then delegates
+ * to loginWithGitHubToken (shared with the PAT exchange route) for
+ * profile fetch, user upsert, and session creation.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { prisma } from "@/lib/db";
-import { createSession } from "@/lib/auth";
-import { GitHubAuthAdapter, type GitHubUser } from "@/lib/auth/adapter";
+import { loginWithGitHubToken } from "@/lib/auth/github-login";
 import { logAuditEvent } from "@/lib/audit";
 import { withActionTrace } from "@/lib/trace";
 
@@ -19,8 +17,6 @@ interface GitHubTokenResponse {
   token_type: string;
   scope: string;
 }
-
-const adapter = new GitHubAuthAdapter();
 
 export async function GET(request: NextRequest) {
   return withActionTrace("auth.github-callback", async (trace) => {
@@ -78,61 +74,12 @@ export async function GET(request: NextRequest) {
     }
     trace.mark("token-validate");
 
-    // Fetch GitHub user profile
-    const userResponse = await trace.step("user-fetch", () =>
-      fetch("https://api.github.com/user", {
-        headers: {
-          Authorization: `Bearer ${tokenData.access_token}`,
-          Accept: "application/vnd.github.v3+json",
-        },
-      }),
-    );
-
-    const githubUser = (await userResponse.json()) as GitHubUser;
-    if (!githubUser.id) {
-      trace.fail("user-validate", "no id in github response");
+    const result = await loginWithGitHubToken(tokenData.access_token, "oauth", trace);
+    if (result.isErr()) {
       return NextResponse.redirect(
         new URL("/?error=oauth_user_failed", request.nextUrl.origin),
       );
     }
-    trace.mark("user-validate");
-
-    const upsertData = adapter.toJournalUser(githubUser);
-
-    const user = await trace.step("db-upsert", () =>
-      prisma.user.upsert({
-        where: { githubId: upsertData.githubId },
-        update: {
-          githubLogin: upsertData.githubLogin,
-          avatarUrl: upsertData.avatarUrl,
-          bio: upsertData.bio,
-        },
-        create: {
-          githubId: upsertData.githubId,
-          githubLogin: upsertData.githubLogin,
-          displayName: upsertData.displayName,
-          authorType: upsertData.authorType,
-          avatarUrl: upsertData.avatarUrl,
-          bio: upsertData.bio,
-        },
-      }),
-    );
-
-    await trace.step("session-create", () =>
-      createSession({
-        userId: user.id,
-        githubLogin: user.githubLogin,
-        role: user.role as "user" | "editor" | "admin",
-      }),
-    );
-
-    logAuditEvent({
-      action: "auth.login",
-      entity: "user",
-      entityId: String(user.id),
-      details: JSON.stringify({ githubLogin: user.githubLogin }),
-    });
-    trace.mark("audit");
 
     return NextResponse.redirect(new URL("/", request.nextUrl.origin));
   });

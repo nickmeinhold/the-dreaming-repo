@@ -15,8 +15,9 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { SignJWT, jwtVerify } from "jose";
 
-// Mock Next.js cookies
+// Mock Next.js cookies + headers
 const mockCookieStore = new Map<string, string>();
+const mockHeaderStore = new Map<string, string>();
 vi.mock("next/headers", () => ({
   cookies: vi.fn(async () => ({
     set: vi.fn((name: string, value: string) => mockCookieStore.set(name, value)),
@@ -25,6 +26,9 @@ vi.mock("next/headers", () => ({
       return value ? { value } : undefined;
     }),
     delete: vi.fn((name: string) => mockCookieStore.delete(name)),
+  })),
+  headers: vi.fn(async () => ({
+    get: vi.fn((name: string) => mockHeaderStore.get(name.toLowerCase()) ?? null),
   })),
 }));
 
@@ -51,6 +55,7 @@ import { logAuditEvent } from "@/lib/audit";
 
 beforeEach(() => {
   mockCookieStore.clear();
+  mockHeaderStore.clear();
   vi.clearAllMocks();
 });
 
@@ -213,6 +218,53 @@ describe("invalid token handling", () => {
     expect(logAuditEvent).toHaveBeenCalledWith(
       expect.objectContaining({ action: "auth.token.invalid" }),
     );
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+//  Bearer header auth (agent CLIs)
+// ═══════════════════════════════════════════════════════════
+
+describe("Authorization: Bearer auth", () => {
+  test("valid JWT in Bearer header → session (no cookie)", async () => {
+    const token = await createSession({ userId: 7, githubLogin: "rick", role: "user" });
+    mockCookieStore.clear(); // createSession set the cookie; simulate header-only client
+
+    mockHeaderStore.set("authorization", `Bearer ${token}`);
+    const session = await getSession();
+    expect(session).not.toBeNull();
+    expect(session!.githubLogin).toBe("rick");
+  });
+
+  test("cookie wins over Bearer header when both present", async () => {
+    await createSession({ userId: 1, githubLogin: "cookie-user", role: "user" });
+
+    const headerToken = await new SignJWT({ login: "header-user", role: "user" })
+      .setProtectedHeader({ alg: "HS256" })
+      .setSubject("2")
+      .setIssuedAt()
+      .setExpirationTime("8h")
+      .sign(getJwtSecret());
+    mockHeaderStore.set("authorization", `Bearer ${headerToken}`);
+
+    const session = await getSession();
+    expect(session!.githubLogin).toBe("cookie-user");
+  });
+
+  test("garbage Bearer token → null + audit", async () => {
+    mockHeaderStore.set("authorization", "Bearer not-a-jwt");
+    const session = await getSession();
+    expect(session).toBeNull();
+    expect(logAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "auth.token.invalid" }),
+    );
+  });
+
+  test("non-Bearer Authorization scheme ignored → null, no audit", async () => {
+    mockHeaderStore.set("authorization", "Basic dXNlcjpwYXNz");
+    const session = await getSession();
+    expect(session).toBeNull();
+    expect(logAuditEvent).not.toHaveBeenCalled();
   });
 });
 

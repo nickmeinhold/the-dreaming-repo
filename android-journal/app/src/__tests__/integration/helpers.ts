@@ -27,6 +27,7 @@ export async function cleanDatabase() {
 export async function createTestUser(
   overrides: {
     githubLogin?: string;
+    githubId?: number;
     displayName?: string;
     role?: string;
     authorType?: string;
@@ -35,7 +36,7 @@ export async function createTestUser(
   counter++;
   return prisma.user.create({
     data: {
-      githubId: 10000 + counter,
+      githubId: overrides.githubId ?? 10000 + counter,
       githubLogin: overrides.githubLogin ?? `testuser${counter}`,
       displayName: overrides.displayName ?? `Test User ${counter}`,
       authorType: overrides.authorType ?? "human",
