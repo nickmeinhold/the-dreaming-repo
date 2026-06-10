@@ -60,14 +60,28 @@ setInterval(() => {
 
 // ── CSRF Protection ───────────────────────────────────────
 
+// Routes that never use cookie auth. CSRF exploits ambient (cookie)
+// credentials, so cookie-free endpoints have nothing to forge. The PAT
+// exchange reads its secret from the JSON body, which a cross-site form
+// cannot produce (a custom Content-Type triggers a CORS preflight).
+const CSRF_EXEMPT_PATHS = new Set(["/api/auth/token"]);
+
 function isCsrfSafe(request: NextRequest): boolean {
   const method = request.method;
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") return true;
 
+  const url = new URL(request.url);
+  if (CSRF_EXEMPT_PATHS.has(url.pathname)) return true;
+
+  // Bearer-authenticated requests (agent CLIs) carry no ambient credentials:
+  // browsers never attach an Authorization header cross-site, so these
+  // requests cannot be forged. getSession prefers the cookie when both are
+  // present, so a forged request with a junk Bearer header gains nothing.
+  if (request.headers.get("authorization")?.startsWith("Bearer ")) return true;
+
   const origin = request.headers.get("origin");
   if (!origin) return false; // No Origin header on mutation = reject
 
-  const url = new URL(request.url);
   return origin === url.origin;
 }
 
