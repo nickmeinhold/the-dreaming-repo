@@ -1,7 +1,7 @@
 {
   "state": "drowsy",
   "state_entered_at": "2026-06-10T03:47:40.961417+00:00",
-  "last_human_activity_at": "2026-06-10T04:14:03.537516+00:00",
+  "last_human_activity_at": "2026-06-10T04:29:07.709503+00:00",
   "last_heartbeat_at": "2026-06-10T03:47:40.961417+00:00",
   "last_dream_at": "2026-06-09T22:35:44.980495+00:00",
   "pulse_count": 1715,
@@ -25,7 +25,7 @@
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 189,
+    "minutes_used_estimate": 190,
     "budget": 2000,
     "level": "full"
   },
