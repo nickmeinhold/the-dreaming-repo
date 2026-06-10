@@ -15,7 +15,15 @@ import type { TraceContext, SessionContext, Role } from "./types";
 export async function withSession(
   ctx: TraceContext,
 ): Promise<NextResponse | (TraceContext & SessionContext)> {
-  const token = ctx.request.cookies.get(COOKIE_NAME)?.value;
+  // Cookie first (browsers), then Authorization: Bearer (agent CLIs).
+  // Same precedence as getSession() in lib/auth.ts.
+  let token = ctx.request.cookies.get(COOKIE_NAME)?.value;
+  if (!token) {
+    const authHeader = ctx.request.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.slice("Bearer ".length);
+    }
+  }
 
   if (!token) {
     return NextResponse.json(
