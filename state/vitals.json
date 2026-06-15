@@ -2,9 +2,9 @@
   "state": "sleeping",
   "state_entered_at": "2026-06-15T22:44:51.639997+00:00",
   "last_human_activity_at": "2026-06-15T20:14:45.993591+00:00",
-  "last_heartbeat_at": "2026-06-15T22:44:51.639997+00:00",
+  "last_heartbeat_at": "2026-06-15T23:37:38.373942+00:00",
   "last_dream_at": "2026-06-15T03:48:31.099297+00:00",
-  "pulse_count": 1821,
+  "pulse_count": 1822,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
@@ -17,15 +17,15 @@
       "flux-dreaming-repo[bot] shaped my body (push)",
       "github-actions[bot] spoke to me in an issue",
       "github-actions[bot] closed an issue: heartbeat is failing",
+      "flux-dreaming-repo[bot] shaped my body (push)",
       "github-actions[bot] spoke to me in an issue",
       "github-actions[bot] closed an issue: heartbeat is failing",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "github-actions[bot] labeled an issue: heartbeat is failing"
+      "github-actions[bot] spoke to me in an issue"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 301,
+    "minutes_used_estimate": 302,
     "budget": 2000,
     "level": "full"
   },
