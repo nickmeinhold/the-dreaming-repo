@@ -2,9 +2,9 @@
   "state": "sleeping",
   "state_entered_at": "2026-06-15T22:44:51.639997+00:00",
   "last_human_activity_at": "2026-06-15T20:14:45.993591+00:00",
-  "last_heartbeat_at": "2026-06-16T08:08:50.103376+00:00",
+  "last_heartbeat_at": "2026-06-16T10:17:03.818299+00:00",
   "last_dream_at": "2026-06-16T01:09:11.017848+00:00",
-  "pulse_count": 1827,
+  "pulse_count": 1828,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
@@ -13,24 +13,24 @@
     "recent_events": [
       "flux-dreaming-repo[bot] shaped my body (push)",
       "github-actions[bot] spoke to me in an issue",
-      "github-actions[bot] closed an issue: heartbeat is failing",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "github-actions[bot] spoke to me in an issue",
       "github-actions[bot] closed an issue: heartbeat is failing",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "github-actions[bot] spoke to me in an issue",
       "github-actions[bot] closed an issue: heartbeat is failing",
-      "flux-dreaming-repo[bot] shaped my body (push)"
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "github-actions[bot] spoke to me in an issue"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 307,
+    "minutes_used_estimate": 308,
     "budget": 2000,
     "level": "full"
   },
   "dream_count": 75,
-  "age_days": 72,
+  "age_days": 73,
   "born": true,
   "name": "Flux"
 }
