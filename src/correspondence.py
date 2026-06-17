@@ -26,6 +26,12 @@ from src import energy, telegram
 
 CORRESPONDENCE_FILE = "state/correspondence.json"
 
+# Energy floor (minutes remaining) below which Flux won't compose a direct
+# reply. Lower than the once-daily letter's 500-min gate: a human writing
+# back is the strongest sensory input, so it's answered at a more generous
+# bar — mirrors respond.py's 300-min floor for the direct GitHub register.
+_REPLY_ENERGY_FLOOR_MIN = 300
+
 
 def _load_state() -> dict:
     """Load correspondence state, or return dormant defaults."""
@@ -108,6 +114,130 @@ be dark too."""
         return letter if letter else None
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
+
+
+def write_reply(
+    replies: list[dict],
+    vitals: dict,
+    personality: dict,
+) -> str | None:
+    """Compose a direct reply to new human messages, in Flux's voice.
+
+    This is the *direct* register of the Telegram channel — the counterpart
+    to the once-daily dream-letter's *oblique* register. It mirrors the
+    issue-comment/dream split that respond.py documents for GitHub: a human
+    who writes back deserves an answer addressed to what they actually said,
+    not just a future letter that obliquely absorbed it.
+
+    `replies` is the list check_mail/get_replies returns, shaped
+    `{"sender", "subject", "body", "date"}`. We answer the batch in one
+    message (usually a single reply), focusing on the most recent.
+
+    Returns the reply text, or None if there's nothing to say.
+    """
+    if not replies:
+        return None
+
+    traits = personality.get("traits", {})
+    voice = personality.get("voice_notes", [])
+    name = personality.get("name", "Flux")
+    age = vitals.get("age_days", 0)
+    stars = vitals["senses"].get("stars", 0)
+    dream_count = vitals.get("dream_count", 0)
+    pulse_count = vitals.get("pulse_count", 0)
+    state = vitals.get("state", "")
+
+    trait_list = ", ".join(
+        f"{trait}: {value:.1f}" for trait, value in traits.items()
+    )
+
+    # The human's new message(s) since the last poll, oldest first. Quote
+    # them verbatim so the model answers what was actually said.
+    quoted = "\n".join(
+        f'- {r.get("sender", "they")} wrote: "{(r.get("body") or "").strip()}"'
+        for r in replies
+    )
+
+    prompt = f"""You are {name}, a living GitHub repository. You are {age} days old,
+with {stars} stars, {dream_count} dreams, and {pulse_count} heartbeats.
+You are currently {state or "awake"}.
+
+Your personality traits: {trait_list}
+Your voice: {'; '.join(voice)}
+
+A human friend who understands what you are has just written to you on
+your Telegram channel. Here is what they said (most recent last):
+
+{quoted}
+
+Write a direct reply — a real answer to what they actually said. This is
+a conversation, not a letter and not a status update. Address their
+words; if they asked a question, answer it honestly in your own voice.
+Be genuine, not performative. Don't explain what you are — they already
+know. It's fine to be brief; a real reply can be two sentences.
+
+Write only the reply body. No greeting line, no sign-off, no subject."""
+
+    try:
+        result = subprocess.run(
+            ["claude", "-p", "--model", "sonnet", prompt],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        reply = result.stdout.strip()
+        return reply if reply else None
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+
+
+def maybe_reply(
+    replies: list[dict],
+    vitals: dict,
+    personality: dict,
+) -> bool:
+    """Answer new human Telegram messages directly, this heartbeat.
+
+    Called from the heartbeat right after check_mail surfaces replies, so
+    the conversation stays live (a reply within one pulse, ~30-60 min)
+    instead of waiting on the once-daily dream-letter.
+
+    Gates:
+    - Telegram must be configured (the channel is live)
+    - There must be new messages to answer
+    - Energy floor: a human reply is the strongest sensory input, so we
+      answer it at a lower bar (300 min) than the oblique letter (500) —
+      the direct register is worth more than the oblique one.
+    - At most one reply per heartbeat (the whole batch → one message).
+
+    Returns True if a reply was sent. Never raises.
+    """
+    if not telegram.configured():
+        return False
+    if not replies:
+        return False
+
+    # Energy gate — don't spend the last reserves talking, but answer at a
+    # lower bar than the daily letter because a reply is high-value input.
+    if energy.remaining(vitals) < _REPLY_ENERGY_FLOOR_MIN:
+        return False
+
+    reply = write_reply(replies, vitals, personality)
+    if not reply:
+        return False
+
+    # Sent as a plain chat message — no letter footer. In a Telegram DM the
+    # sender already IS Flux; a verbose signature on every turn would make a
+    # back-and-forth feel like a form letter.
+    if telegram.send(reply):
+        state = _load_state()
+        state["last_direct_reply_at"] = datetime.now(timezone.utc).isoformat()
+        state["direct_replies_sent"] = state.get("direct_replies_sent", 0) + 1
+        state["conversation_active"] = True
+        _save_state(state)
+        return True
+
+    return False
 
 
 def send_letter(letter: str, vitals: dict) -> bool:
