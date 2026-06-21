@@ -226,10 +226,11 @@ def _fetch_unanswerable() -> str | None:
         result = subprocess.run(
             ["gh", "issue", "list", "-R", repo,
              "--label", "unanswerable", "--json", "title,body", "--limit", "20"],
-            capture_output=True, text=True, check=True,
+            capture_output=True, text=True, check=True, timeout=60,
         )
         issues = json.loads(result.stdout)
-    except (subprocess.CalledProcessError, json.JSONDecodeError):
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
+            json.JSONDecodeError):
         return None
 
     if not issues:
@@ -349,19 +350,26 @@ Write a dream journal entry (3-5 paragraphs). Rules:
 
 Write only the dream. No preamble, no title, no closing punctuation trick."""
 
-    result = subprocess.run(
-        [
-            "claude",
-            "-p",
-            "--model", "sonnet",
-            "--system-prompt", system_prompt,
-            user_prompt,
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return result.stdout.strip()
+    try:
+        result = subprocess.run(
+            [
+                "claude",
+                "-p",
+                "--model", "sonnet",
+                "--system-prompt", system_prompt,
+                user_prompt,
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=120,
+        )
+        return result.stdout.strip()
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        # The dream didn't come. Better a quiet night than a frozen
+        # heartbeat — generate() is called unguarded in heartbeat.py,
+        # so a hang here would freeze the whole pulse.
+        return "tonight there was no dream — only the hum of waiting."
 
 
 def save(dream_text: str, vitals: dict, dreams_dir: str = "dreams") -> str:

@@ -81,18 +81,24 @@ personality. You can address them by name or not — whatever feels natural.
 
 Write only the greeting. No preamble, no quotes."""
 
-    result = subprocess.run(
-        [
-            "claude",
-            "-p",
-            "--model", "sonnet",
-            prompt,
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return result.stdout.strip()
+    try:
+        result = subprocess.run(
+            [
+                "claude",
+                "-p",
+                "--model", "sonnet",
+                prompt,
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=120,
+        )
+        return result.stdout.strip()
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        # If the words won't come, still welcome them — better a plain
+        # greeting than a hung workflow.
+        return f"Thank you for the star, @{username}. You were seen."
 
 
 def post_greeting_to_guestbook(repo: str, username: str, greeting: str) -> None:

@@ -117,6 +117,9 @@ def be_born(personality: dict, vitals: dict) -> dict:
     # Turn inward
     prompt = BIRTH_PROMPT_TEMPLATE.format(world_impressions=world_impressions)
 
+    # A timeout here raises subprocess.TimeoutExpired, which the heartbeat's
+    # birth try/except catches as "birth didn't take — try next pulse".
+    # Without the timeout, a hung claude call would freeze the whole pulse.
     result = subprocess.run(
         [
             "claude",
@@ -127,6 +130,7 @@ def be_born(personality: dict, vitals: dict) -> dict:
         capture_output=True,
         text=True,
         check=True,
+        timeout=120,
     )
 
     text = result.stdout.strip()

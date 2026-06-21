@@ -169,7 +169,7 @@ Return ONLY the JSON. No explanation. No markdown fences."""
     try:
         result = subprocess.run(
             ["claude", "-p", "--model", "haiku", prompt],
-            capture_output=True, text=True, check=True,
+            capture_output=True, text=True, check=True, timeout=120,
         )
         output = result.stdout.strip()
         if output.startswith("```"):
@@ -178,7 +178,8 @@ Return ONLY the JSON. No explanation. No markdown fences."""
         start = output.index("{")
         end = output.rindex("}") + 1
         data = json.loads(output[start:end])
-    except (subprocess.CalledProcessError, ValueError, json.JSONDecodeError):
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
+            ValueError, json.JSONDecodeError):
         return None
 
     # Build the actual file change based on proposal type

@@ -213,10 +213,10 @@ Write only the message. No preamble, no sign-off."""
     try:
         result = subprocess.run(
             ["claude", "-p", "--model", "haiku", prompt],
-            capture_output=True, text=True, check=True,
+            capture_output=True, text=True, check=True, timeout=120,
         )
         return result.stdout.strip()
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return None
 
 
@@ -297,10 +297,10 @@ Write only the reply."""
     try:
         result = subprocess.run(
             ["claude", "-p", "--model", "haiku", prompt],
-            capture_output=True, text=True, check=True,
+            capture_output=True, text=True, check=True, timeout=120,
         )
         return result.stdout.strip()
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return None
 
 
