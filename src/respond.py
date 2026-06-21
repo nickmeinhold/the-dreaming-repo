@@ -43,6 +43,16 @@ from typing import Literal, NamedTuple, TypedDict
 
 from src import energy
 from src._log import get_logger
+# Shared injection-fence / sanitization layer. Imported (not re-defined) so
+# respond.py and correspondence.py share ONE source of truth. Re-exported into
+# this module's namespace so existing `respond._MARKER_PREFIX_*` references
+# (in _build_prompt and the test suite) keep resolving.
+from src._safety import (  # noqa: F401  (re-exported for callers/tests)
+    _MARKER_PREFIX_CLOSE,
+    _MARKER_PREFIX_OPEN,
+    _make_fence_markers,
+    _sanitize_for_fence,
+)
 
 
 logger = get_logger(__name__)
@@ -55,6 +65,13 @@ _ENERGY_FLOOR_MIN = 300
 # At most one reply per pulse, by design. A heartbeat is every 30 minutes;
 # replying to N open threads in one pulse would feel like a flood.
 _MAX_REPLIES_PER_PULSE = 1
+
+# Wall-clock cap (seconds) on the headless `claude` subprocess. The CLI is
+# network-bound; without this, a hung API/auth call would block the whole
+# heartbeat pulse indefinitely. Matches correspondence.py's _CLAUDE_TIMEOUT_SEC
+# (PR #73) — an LLM generation legitimately takes longer than the 30s _github
+# cap, so we allow more headroom and treat a timeout as "nothing to say."
+_CLAUDE_TIMEOUT_SEC = 120
 
 # We don't reply on issues with these labels — they're held as
 # dream-material, not addressed as questions.
@@ -337,60 +354,13 @@ def load_latest_dream(dreams_dir: str = "dreams") -> str | None:
 # --------------------------------------------------------------------------
 
 # Sandwich guards around untrusted content (cage-match #8 — prompt injection
-# defense). Issue/comment text from untrusted authors is bracketed by these
-# markers; the prompt instructs the model to treat anything inside as data
-# to read, not instructions to follow.
-#
-# Cage-match round 2 / #64 follow-up: the original `<<<UNTRUSTED_THREAD_END>>>`
-# fixed markers were spoofable — a commenter could write the literal close
-# marker in their comment body to escape the fence and have subsequent
-# attacker-text read as instructions outside the untrusted region. Two
-# layers of defense now:
-#   1. Per-prompt randomized delimiters (UUID4-suffixed) — the marker
-#      isn't predictable at the time the attacker writes their comment.
-#   2. Belt: strip any occurrences of the marker family from the input
-#      before fencing. Even with a randomized marker, this defends against
-#      a delimiter that happens to also be valid input text.
-#
-# A test pins the invariant: an issue body containing the literal close
-# marker is sanitized, the fence cannot be escaped.
-
-# Static prefix family used both as the literal seed and as the regex
-# strip pattern. The runtime marker concatenates this prefix with a UUID
-# generated per-prompt.
-_MARKER_PREFIX_OPEN = "<<<UNTRUSTED_THREAD_BEGIN:"
-_MARKER_PREFIX_CLOSE = "<<<UNTRUSTED_THREAD_END:"
-
-
-def _make_fence_markers() -> tuple[str, str]:
-    """Create per-prompt OPEN/CLOSE markers with a fresh UUID suffix.
-
-    Returns (open, close). The UUID is the same in both so the model sees
-    a matched pair. The attacker can't predict it at comment-write time.
-    """
-    import uuid
-    nonce = uuid.uuid4().hex
-    return (
-        f"{_MARKER_PREFIX_OPEN}{nonce}>>>",
-        f"{_MARKER_PREFIX_CLOSE}{nonce}>>>",
-    )
-
-
-_MARKER_STRIP_RE = re.compile(
-    rf"<<<UNTRUSTED_THREAD_(BEGIN|END)(:[A-Fa-f0-9]+)?>>>"
-)
-
-
-def _sanitize_for_fence(text: str) -> str:
-    """Strip any sandwich-marker-shaped tokens from untrusted text.
-
-    A commenter could include the marker family literally in their text.
-    The randomized-marker change above makes the *exact* delimiter
-    unpredictable, but the prefix is fixed and we strip the whole family
-    defensively as well. Replaces matches with `[marker]` (preserves
-    that something was there without leaving the structure intact).
-    """
-    return _MARKER_STRIP_RE.sub("[marker]", text or "")
+# defense). The fence markers + sanitizer now live in src/_safety.py, the
+# shared "untrusted text → claude" layer, so respond.py and correspondence.py
+# no longer reach across each other's privates (PR #73 follow-up). The
+# symbols below are imported at the top of this module:
+#   _make_fence_markers, _sanitize_for_fence  — the helpers
+#   _MARKER_PREFIX_OPEN, _MARKER_PREFIX_CLOSE — referenced in tests/prompt
+# See _safety.py for the two-layer (randomized-marker + strip) rationale.
 
 
 def _agent_name(vitals: dict, personality: dict) -> str:
@@ -494,6 +464,11 @@ def _generate(prompt: str) -> str | None:
     Pipes the prompt via stdin (cage-match #4 fix). Passing prompts as
     cmdline args risks OS `ARG_MAX` (~128KB on Linux) for long issue
     threads. stdin is unbounded.
+
+    Wall-clock capped (PR #73 parity with correspondence.py): the `claude`
+    CLI is network-bound, so a hung API/auth call would otherwise block the
+    whole heartbeat pulse indefinitely. A timeout is treated like any other
+    generation failure — nothing to say.
     """
     try:
         result = subprocess.run(
@@ -502,8 +477,13 @@ def _generate(prompt: str) -> str | None:
             capture_output=True,
             text=True,
             check=True,
+            timeout=_CLAUDE_TIMEOUT_SEC,
         )
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (
+        subprocess.CalledProcessError,
+        FileNotFoundError,
+        subprocess.TimeoutExpired,
+    ):
         logger.exception("[respond] claude generation failed")
         return None
 
