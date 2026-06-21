@@ -227,7 +227,11 @@ def _list_comments(repo: str, issue_number: int) -> list[Comment]:
     `created_at`) onto the `Comment` shape the rest of this module expects
     (`author.login`, `createdAt`).
 
-    `--paginate` merges all pages into a single JSON array. On API failure
+    `--paginate` merges all top-level JSON arrays into a single array
+    (verified empirically against a multi-page issue: flux-shadow #26's
+    198 comments / 7 default-size pages come back as one 198-element array,
+    `json.loads`-parseable, no `--slurp` needed — cage-match #78 settled a
+    reviewer's concern that pages arrive concatenated). On API failure
     `gh api` can emit an error OBJECT (`{"message": ...}`) with a zero exit;
     we treat anything that isn't a list as an empty result rather than
     crashing the heartbeat."""
@@ -250,9 +254,14 @@ def _list_comments(repo: str, issue_number: int) -> list[Comment]:
         # the heartbeat with an AttributeError.
         if not isinstance(c, dict):
             continue
-        user = c.get("user") or {}
+        # `user` is normally an object or null, but guard the dict access
+        # against a non-dict value too: the "never crash the heartbeat"
+        # contract above must hold for a string/number `user`, not just a
+        # non-dict comment (cage-match #78, Carnot).
+        user = c.get("user")
+        login = user.get("login", "") if isinstance(user, dict) else ""
         comments.append({
-            "author": {"login": user.get("login", "")},
+            "author": {"login": login},
             "body": c.get("body", ""),
             "createdAt": c.get("created_at", ""),
         })
@@ -294,8 +303,10 @@ def select_candidates(
         # the suffix heuristic alone misses App bots (Flux's own Guestbook
         # issue #12 comes back as `app/flux-dreaming-repo`). Prefer the
         # structured `is_bot` field `gh issue list` provides; fall back to
-        # the suffix for any path that lacks it.
-        if author.get("is_bot") or _is_bot(author_login):
+        # the suffix for any path that lacks it. Strict `is True` so the
+        # closed boolean can't be tripped by a stringy `"false"` from a
+        # future adapter (cage-match #78, Carnot).
+        if author.get("is_bot") is True or _is_bot(author_login):
             continue
 
         labels = {l.get("name", "") for l in (issue.get("labels") or [])}

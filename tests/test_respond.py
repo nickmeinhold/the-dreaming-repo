@@ -207,15 +207,19 @@ class TestFiltering:
              "body": "still no PR named"},
             "this should not be here",  # malformed element — must be skipped
             {"user": None, "created_at": "2026-06-06T02:00:00Z", "body": "ghost"},
+            # `user` as a non-dict (string) must NOT raise on `.get` —
+            # the heartbeat-never-crashes contract (cage-match #78, Carnot).
+            {"user": "stringly", "created_at": "2026-06-06T03:00:00Z", "body": "weird"},
         ])
         monkeypatch.setattr(respond, "_gh", lambda args: rest_payload)
         comments = respond._list_comments("nickmeinhold/the-dreaming-repo", 61)
-        assert len(comments) == 3, "malformed string element must be dropped"
+        assert len(comments) == 4, "malformed string element must be dropped"
         assert comments[1]["author"]["login"] == "flux-dreaming-repo[bot]", (
             "REST must preserve the [bot] suffix — this is the loop fix"
         )
         assert comments[0]["createdAt"] == "2026-06-06T00:00:00Z"
         assert comments[2]["author"]["login"] == ""  # null user → empty login
+        assert comments[3]["author"]["login"] == ""  # non-dict user → empty login
 
     def test_list_comments_handles_error_object(self, monkeypatch):
         """If the API returns an error object instead of an array (e.g.
