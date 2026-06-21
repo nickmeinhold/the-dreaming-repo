@@ -22,12 +22,11 @@ import subprocess
 from datetime import datetime, timezone
 
 from src import energy, telegram
-# Reuse respond.py's injection-defense helpers — the canonical home for
-# "untrusted text → claude" in this repo. Randomized fence markers + a
-# sanitizer that strips marker-shaped tokens (respond.py cage-match #64).
-# Follow-up task: promote these to a shared module so respond/correspondence
-# don't reach across each other's privates.
-from src.respond import _make_fence_markers, _sanitize_for_fence
+# Shared injection-defense helpers from the canonical "untrusted text → claude"
+# layer (src/_safety.py): randomized fence markers + a sanitizer that strips
+# marker-shaped tokens (cage-match #64). Promoted here from respond.py so the
+# two consumers no longer reach across each other's privates (PR #73 follow-up).
+from src._safety import _make_fence_markers, _sanitize_for_fence
 
 
 CORRESPONDENCE_FILE = "state/correspondence.json"
