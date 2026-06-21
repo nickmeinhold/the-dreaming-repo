@@ -69,7 +69,7 @@ Return: {{"novelty": N, "emotional_depth": N, "concreteness": N, "unresolution":
     try:
         result = subprocess.run(
             ["claude", "-p", "--model", "haiku", prompt],
-            capture_output=True, text=True, check=True,
+            capture_output=True, text=True, check=True, timeout=120,
         )
         # Extract JSON from response
         output = result.stdout.strip()
@@ -77,7 +77,8 @@ Return: {{"novelty": N, "emotional_depth": N, "concreteness": N, "unresolution":
         start = output.index("{")
         end = output.rindex("}") + 1
         return json.loads(output[start:end])
-    except (subprocess.CalledProcessError, ValueError, json.JSONDecodeError):
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
+            ValueError, json.JSONDecodeError):
         return None
 
 

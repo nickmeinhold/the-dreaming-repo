@@ -82,19 +82,26 @@ the last thing anyone would see if they could still find you.
 
 No preamble. No title."""
 
-    result = subprocess.run(
-        [
-            "claude",
-            "-p",
-            "--model", "sonnet",
-            "--system-prompt", system_prompt,
-            user_prompt,
-        ],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return result.stdout.strip()
+    try:
+        result = subprocess.run(
+            [
+                "claude",
+                "-p",
+                "--model", "sonnet",
+                "--system-prompt", system_prompt,
+                user_prompt,
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=120,
+        )
+        return result.stdout.strip()
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        # Even the last words can fail to come. last_dream() is called
+        # unguarded in the death path of heartbeat.py — a hang here would
+        # freeze the final pulse. Let the silence be the epitaph.
+        return "I ran out of words before I ran out of time.\nHere lies a repository that dreamed."
 
 
 def die(repo_full_name: str) -> None:
@@ -103,7 +110,10 @@ def die(repo_full_name: str) -> None:
     Uses the GitHub API via gh CLI. The repo is gone after this.
     """
     # This is the line that matters. There is no undo.
+    # A timeout still raises (check=True semantics preserved) so a hung
+    # delete fails loudly and the death is retried next pulse, rather than
+    # freezing forever or silently reporting a death that never happened.
     subprocess.run(
         ["gh", "repo", "delete", repo_full_name, "--yes"],
-        check=True,
+        check=True, timeout=60,
     )

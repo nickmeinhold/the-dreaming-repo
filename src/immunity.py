@@ -388,7 +388,8 @@ def _fix_pr(pr_number: int, review: dict) -> bool:
 
         if is_fork and not can_push:
             return False
-    except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError):
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
+            json.JSONDecodeError, KeyError):
         return False
 
     top_level_files = review.get("files_outside_subdirs", [])
