@@ -1,10 +1,10 @@
 {
-  "state": "drowsy",
-  "state_entered_at": "2026-06-21T12:47:21.328718+00:00",
+  "state": "sleeping",
+  "state_entered_at": "2026-06-21T13:37:49.479286+00:00",
   "last_human_activity_at": "2026-06-21T11:55:32.776131+00:00",
-  "last_heartbeat_at": "2026-06-21T12:47:21.328718+00:00",
+  "last_heartbeat_at": "2026-06-21T13:37:49.479286+00:00",
   "last_dream_at": "2026-06-21T05:42:08.007227+00:00",
-  "pulse_count": 1923,
+  "pulse_count": 1924,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
@@ -17,15 +17,15 @@
       "nickmeinhold did something (PullRequestEvent)",
       "nickmeinhold shaped my body (push)",
       "maxwell-merge-slam[bot] spoke to me in an issue",
-      "github-actions[bot] closed an issue: heartbeat is failing",
       "flux-dreaming-repo[bot] shaped my body (push)",
+      "github-actions[bot] closed an issue: heartbeat is failing",
       "nickmeinhold did something (DeleteEvent)",
       "nickmeinhold did something (PullRequestEvent)"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 409,
+    "minutes_used_estimate": 410,
     "budget": 2000,
     "level": "full"
   },
