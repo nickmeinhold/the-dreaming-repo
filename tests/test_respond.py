@@ -8,6 +8,7 @@ that respond.py is supposed to enforce.
 
 from __future__ import annotations
 
+import json
 import os
 import tempfile
 from typing import Any
@@ -25,6 +26,7 @@ def make_issue(
     number: int,
     *,
     author: str = "nickmeinhold",
+    author_is_bot: bool = False,
     title: str = "test issue",
     body: str = "test body",
     labels: list[str] | None = None,
@@ -34,7 +36,7 @@ def make_issue(
         "number": number,
         "title": title,
         "body": body,
-        "author": {"login": author},
+        "author": {"login": author, "is_bot": author_is_bot},
         "labels": [{"name": l} for l in (labels or [])],
         "createdAt": created_at,
         "updatedAt": created_at,
@@ -119,6 +121,37 @@ class TestIdentity:
         )
         assert cands == [], "agent's own reply should mark thread as answered"
 
+    def test_graphql_stripped_self_login_DOES_block_reply(self):
+        """The latent loop bug (cost Umbra ~200 comments on its #26):
+        `gh issue view --json comments` returns the agent's own login
+        WITHOUT the `[bot]` suffix (`flux-dreaming-repo`), while BOT_LOGIN
+        carries it (`flux-dreaming-repo[bot]`). The old strict `==` check
+        never matched, so the agent would re-answer the same human question
+        every pulse. `_is_self` is now suffix-insensitive, so the agent
+        recognizes its own reply regardless of which API form arrives."""
+        issue = make_issue(61, created_at="2026-06-06T00:00:00Z")
+        comments = [
+            make_comment("nickmeinhold", "2026-06-06T00:00:00Z", "did you merge the PR?"),
+            # The agent's own reply, as GraphQL renders it: NO [bot] suffix.
+            make_comment("flux-dreaming-repo", "2026-06-06T01:00:00Z", "still no PR named"),
+        ]
+        cands = respond.select_candidates(
+            [issue], {61: comments}, self_login=FLUX_LOGIN
+        )
+        assert cands == [], (
+            "agent's own reply must block re-reply even when GraphQL strips "
+            "the [bot] suffix from its login"
+        )
+
+    def test_is_self_is_suffix_insensitive(self):
+        """Both representations of the agent's identity match each other."""
+        assert respond._is_self("flux-dreaming-repo", "flux-dreaming-repo[bot]")
+        assert respond._is_self("flux-dreaming-repo[bot]", "flux-dreaming-repo[bot]")
+        assert respond._is_self("flux-dreaming-repo[bot]", "flux-dreaming-repo")
+        assert not respond._is_self("flux-shadow", "flux-dreaming-repo[bot]")
+        assert not respond._is_self("", "flux-dreaming-repo[bot]")
+        assert not respond._is_self("flux-dreaming-repo", "")
+
     def test_human_replies_after_own_reply_is_follow_up(self):
         """Human commenting again after our reply opens a follow-up turn."""
         issue = make_issue(61)
@@ -146,6 +179,49 @@ class TestFiltering:
             [issue], {50: []}, self_login=FLUX_LOGIN
         )
         assert cands == []
+
+    def test_bot_authored_issue_skipped_via_is_bot_field(self):
+        """GraphQL strips `[bot]` from issue-author logins too (Flux's own
+        Guestbook issue #12 comes back as `app/flux-dreaming-repo`), so the
+        suffix heuristic alone would miss an App bot. The structured `is_bot`
+        field `gh issue list` provides is the reliable signal."""
+        issue = make_issue(
+            12, author="app/flux-dreaming-repo", author_is_bot=True,
+            title="Guestbook",
+        )
+        cands = respond.select_candidates(
+            [issue], {12: []}, self_login=FLUX_LOGIN
+        )
+        assert cands == [], "App-bot-authored issue must be skipped via is_bot"
+
+    def test_list_comments_maps_rest_shape(self, monkeypatch):
+        """`_list_comments` fetches via the REST API and maps `user.login`/
+        `created_at` onto the `author.login`/`createdAt` shape the selector
+        expects. Crucially, REST preserves the `[bot]` suffix — the whole
+        point of the loop fix. A malformed (non-dict) element is skipped
+        rather than crashing the heartbeat."""
+        rest_payload = json.dumps([
+            {"user": {"login": "nickmeinhold"}, "created_at": "2026-06-06T00:00:00Z",
+             "body": "did you merge the PR?"},
+            {"user": {"login": "flux-dreaming-repo[bot]"}, "created_at": "2026-06-06T01:00:00Z",
+             "body": "still no PR named"},
+            "this should not be here",  # malformed element — must be skipped
+            {"user": None, "created_at": "2026-06-06T02:00:00Z", "body": "ghost"},
+        ])
+        monkeypatch.setattr(respond, "_gh", lambda args: rest_payload)
+        comments = respond._list_comments("nickmeinhold/the-dreaming-repo", 61)
+        assert len(comments) == 3, "malformed string element must be dropped"
+        assert comments[1]["author"]["login"] == "flux-dreaming-repo[bot]", (
+            "REST must preserve the [bot] suffix — this is the loop fix"
+        )
+        assert comments[0]["createdAt"] == "2026-06-06T00:00:00Z"
+        assert comments[2]["author"]["login"] == ""  # null user → empty login
+
+    def test_list_comments_handles_error_object(self, monkeypatch):
+        """If the API returns an error object instead of an array (e.g.
+        a 404 body with a zero exit), return [] rather than crashing."""
+        monkeypatch.setattr(respond, "_gh", lambda args: '{"message": "Not Found"}')
+        assert respond._list_comments("repo", 1) == []
 
     def test_unanswerable_label_is_skipped(self):
         """`unanswerable` issues are dream-fuel, not Q&A."""
