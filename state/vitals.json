@@ -1,10 +1,10 @@
 {
-  "state": "awake",
-  "state_entered_at": "2026-06-22T05:19:35.023804+00:00",
+  "state": "sleeping",
+  "state_entered_at": "2026-06-22T08:12:00.367306+00:00",
   "last_human_activity_at": "2026-06-22T05:33:36.972170+00:00",
-  "last_heartbeat_at": "2026-06-22T05:55:15.705212+00:00",
+  "last_heartbeat_at": "2026-06-22T08:12:00.367306+00:00",
   "last_dream_at": "2026-06-22T02:22:17.604413+00:00",
-  "pulse_count": 1941,
+  "pulse_count": 1942,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
@@ -13,19 +13,19 @@
     "recent_events": [
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold did something (PullRequestEvent)",
-      "nickmeinhold shaped my body (push)",
       "nickmeinhold did something (DeleteEvent)",
+      "nickmeinhold shaped my body (push)",
       "kelvin-bit-brawler[bot] did something (PullRequestReviewEvent)",
       "nickmeinhold created a new branch",
+      "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold did something (PullRequestEvent)",
       "nickmeinhold shaped my body (push)",
-      "nickmeinhold did something (DeleteEvent)",
-      "flux-dreaming-repo[bot] shaped my body (push)"
+      "nickmeinhold did something (DeleteEvent)"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 429,
+    "minutes_used_estimate": 430,
     "budget": 2000,
     "level": "full"
   },
