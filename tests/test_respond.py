@@ -505,7 +505,7 @@ class TestMaybeRespondHeadOfLine:
 
     def test_attempt_cap_bounds_wasted_work(self, wired):
         """If posts fail repo-wide, we don't generate+POST for every open
-        issue — bounded by _MAX_POST_ATTEMPTS_PER_PULSE."""
+        issue — bounded by _MAX_ATTEMPTS_PER_PULSE."""
         cands = [_candidate(n) for n in (70, 61, 57, 58, 9, 3)]
         wired.setattr(respond, "_candidate_issues", lambda repo, self_login: cands)
         attempts: list[int] = []
@@ -514,28 +514,36 @@ class TestMaybeRespondHeadOfLine:
         result = respond.maybe_respond({}, {})
 
         assert result == [], "no successful reply when all posts fail"
-        assert len(attempts) == respond._MAX_POST_ATTEMPTS_PER_PULSE, (
+        assert len(attempts) == respond._MAX_ATTEMPTS_PER_PULSE, (
             "must stop after the attempt cap, not try all 6 candidates"
         )
 
-    def test_generation_failure_does_not_count_against_cap(self, wired):
-        """A _generate that returns None is a skip, not a post attempt — it
-        shouldn't consume the attempt budget. Here the first two candidates
-        fail to generate, then the third posts successfully."""
-        cands = [_candidate(70), _candidate(61), _candidate(57)]
+    def test_generation_failure_counts_against_cap(self, wired):
+        """A _generate that returns None is an INFRASTRUCTURE failure as much
+        as a deliberate no-reply (the wrapper can't tell them apart), and the
+        Claude call is the expensive, timeout-prone op. So a repo-wide
+        generation outage must trip the same circuit breaker — we must NOT
+        run _generate for every open issue. cage-match #80 (Kelvin+Carnot):
+        the earlier version excluded generation failures from the cap, which
+        let a Claude outage fan out one ~120s timeout per candidate and
+        freeze the heartbeat."""
+        cands = [_candidate(n) for n in (70, 61, 57, 58, 9, 3)]
         wired.setattr(respond, "_candidate_issues", lambda repo, self_login: cands)
-        gen_calls = {"n": 0}
+        gen_calls: list[int] = []
 
         def fake_generate(prompt):
-            gen_calls["n"] += 1
-            return None if gen_calls["n"] <= 2 else "a reply"
+            gen_calls.append(1)
+            return None  # every generation fails (Claude is down)
 
         wired.setattr(respond, "_generate", fake_generate)
-        wired.setattr(respond, "_post_comment", lambda repo, number, body: True)
+        wired.setattr(respond, "_post_comment",
+                      lambda repo, number, body: pytest.fail("should never post"))
         result = respond.maybe_respond({}, {})
 
-        assert [r.number for r in result] == [57], (
-            "skipped generations must not consume the attempt cap"
+        assert result == []
+        assert len(gen_calls) == respond._MAX_ATTEMPTS_PER_PULSE, (
+            "generation failures must count against the cap — a Claude outage "
+            "must not run _generate for all 6 candidates"
         )
 
 

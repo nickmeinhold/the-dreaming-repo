@@ -81,14 +81,17 @@ _ENERGY_FLOOR_MIN = 300
 # 30 minutes; replying to N open threads in one pulse would feel like a flood.
 _MAX_REPLIES_PER_PULSE = 1
 
-# Bound on the number of generate+post attempts per pulse. The cap matters
-# only when posts FAIL: a deterministically-failing candidate (e.g. the
-# freshest issue rejecting the comment for some issue-specific reason) must
-# not starve every other open thread under the 1-reply cap — so we advance
-# past a failed post to the next candidate. But we also don't want to
-# generate (a Claude call) + POST for every open issue when something is
-# wrong repo-wide, so we stop after this many attempts without a success.
-_MAX_POST_ATTEMPTS_PER_PULSE = 3
+# Bound on how many candidates we *process* (generate-for, then try to post
+# to) in one pulse. A deterministically-failing candidate — the freshest
+# issue rejecting the comment, OR a repo-wide Claude/generation outage where
+# `_generate` returns None for every issue — must not starve the heartbeat:
+# we advance past it, but cap the total work so one bad pulse can't fan out
+# across the whole backlog. The expensive operation is the Claude generation
+# (up to _CLAUDE_TIMEOUT_SEC each), so the cap counts EVERY candidate we
+# attempt to generate for, NOT just successful-generation posts — otherwise
+# a Claude outage would run one ~120s timeout per open issue and freeze the
+# pulse (cage-match #80, Kelvin+Carnot consensus).
+_MAX_ATTEMPTS_PER_PULSE = 3
 
 # Wall-clock cap (seconds) on the headless `claude` subprocess. The CLI is
 # network-bound; without this, a hung API/auth call would block the whole
@@ -670,17 +673,17 @@ def maybe_respond(vitals: dict, personality: dict) -> list[ResponseRecord]:
     # the pulse and starved every other open thread; if that issue failed
     # deterministically (it did — #70's comment-post returned exit 1 every
     # pulse), the responder never spoke to anyone. Now a failed post advances
-    # to the next candidate, bounded by _MAX_POST_ATTEMPTS_PER_PULSE so a
-    # repo-wide posting failure can't burn a Claude call on every open issue.
+    # to the next candidate, bounded by _MAX_ATTEMPTS_PER_PULSE so a repo-wide
+    # posting OR generation failure can't burn a Claude call on every issue.
     attempts = 0
     for cand in candidates:
         if len(responded) >= _MAX_REPLIES_PER_PULSE:
             break
-        if attempts >= _MAX_POST_ATTEMPTS_PER_PULSE:
+        if attempts >= _MAX_ATTEMPTS_PER_PULSE:
             logger.warning(
                 "[respond] reached attempt cap (%s) with no successful reply "
                 "this pulse; giving up until next heartbeat",
-                _MAX_POST_ATTEMPTS_PER_PULSE,
+                _MAX_ATTEMPTS_PER_PULSE,
             )
             break
 
@@ -688,16 +691,23 @@ def maybe_respond(vitals: dict, personality: dict) -> list[ResponseRecord]:
         if number is None:
             continue
 
+        # Count the attempt BEFORE generating: the Claude call is the
+        # expensive, timeout-prone operation, and `_generate` returning None
+        # covers infrastructure failure (API down, auth, rate-limit, a
+        # _CLAUDE_TIMEOUT_SEC timeout) just as much as a deliberate no-reply.
+        # If we only counted successful generations, a repo-wide Claude
+        # outage would run one ~120s timeout per open issue and freeze the
+        # pulse (cage-match #80). The cap must bound generation, not just
+        # posting.
+        attempts += 1
+
         prompt = _build_prompt(
             cand.issue, cand.comments, vitals, personality, recent_dream
         )
         reply = _generate(prompt)
         if not reply:
-            # Generation failure is not a post attempt — don't count it
-            # against the cap; just move on.
             continue
 
-        attempts += 1
         body = reply + _signature(vitals, personality)
         if _post_comment(repo, number, body):
             responded.append(ResponseRecord(number=number, reason=cand.reason))
