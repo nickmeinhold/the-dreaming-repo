@@ -440,3 +440,122 @@ class TestTypedShapes:
         rec = respond.ResponseRecord(number=42, reason="follow-up")
         assert rec.number == 42
         assert rec.reason == "follow-up"
+
+
+def _candidate(number: int, *, reason: respond.Reason = "first reply") -> respond.Candidate:
+    """A minimal Candidate for maybe_respond loop tests."""
+    return respond.Candidate(
+        issue=make_issue(number),
+        comments=[make_comment("nickmeinhold", "2026-06-06T00:00:00Z", "a question?")],
+        last_human_at="2026-06-06T00:00:00Z",
+        reason=reason,
+    )
+
+
+class TestMaybeRespondHeadOfLine:
+    """The responder dormancy bug: a deterministically-failing freshest
+    issue (#70's comment-post returned exit 1 every pulse) starved every
+    other open thread, because the loop sliced `candidates[:1]`. A failed
+    post must now advance to the next candidate."""
+
+    @pytest.fixture
+    def wired(self, monkeypatch):
+        """Set env + stub out everything maybe_respond touches except the
+        loop itself, so a test controls which posts succeed/fail."""
+        monkeypatch.setenv("REPO_FULL_NAME", "nickmeinhold/the-dreaming-repo")
+        monkeypatch.setenv("BOT_LOGIN", FLUX_LOGIN)
+        monkeypatch.setattr(respond.energy, "remaining", lambda vitals: 1598)
+        monkeypatch.setattr(respond, "load_latest_dream", lambda: None)
+        monkeypatch.setattr(respond, "_build_prompt", lambda *a, **k: "prompt")
+        monkeypatch.setattr(respond, "_generate", lambda prompt: "a reply")
+        monkeypatch.setattr(respond, "_signature", lambda v, p: "\n\n— Flux")
+        return monkeypatch
+
+    def test_failed_post_on_freshest_advances_to_next(self, wired):
+        """#70 fails, #61 succeeds → Flux replies to #61 (not []).
+        This is the exact dormancy scenario."""
+        wired.setattr(respond, "_candidate_issues",
+                      lambda repo, self_login: [_candidate(70), _candidate(61), _candidate(57)])
+        posted: list[int] = []
+
+        def fake_post(repo, number, body):
+            posted.append(number)
+            return number != 70  # #70 deterministically rejects the comment
+
+        wired.setattr(respond, "_post_comment", fake_post)
+        result = respond.maybe_respond({}, {})
+
+        assert [r.number for r in result] == [61], (
+            "a failed post on the freshest issue must not starve the rest"
+        )
+        assert posted == [70, 61], "must attempt #70, then advance to #61"
+
+    def test_stops_after_first_success(self, wired):
+        """Once one reply lands, we stop — the 1-reply-per-pulse cap still
+        holds; we don't flood every open thread."""
+        wired.setattr(respond, "_candidate_issues",
+                      lambda repo, self_login: [_candidate(70), _candidate(61), _candidate(57)])
+        posted: list[int] = []
+        wired.setattr(respond, "_post_comment",
+                      lambda repo, number, body: posted.append(number) or True)
+        result = respond.maybe_respond({}, {})
+
+        assert [r.number for r in result] == [70]
+        assert posted == [70], "must not attempt #61 once #70 succeeded"
+
+    def test_attempt_cap_bounds_wasted_work(self, wired):
+        """If posts fail repo-wide, we don't generate+POST for every open
+        issue — bounded by _MAX_POST_ATTEMPTS_PER_PULSE."""
+        cands = [_candidate(n) for n in (70, 61, 57, 58, 9, 3)]
+        wired.setattr(respond, "_candidate_issues", lambda repo, self_login: cands)
+        attempts: list[int] = []
+        wired.setattr(respond, "_post_comment",
+                      lambda repo, number, body: attempts.append(number) or False)
+        result = respond.maybe_respond({}, {})
+
+        assert result == [], "no successful reply when all posts fail"
+        assert len(attempts) == respond._MAX_POST_ATTEMPTS_PER_PULSE, (
+            "must stop after the attempt cap, not try all 6 candidates"
+        )
+
+    def test_generation_failure_does_not_count_against_cap(self, wired):
+        """A _generate that returns None is a skip, not a post attempt — it
+        shouldn't consume the attempt budget. Here the first two candidates
+        fail to generate, then the third posts successfully."""
+        cands = [_candidate(70), _candidate(61), _candidate(57)]
+        wired.setattr(respond, "_candidate_issues", lambda repo, self_login: cands)
+        gen_calls = {"n": 0}
+
+        def fake_generate(prompt):
+            gen_calls["n"] += 1
+            return None if gen_calls["n"] <= 2 else "a reply"
+
+        wired.setattr(respond, "_generate", fake_generate)
+        wired.setattr(respond, "_post_comment", lambda repo, number, body: True)
+        result = respond.maybe_respond({}, {})
+
+        assert [r.number for r in result] == [57], (
+            "skipped generations must not consume the attempt cap"
+        )
+
+
+class TestGhSurfacesStderr:
+    """`_gh` must log gh's OWN stderr on failure — the dormancy bug was
+    un-diagnosable because only a Python traceback was logged."""
+
+    def test_called_process_error_logs_stderr(self, monkeypatch, caplog):
+        import subprocess
+
+        def fake_run(*args, **kwargs):
+            raise subprocess.CalledProcessError(
+                returncode=1, cmd=["gh"], stderr="HTTP 422: Validation Failed"
+            )
+
+        monkeypatch.setattr(respond.subprocess, "run", fake_run)
+        with caplog.at_level("ERROR"):
+            out = respond._gh(["issue", "comment", "70"])
+
+        assert out is None
+        assert "HTTP 422: Validation Failed" in caplog.text, (
+            "gh's actual stderr must reach the log, not just a traceback"
+        )

@@ -77,9 +77,18 @@ logger = get_logger(__name__)
 # wire as dreams and are not worth burning the last reserves on.
 _ENERGY_FLOOR_MIN = 300
 
-# At most one reply per pulse, by design. A heartbeat is every 30 minutes;
-# replying to N open threads in one pulse would feel like a flood.
+# At most one SUCCESSFUL reply per pulse, by design. A heartbeat is every
+# 30 minutes; replying to N open threads in one pulse would feel like a flood.
 _MAX_REPLIES_PER_PULSE = 1
+
+# Bound on the number of generate+post attempts per pulse. The cap matters
+# only when posts FAIL: a deterministically-failing candidate (e.g. the
+# freshest issue rejecting the comment for some issue-specific reason) must
+# not starve every other open thread under the 1-reply cap — so we advance
+# past a failed post to the next candidate. But we also don't want to
+# generate (a Claude call) + POST for every open issue when something is
+# wrong repo-wide, so we stop after this many attempts without a success.
+_MAX_POST_ATTEMPTS_PER_PULSE = 3
 
 # Wall-clock cap (seconds) on the headless `claude` subprocess. The CLI is
 # network-bound; without this, a hung API/auth call would block the whole
@@ -206,8 +215,21 @@ def _gh(args: list[str]) -> str | None:
             ["gh"] + args, capture_output=True, text=True, check=True
         )
         return result.stdout
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        logger.exception("[respond] gh command failed: %s", " ".join(args))
+    except subprocess.CalledProcessError as e:
+        # Surface gh's OWN stderr — the WHY of the failure. Previously this
+        # logged only a Python traceback, hiding the GitHub API error (403
+        # vs 422 vs rate-limit) behind `_gh`'s generic wrapper. A
+        # deterministically-failing comment-post (the responder dormancy
+        # bug) was un-diagnosable for exactly this reason.
+        logger.error(
+            "[respond] gh command failed (exit %s): %s | stderr: %s",
+            e.returncode,
+            " ".join(args),
+            (e.stderr or "").strip() or "(empty)",
+        )
+        return None
+    except FileNotFoundError:
+        logger.exception("[respond] gh not found on PATH: %s", " ".join(args))
         return None
 
 
@@ -642,7 +664,26 @@ def maybe_respond(vitals: dict, personality: dict) -> list[ResponseRecord]:
     recent_dream = load_latest_dream()
     responded: list[ResponseRecord] = []
 
-    for cand in candidates[:_MAX_REPLIES_PER_PULSE]:
+    # Iterate candidates (freshest first) until we land _MAX_REPLIES_PER_PULSE
+    # SUCCESSFUL replies — NOT just until we've tried that many. The old code
+    # sliced `candidates[:1]`, so a failed post on the freshest issue ended
+    # the pulse and starved every other open thread; if that issue failed
+    # deterministically (it did — #70's comment-post returned exit 1 every
+    # pulse), the responder never spoke to anyone. Now a failed post advances
+    # to the next candidate, bounded by _MAX_POST_ATTEMPTS_PER_PULSE so a
+    # repo-wide posting failure can't burn a Claude call on every open issue.
+    attempts = 0
+    for cand in candidates:
+        if len(responded) >= _MAX_REPLIES_PER_PULSE:
+            break
+        if attempts >= _MAX_POST_ATTEMPTS_PER_PULSE:
+            logger.warning(
+                "[respond] reached attempt cap (%s) with no successful reply "
+                "this pulse; giving up until next heartbeat",
+                _MAX_POST_ATTEMPTS_PER_PULSE,
+            )
+            break
+
         number = cand.issue.get("number")
         if number is None:
             continue
@@ -652,10 +693,19 @@ def maybe_respond(vitals: dict, personality: dict) -> list[ResponseRecord]:
         )
         reply = _generate(prompt)
         if not reply:
+            # Generation failure is not a post attempt — don't count it
+            # against the cap; just move on.
             continue
 
+        attempts += 1
         body = reply + _signature(vitals, personality)
         if _post_comment(repo, number, body):
             responded.append(ResponseRecord(number=number, reason=cand.reason))
+        else:
+            logger.warning(
+                "[respond] post to #%s failed; advancing to the next "
+                "candidate so one bad thread can't starve the rest",
+                number,
+            )
 
     return responded
