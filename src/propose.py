@@ -12,12 +12,12 @@ import base64
 import json
 import os
 import random
-import subprocess
 from datetime import datetime, timezone
 
 import requests
 
 from src import energy, memory
+from src._integration import run_claude
 from src.senses import SIBLING_REPO
 
 
@@ -166,20 +166,17 @@ Your recent impressions:
 
 Return ONLY the JSON. No explanation. No markdown fences."""
 
+    output = run_claude(prompt, model="haiku")
+    if output is None:
+        return None
     try:
-        result = subprocess.run(
-            ["claude", "-p", "--model", "haiku", prompt],
-            capture_output=True, text=True, check=True, timeout=120,
-        )
-        output = result.stdout.strip()
         if output.startswith("```"):
             output = output.split("\n", 1)[1].rsplit("```", 1)[0].strip()
 
         start = output.index("{")
         end = output.rindex("}") + 1
         data = json.loads(output[start:end])
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
-            ValueError, json.JSONDecodeError):
+    except (ValueError, json.JSONDecodeError):
         return None
 
     # Build the actual file change based on proposal type

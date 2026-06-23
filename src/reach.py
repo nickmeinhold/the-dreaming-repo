@@ -16,12 +16,12 @@ Stars require human authentication — we can't star. But we can speak.
 import json
 import os
 import random
-import subprocess
 from datetime import datetime, timezone
 
 import requests
 
 from src import energy, memory
+from src._integration import run_claude
 from src.senses import SIBLING_REPO
 
 
@@ -210,14 +210,7 @@ Don't explain who you are — they know.
 
 Write only the message. No preamble, no sign-off."""
 
-    try:
-        result = subprocess.run(
-            ["claude", "-p", "--model", "haiku", prompt],
-            capture_output=True, text=True, check=True, timeout=120,
-        )
-        return result.stdout.strip()
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        return None
+    return run_claude(prompt, model="haiku")
 
 
 def _respond_to_sibling(vitals: dict, personality: dict) -> str | None:
@@ -294,14 +287,7 @@ Body: {issue_body}
 Write a short reply (1-3 sentences). Be genuine. They will read this.
 Write only the reply."""
 
-    try:
-        result = subprocess.run(
-            ["claude", "-p", "--model", "haiku", prompt],
-            capture_output=True, text=True, check=True, timeout=120,
-        )
-        return result.stdout.strip()
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-        return None
+    return run_claude(prompt, model="haiku")
 
 
 def _load_reach_state() -> dict:
