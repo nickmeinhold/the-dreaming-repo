@@ -183,21 +183,32 @@ def is_self(login: str | None, *, self_login: str) -> bool:
 # 3. API-shape validation + REST-preferring fetch
 # --------------------------------------------------------------------------
 
+def _is_http_error_status(value: object) -> bool:
+    """True if `value` looks like a gh-api error `status` — a 4xx/5xx HTTP
+    code string like "404". A data field that happens to be named `status`
+    (`"completed"`, `"open"`, `"200"`) is not an error signal (cage-match #81,
+    Carnot): keying off the bare *presence* of `status` would make `gh_json`
+    discard a legitimate data object that carried both `message` and `status`.
+    """
+    s = str(value).strip()
+    return len(s) == 3 and s.isdigit() and s[0] in ("4", "5")
+
+
 def is_gh_error(payload: object) -> bool:
     """True if a parsed `gh api` payload is an error object, not data.
 
-    `gh api` returns `{"message": "...", "documentation_url": "..."}` (and/or
-    `"status": "404"`) on error, but a list (or a data object) on success.
-    Iterating an error object as if it were a list of items was the third
-    proprioception bug. We key off `message` plus one of the error-only
-    companions so a legitimate data dict that merely contains a `message`
-    field isn't misclassified.
+    `gh api` returns `{"message": "...", "documentation_url": "..."}` and/or
+    `{"message": "...", "status": "404"}` on error, but a list (or a data
+    object) on success. Iterating an error object as if it were a list of
+    items was the third proprioception bug. We key off `message` plus an
+    error-ONLY companion — a `documentation_url`, or a `status` that is an
+    actual 4xx/5xx HTTP code — so a legitimate data dict that merely contains
+    a `message` (a commit) or a benign `status` (a run: `"completed"`) isn't
+    misclassified.
     """
-    return (
-        isinstance(payload, dict)
-        and "message" in payload
-        and ("documentation_url" in payload or "status" in payload)
-    )
+    if not (isinstance(payload, dict) and "message" in payload):
+        return False
+    return "documentation_url" in payload or _is_http_error_status(payload.get("status"))
 
 
 def gh_json(out: str | None) -> object | None:

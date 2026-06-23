@@ -131,9 +131,17 @@ class TestGhShape:
     def test_is_gh_error_with_documentation_url(self):
         assert integ.is_gh_error({"message": "Not Found", "documentation_url": "https://..."})
 
-    def test_is_gh_error_with_status(self):
+    def test_is_gh_error_with_http_status(self):
         """Real gh 404 bodies carry `status` and may omit documentation_url."""
         assert integ.is_gh_error({"message": "Not Found", "status": "404"})
+        assert integ.is_gh_error({"message": "Server Error", "status": "503"})
+
+    def test_message_plus_benign_status_is_not_error(self):
+        """A data dict with `message` + a NON-http-code `status` (a run that
+        is "completed", a "200") must NOT be misclassified (cage-match #81)."""
+        assert not integ.is_gh_error({"message": "note", "status": "completed"})
+        assert not integ.is_gh_error({"message": "note", "status": "200"})
+        assert not integ.is_gh_error({"message": "note", "status": "open"})
 
     def test_message_only_dict_is_not_error(self):
         """A data dict that merely contains a `message` field (e.g. a commit)
