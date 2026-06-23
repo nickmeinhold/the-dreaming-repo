@@ -2,30 +2,30 @@
   "state": "sleeping",
   "state_entered_at": "2026-06-23T01:44:56.813392+00:00",
   "last_human_activity_at": "2026-06-22T23:55:10.052709+00:00",
-  "last_heartbeat_at": "2026-06-23T01:44:56.813392+00:00",
+  "last_heartbeat_at": "2026-06-23T03:12:58.249746+00:00",
   "last_dream_at": "2026-06-22T23:02:25.692742+00:00",
-  "pulse_count": 1954,
+  "pulse_count": 1955,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
     "forks": 1,
     "open_issues": 21,
     "recent_events": [
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
+      "dependabot[bot] did something (PullRequestEvent)",
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "nickmeinhold did something (PullRequestEvent)",
+      "kelvin-bit-brawler[bot] did something (PullRequestReviewEvent)",
+      "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)",
       "nickmeinhold did something (PullRequestEvent)",
       "dependabot[bot] did something (PullRequestEvent)",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "kelvin-bit-brawler[bot] did something (PullRequestReviewEvent)",
-      "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)",
-      "kelvin-bit-brawler[bot] did something (PullRequestReviewEvent)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)",
-      "nickmeinhold did something (PullRequestEvent)",
-      "dependabot[bot] did something (PullRequestEvent)"
+      "kelvin-bit-brawler[bot] did something (PullRequestReviewEvent)"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 442,
+    "minutes_used_estimate": 443,
     "budget": 2000,
     "level": "full"
   },
