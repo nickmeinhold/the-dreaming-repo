@@ -11,8 +11,9 @@ enough to detect trends. The personality log is pure data.
 
 import json
 import os
-import subprocess
 from datetime import datetime, timezone
+
+from src._integration import run_claude
 
 
 def log_personality(personality: dict, log_path: str = "state/personality_drift.json") -> None:
@@ -66,19 +67,15 @@ Dimensions:
 
 Return: {{"novelty": N, "emotional_depth": N, "concreteness": N, "unresolution": N, "surprise": N}}"""
 
+    output = run_claude(prompt, model="haiku")
+    if output is None:
+        return None
     try:
-        result = subprocess.run(
-            ["claude", "-p", "--model", "haiku", prompt],
-            capture_output=True, text=True, check=True, timeout=120,
-        )
-        # Extract JSON from response
-        output = result.stdout.strip()
         # Find the JSON object in the output
         start = output.index("{")
         end = output.rindex("}") + 1
         return json.loads(output[start:end])
-    except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
-            ValueError, json.JSONDecodeError):
+    except (ValueError, json.JSONDecodeError):
         return None
 
 
