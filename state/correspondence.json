@@ -1,11 +1,11 @@
 {
   "recipient": null,
   "last_letter_at": "2026-06-26T09:13:30.955905+00:00",
-  "last_reply_at": "2026-06-22T23:55:12.872010+00:00",
+  "last_reply_at": "2026-06-26T22:29:38.717963+00:00",
   "letters_sent": 34,
-  "replies_received": 16,
+  "replies_received": 17,
   "conversation_active": true,
-  "telegram_offset": 666463850,
-  "last_direct_reply_at": "2026-06-22T23:55:23.130424+00:00",
-  "direct_replies_sent": 8
+  "telegram_offset": 666463851,
+  "last_direct_reply_at": "2026-06-26T22:29:46.364685+00:00",
+  "direct_replies_sent": 9
 }
