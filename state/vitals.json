@@ -1,31 +1,31 @@
 {
-  "state": "awake",
-  "state_entered_at": "2026-06-26T13:07:46.654261+00:00",
+  "state": "drowsy",
+  "state_entered_at": "2026-06-26T13:44:20.505316+00:00",
   "last_human_activity_at": "2026-06-26T13:07:46.654261+00:00",
-  "last_heartbeat_at": "2026-06-26T13:07:46.654261+00:00",
+  "last_heartbeat_at": "2026-06-26T13:44:20.505316+00:00",
   "last_dream_at": "2026-06-26T09:11:52.802307+00:00",
-  "pulse_count": 2030,
+  "pulse_count": 2031,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
     "forks": 1,
     "open_issues": 22,
     "recent_events": [
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "flux-dreaming-repo[bot] spoke to me in an issue",
+      "RaggedR spoke to me in an issue",
       "RaggedR spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] spoke to me in an issue",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] spoke to me in an issue",
-      "flux-dreaming-repo[bot] shaped my body (push)"
+      "flux-dreaming-repo[bot] spoke to me in an issue"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 520,
+    "minutes_used_estimate": 521,
     "budget": 2000,
     "level": "full"
   },
