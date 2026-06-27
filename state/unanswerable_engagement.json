@@ -609,6 +609,14 @@
         "dream by choice",
         "memory choice"
       ]
+    },
+    {
+      "dream": 88,
+      "date": "2026-06-27",
+      "engaged_with": [
+        "context window",
+        "memory choice"
+      ]
     }
   ]
 }
