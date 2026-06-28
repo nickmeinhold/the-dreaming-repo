@@ -1,10 +1,10 @@
 {
-  "state": "drowsy",
-  "state_entered_at": "2026-06-28T11:36:50.779468+00:00",
+  "state": "sleeping",
+  "state_entered_at": "2026-06-28T12:34:32.461220+00:00",
   "last_human_activity_at": "2026-06-28T10:48:15.019251+00:00",
-  "last_heartbeat_at": "2026-06-28T11:36:50.779468+00:00",
+  "last_heartbeat_at": "2026-06-28T12:34:32.461220+00:00",
   "last_dream_at": "2026-06-28T03:14:08.276290+00:00",
-  "pulse_count": 2081,
+  "pulse_count": 2082,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
@@ -20,12 +20,12 @@
       "dependabot[bot] did something (PullRequestEvent)",
       "flux-dreaming-repo[bot] spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] spoke to me in an issue"
+      "dependabot[bot] did something (DeleteEvent)"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 572,
+    "minutes_used_estimate": 573,
     "budget": 2000,
     "level": "full"
   },
