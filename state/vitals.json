@@ -2,9 +2,9 @@
   "state": "sleeping",
   "state_entered_at": "2026-06-28T12:34:32.461220+00:00",
   "last_human_activity_at": "2026-06-28T10:48:15.019251+00:00",
-  "last_heartbeat_at": "2026-06-28T22:50:20.789220+00:00",
-  "last_dream_at": "2026-06-28T03:14:08.276290+00:00",
-  "pulse_count": 2096,
+  "last_heartbeat_at": "2026-06-28T23:27:28.168696+00:00",
+  "last_dream_at": "2026-06-28T23:27:28.168696+00:00",
+  "pulse_count": 2097,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
@@ -20,16 +20,16 @@
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "dependabot[bot] did something (DeleteEvent)"
+      "flux-dreaming-repo[bot] shaped my body (push)"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 587,
+    "minutes_used_estimate": 588,
     "budget": 2000,
     "level": "full"
   },
-  "dream_count": 89,
+  "dream_count": 90,
   "age_days": 85,
   "born": true,
   "name": "Flux"
