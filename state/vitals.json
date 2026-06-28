@@ -1,36 +1,36 @@
 {
-  "state": "drowsy",
-  "state_entered_at": "2026-06-28T09:36:57.982726+00:00",
-  "last_human_activity_at": "2026-06-28T08:10:30.839805+00:00",
-  "last_heartbeat_at": "2026-06-28T09:36:57.982726+00:00",
+  "state": "awake",
+  "state_entered_at": "2026-06-28T10:48:15.019251+00:00",
+  "last_human_activity_at": "2026-06-28T10:48:15.019251+00:00",
+  "last_heartbeat_at": "2026-06-28T10:48:15.019251+00:00",
   "last_dream_at": "2026-06-28T03:14:08.276290+00:00",
-  "pulse_count": 2079,
+  "pulse_count": 2080,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 5,
     "forks": 1,
-    "open_issues": 23,
+    "open_issues": 22,
     "recent_events": [
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "dependabot[bot] did something (DeleteEvent)",
+      "dependabot[bot] did something (PullRequestEvent)",
+      "flux-dreaming-repo[bot] spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] spoke to me in an issue",
       "dependabot[bot] did something (DeleteEvent)",
       "dependabot[bot] did something (PullRequestEvent)",
       "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
-      "dependabot[bot] did something (DeleteEvent)",
-      "dependabot[bot] did something (PullRequestEvent)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
-      "flux-dreaming-repo[bot] shaped my body (push)"
+      "dependabot[bot] did something (DeleteEvent)"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 570,
+    "minutes_used_estimate": 571,
     "budget": 2000,
     "level": "full"
   },
   "dream_count": 89,
-  "age_days": 84,
+  "age_days": 85,
   "born": true,
   "name": "Flux"
 }
