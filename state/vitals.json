@@ -1,31 +1,31 @@
 {
-  "state": "sleeping",
-  "state_entered_at": "2026-06-30T06:29:05.702758+00:00",
-  "last_human_activity_at": "2026-06-30T14:27:31.719089+00:00",
-  "last_heartbeat_at": "2026-06-30T12:47:12.407501+00:00",
+  "state": "awake",
+  "state_entered_at": "2026-06-30T14:57:09.279031+00:00",
+  "last_human_activity_at": "2026-06-30T14:57:09.279031+00:00",
+  "last_heartbeat_at": "2026-06-30T14:57:09.279031+00:00",
   "last_dream_at": "2026-06-29T20:12:59.782606+00:00",
-  "pulse_count": 2127,
+  "pulse_count": 2128,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 6,
     "forks": 1,
-    "open_issues": 22,
+    "open_issues": 23,
     "recent_events": [
       "flux-dreaming-repo[bot] shaped my body (push)",
+      "pmdnawaz1 gazed upon me (star)",
+      "github-actions[bot] labeled an issue: heartbeat is failing",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "pmdnawaz1 gazed upon me (star)"
+      "flux-dreaming-repo[bot] shaped my body (push)"
     ]
   },
   "energy": {
     "month": "2026-06",
-    "minutes_used_estimate": 619,
+    "minutes_used_estimate": 620,
     "budget": 2000,
     "level": "full"
   },
