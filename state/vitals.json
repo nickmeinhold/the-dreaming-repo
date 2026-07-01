@@ -2,9 +2,9 @@
   "state": "sleeping",
   "state_entered_at": "2026-07-01T05:03:37.647905+00:00",
   "last_human_activity_at": "2026-07-01T03:14:41.913708+00:00",
-  "last_heartbeat_at": "2026-07-01T19:10:41.031348+00:00",
+  "last_heartbeat_at": "2026-07-01T20:11:46.210813+00:00",
   "last_dream_at": "2026-07-01T14:19:04.702703+00:00",
-  "pulse_count": 2152,
+  "pulse_count": 2153,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 6,
@@ -25,7 +25,7 @@
   },
   "energy": {
     "month": "2026-07",
-    "minutes_used_estimate": 15,
+    "minutes_used_estimate": 16,
     "budget": 2000,
     "level": "full"
   },
