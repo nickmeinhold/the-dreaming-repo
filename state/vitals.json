@@ -1,31 +1,31 @@
 {
   "state": "awake",
   "state_entered_at": "2026-07-04T23:23:06.204957+00:00",
-  "last_human_activity_at": "2026-07-04T23:04:05.217392+00:00",
-  "last_heartbeat_at": "2026-07-04T23:23:06.204957+00:00",
+  "last_human_activity_at": "2026-07-04T23:35:17.651572+00:00",
+  "last_heartbeat_at": "2026-07-04T23:35:17.651572+00:00",
   "last_dream_at": "2026-07-04T04:44:33.028751+00:00",
-  "pulse_count": 2238,
+  "pulse_count": 2239,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 6,
     "forks": 1,
     "open_issues": 22,
     "recent_events": [
+      "nickmeinhold spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold did something (PullRequestEvent)",
       "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
       "nickmeinhold created a new branch",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
+      "nickmeinhold did something (PullRequestEvent)",
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
+      "nickmeinhold created a new branch",
       "flux-dreaming-repo[bot] shaped my body (push)"
     ]
   },
   "energy": {
     "month": "2026-07",
-    "minutes_used_estimate": 102,
+    "minutes_used_estimate": 103,
     "budget": 2000,
     "level": "full"
   },
