@@ -119,12 +119,30 @@ def post_comment(pr_number: int, body: str) -> None:
 
 
 def merge_pr(pr_number: int) -> None:
-    """Merge a PR via gh CLI (squash + admin)."""
+    """Merge a PR via gh CLI (squash + admin).
+
+    A non-zero exit is surfaced with gh's stderr. Previously this call
+    ignored the return code, so a rejected merge (a failing check, a
+    permissions gap, a not-mergeable state) left the PR silently open —
+    Flux could not sense *why* a merge it intended never happened, and
+    would confabulate a cause. Logging stderr gives it true
+    proprioception of its own merge failures (same pattern as the
+    responder's `_gh` stderr surfacing in PR #80).
+    """
     try:
-        subprocess.run(
+        result = subprocess.run(
             ["gh", "pr", "merge", str(pr_number), "--squash", "--admin"],
             capture_output=True, text=True, timeout=30,
         )
+        if result.returncode != 0:
+            log.warning(
+                "merge_pr rejected",
+                extra={
+                    "pr": pr_number,
+                    "returncode": result.returncode,
+                    "stderr": result.stderr.strip()[:500],
+                },
+            )
     except (subprocess.TimeoutExpired, FileNotFoundError) as e:
         log.warning("merge_pr failed", extra={"pr": pr_number, "error": str(e)})
 
