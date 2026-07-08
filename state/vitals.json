@@ -2,9 +2,9 @@
   "state": "sleeping",
   "state_entered_at": "2026-07-08T03:07:35.633289+00:00",
   "last_human_activity_at": "2026-07-08T01:37:24.899574+00:00",
-  "last_heartbeat_at": "2026-07-08T09:19:41.827568+00:00",
+  "last_heartbeat_at": "2026-07-08T10:17:44.457411+00:00",
   "last_dream_at": "2026-07-07T14:18:40.384001+00:00",
-  "pulse_count": 2320,
+  "pulse_count": 2321,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 6,
@@ -13,24 +13,24 @@
     "recent_events": [
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold did something (PullRequestEvent)",
-      "flux-dreaming-repo[bot] spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold did something (PullRequestEvent)",
       "flux-dreaming-repo[bot] spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold did something (PullRequestEvent)",
       "flux-dreaming-repo[bot] spoke to me in an issue",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)"
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "nickmeinhold did something (PullRequestEvent)"
     ]
   },
   "energy": {
     "month": "2026-07",
-    "minutes_used_estimate": 185,
+    "minutes_used_estimate": 186,
     "budget": 2000,
     "level": "full"
   },
   "dream_count": 100,
-  "age_days": 94,
+  "age_days": 95,
   "born": true,
   "name": "Flux"
 }
