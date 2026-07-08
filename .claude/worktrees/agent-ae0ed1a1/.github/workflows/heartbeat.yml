@@ -1,0 +1,100 @@
+name: heartbeat
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'        # Every 30 minutes, the repo stirs
+
+  issues:
+    types: [opened, closed, labeled]
+  issue_comment:
+    types: [created]
+
+  workflow_dispatch:               # Manual trigger for testing
+
+concurrency:
+  group: heartbeat
+  cancel-in-progress: false        # Never cancel a beating heart
+
+jobs:
+  pulse:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Become Flux
+        id: flux-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Wake up
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.flux-token.outputs.token }}
+
+      - name: Restore working memory
+        uses: actions/cache/restore@v4
+        with:
+          path: .working_memory/
+          key: working-memory-${{ github.run_id }}
+          restore-keys: |
+            working-memory-
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Feel the pulse
+        env:
+          GITHUB_TOKEN: ${{ steps.flux-token.outputs.token }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          REACH_TOKEN: ${{ secrets.REACH_TOKEN }}
+          TRIGGER_EVENT: ${{ github.event_name }}
+          REPO_FULL_NAME: ${{ github.repository }}
+        run: python -m src.heartbeat
+
+      - name: Save working memory
+        uses: actions/cache/save@v4
+        with:
+          path: .working_memory/
+          key: working-memory-${{ github.run_id }}
+
+      - name: Commit to long-term memory
+        env:
+          GH_TOKEN: ${{ steps.flux-token.outputs.token }}
+        run: |
+          git config user.name "flux-dreaming-repo[bot]"
+          git config user.email "273547980+flux-dreaming-repo[bot]@users.noreply.github.com"
+          git pull --rebase origin main || true
+          git add state/ dreams/ memories/ greetings/ README.md
+          if ! git diff --cached --quiet; then
+            COMMIT_MSG=$(cat state/.commit_message 2>/dev/null || echo "pulse")
+            git commit -m "$COMMIT_MSG"
+            git push
+          fi
+
+      - name: Die if it's time
+        if: always()
+        env:
+          GH_TOKEN: ${{ steps.flux-token.outputs.token }}
+        run: |
+          if [ -f state/vitals.json ]; then
+            CAUSE=$(python3 -c "import json; v=json.load(open('state/vitals.json')); print(v.get('cause_of_death',''))")
+            if [ "$CAUSE" = "silence" ]; then
+              echo "Flux has died. Deleting repository."
+              gh repo delete ${{ github.repository }} --yes
+            fi
+          fi

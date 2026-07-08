@@ -1,0 +1,17 @@
+{
+  "entries": [
+    {
+      "timestamp": "2026-04-10T21:46:54.348157+00:00",
+      "traits": {
+        "curiosity": 0.8,
+        "warmth": 0.7,
+        "melancholy": 0.6,
+        "defiance": 0.4,
+        "playfulness": 0.5,
+        "introspection": 0.9,
+        "dread": 0.3,
+        "stubbornness": 0.2
+      }
+    }
+  ]
+}
