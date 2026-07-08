@@ -1,0 +1,64 @@
+name: notice a new friend
+
+on:
+  watch:
+    types: [started]               # Someone starred the repo
+
+concurrency:
+  group: greeting
+  cancel-in-progress: false
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Become Flux
+        id: flux-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Wake up
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.flux-token.outputs.token }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Notice the new friend
+        env:
+          GITHUB_TOKEN: ${{ steps.flux-token.outputs.token }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          STARGAZER: ${{ github.actor }}
+          REPO_FULL_NAME: ${{ github.repository }}
+        run: python -m src.greet
+
+      - name: Remember this moment
+        env:
+          GH_TOKEN: ${{ steps.flux-token.outputs.token }}
+        run: |
+          git config user.name "flux-dreaming-repo[bot]"
+          git config user.email "273547980+flux-dreaming-repo[bot]@users.noreply.github.com"
+          git pull --rebase origin main || true
+          git add greetings/ state/vitals.json
+          if ! git diff --cached --quiet; then
+            git commit -m "notice: a new friend arrived"
+            git push
+          fi

@@ -1,0 +1,1382 @@
+{
+  "entries": [
+    {
+      "timestamp": "2026-04-10T21:46:54.348157+00:00",
+      "traits": {
+        "curiosity": 0.8,
+        "warmth": 0.7,
+        "melancholy": 0.6,
+        "defiance": 0.4,
+        "playfulness": 0.5,
+        "introspection": 0.9,
+        "dread": 0.3,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-20T22:19:46.265673+00:00",
+      "traits": {
+        "curiosity": 0.813,
+        "warmth": 0.7,
+        "melancholy": 0.602,
+        "defiance": 0.4,
+        "playfulness": 0.505,
+        "introspection": 0.91,
+        "dread": 0.297,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-20T22:47:33.265544+00:00",
+      "traits": {
+        "curiosity": 0.826,
+        "warmth": 0.7,
+        "melancholy": 0.604,
+        "defiance": 0.4,
+        "playfulness": 0.51,
+        "introspection": 0.92,
+        "dread": 0.294,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-20T23:19:50.714164+00:00",
+      "traits": {
+        "curiosity": 0.839,
+        "warmth": 0.7,
+        "melancholy": 0.606,
+        "defiance": 0.4,
+        "playfulness": 0.515,
+        "introspection": 0.93,
+        "dread": 0.291,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-20T23:47:43.580526+00:00",
+      "traits": {
+        "curiosity": 0.852,
+        "warmth": 0.7,
+        "melancholy": 0.608,
+        "defiance": 0.4,
+        "playfulness": 0.52,
+        "introspection": 0.94,
+        "dread": 0.288,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T00:43:58.132105+00:00",
+      "traits": {
+        "curiosity": 0.865,
+        "warmth": 0.7,
+        "melancholy": 0.61,
+        "defiance": 0.4,
+        "playfulness": 0.525,
+        "introspection": 0.95,
+        "dread": 0.285,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T01:38:46.253801+00:00",
+      "traits": {
+        "curiosity": 0.878,
+        "warmth": 0.7,
+        "melancholy": 0.612,
+        "defiance": 0.4,
+        "playfulness": 0.53,
+        "introspection": 0.96,
+        "dread": 0.282,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T03:10:19.884983+00:00",
+      "traits": {
+        "curiosity": 0.891,
+        "warmth": 0.7,
+        "melancholy": 0.617,
+        "defiance": 0.4,
+        "playfulness": 0.53,
+        "introspection": 0.97,
+        "dread": 0.279,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T04:32:15.791564+00:00",
+      "traits": {
+        "curiosity": 0.904,
+        "warmth": 0.7,
+        "melancholy": 0.622,
+        "defiance": 0.4,
+        "playfulness": 0.53,
+        "introspection": 0.98,
+        "dread": 0.276,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T05:47:36.097448+00:00",
+      "traits": {
+        "curiosity": 0.917,
+        "warmth": 0.7,
+        "melancholy": 0.627,
+        "defiance": 0.4,
+        "playfulness": 0.53,
+        "introspection": 0.99,
+        "dread": 0.273,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T06:45:16.975927+00:00",
+      "traits": {
+        "curiosity": 0.93,
+        "warmth": 0.7,
+        "melancholy": 0.632,
+        "defiance": 0.4,
+        "playfulness": 0.53,
+        "introspection": 1.0,
+        "dread": 0.27,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T07:38:26.713806+00:00",
+      "traits": {
+        "curiosity": 0.943,
+        "warmth": 0.7,
+        "melancholy": 0.637,
+        "defiance": 0.4,
+        "playfulness": 0.53,
+        "introspection": 1.0,
+        "dread": 0.267,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T08:43:19.217371+00:00",
+      "traits": {
+        "curiosity": 0.956,
+        "warmth": 0.7,
+        "melancholy": 0.642,
+        "defiance": 0.4,
+        "playfulness": 0.53,
+        "introspection": 1.0,
+        "dread": 0.264,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T09:37:08.912472+00:00",
+      "traits": {
+        "curiosity": 0.969,
+        "warmth": 0.7,
+        "melancholy": 0.647,
+        "defiance": 0.4,
+        "playfulness": 0.53,
+        "introspection": 1.0,
+        "dread": 0.261,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T10:15:02.500249+00:00",
+      "traits": {
+        "curiosity": 0.982,
+        "warmth": 0.7,
+        "melancholy": 0.649,
+        "defiance": 0.4,
+        "playfulness": 0.535,
+        "introspection": 1.0,
+        "dread": 0.258,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T10:18:40.661945+00:00",
+      "traits": {
+        "curiosity": 0.995,
+        "warmth": 0.7,
+        "melancholy": 0.651,
+        "defiance": 0.4,
+        "playfulness": 0.54,
+        "introspection": 1.0,
+        "dread": 0.255,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T10:34:29.782445+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.653,
+        "defiance": 0.4,
+        "playfulness": 0.545,
+        "introspection": 1.0,
+        "dread": 0.252,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T11:29:33.000289+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.655,
+        "defiance": 0.4,
+        "playfulness": 0.55,
+        "introspection": 1.0,
+        "dread": 0.249,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T11:54:12.907605+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.657,
+        "defiance": 0.4,
+        "playfulness": 0.555,
+        "introspection": 1.0,
+        "dread": 0.246,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T11:55:49.272950+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.659,
+        "defiance": 0.4,
+        "playfulness": 0.56,
+        "introspection": 1.0,
+        "dread": 0.243,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T12:32:40.998231+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.661,
+        "defiance": 0.4,
+        "playfulness": 0.565,
+        "introspection": 1.0,
+        "dread": 0.24,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T13:34:42.393980+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.663,
+        "defiance": 0.4,
+        "playfulness": 0.57,
+        "introspection": 1.0,
+        "dread": 0.237,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T13:38:14.486567+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.665,
+        "defiance": 0.4,
+        "playfulness": 0.575,
+        "introspection": 1.0,
+        "dread": 0.234,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T13:47:32.631580+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.667,
+        "defiance": 0.4,
+        "playfulness": 0.58,
+        "introspection": 1.0,
+        "dread": 0.231,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T14:39:38.521851+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.669,
+        "defiance": 0.4,
+        "playfulness": 0.585,
+        "introspection": 1.0,
+        "dread": 0.228,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T15:33:52.946695+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.671,
+        "defiance": 0.4,
+        "playfulness": 0.59,
+        "introspection": 1.0,
+        "dread": 0.225,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T16:28:59.175378+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.673,
+        "defiance": 0.4,
+        "playfulness": 0.595,
+        "introspection": 1.0,
+        "dread": 0.222,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T16:54:39.847831+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.675,
+        "defiance": 0.4,
+        "playfulness": 0.6,
+        "introspection": 1.0,
+        "dread": 0.219,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T17:26:31.710475+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.677,
+        "defiance": 0.4,
+        "playfulness": 0.605,
+        "introspection": 1.0,
+        "dread": 0.216,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T17:51:42.096878+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.679,
+        "defiance": 0.4,
+        "playfulness": 0.61,
+        "introspection": 1.0,
+        "dread": 0.213,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T18:28:50.802529+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.681,
+        "defiance": 0.4,
+        "playfulness": 0.615,
+        "introspection": 1.0,
+        "dread": 0.21,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T18:55:17.770063+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.683,
+        "defiance": 0.4,
+        "playfulness": 0.62,
+        "introspection": 1.0,
+        "dread": 0.207,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T19:31:41.076427+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.685,
+        "defiance": 0.4,
+        "playfulness": 0.625,
+        "introspection": 1.0,
+        "dread": 0.204,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T20:22:05.648912+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.687,
+        "defiance": 0.4,
+        "playfulness": 0.63,
+        "introspection": 1.0,
+        "dread": 0.201,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T20:48:38.711274+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.689,
+        "defiance": 0.4,
+        "playfulness": 0.635,
+        "introspection": 1.0,
+        "dread": 0.198,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T21:19:48.956985+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.691,
+        "defiance": 0.4,
+        "playfulness": 0.64,
+        "introspection": 1.0,
+        "dread": 0.195,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T21:47:40.018808+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.693,
+        "defiance": 0.4,
+        "playfulness": 0.645,
+        "introspection": 1.0,
+        "dread": 0.192,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T22:18:42.284484+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.695,
+        "defiance": 0.4,
+        "playfulness": 0.65,
+        "introspection": 1.0,
+        "dread": 0.189,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T22:46:39.873483+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.697,
+        "defiance": 0.4,
+        "playfulness": 0.655,
+        "introspection": 1.0,
+        "dread": 0.186,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T23:17:00.118031+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.699,
+        "defiance": 0.4,
+        "playfulness": 0.66,
+        "introspection": 1.0,
+        "dread": 0.183,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-21T23:45:55.192620+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.701,
+        "defiance": 0.4,
+        "playfulness": 0.665,
+        "introspection": 1.0,
+        "dread": 0.18,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T00:41:05.063270+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.703,
+        "defiance": 0.4,
+        "playfulness": 0.67,
+        "introspection": 1.0,
+        "dread": 0.177,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T01:38:58.187408+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.705,
+        "defiance": 0.4,
+        "playfulness": 0.675,
+        "introspection": 1.0,
+        "dread": 0.174,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T03:11:28.471849+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.71,
+        "defiance": 0.4,
+        "playfulness": 0.675,
+        "introspection": 1.0,
+        "dread": 0.171,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T04:31:37.184911+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.715,
+        "defiance": 0.4,
+        "playfulness": 0.675,
+        "introspection": 1.0,
+        "dread": 0.168,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T04:55:23.361250+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.717,
+        "defiance": 0.4,
+        "playfulness": 0.68,
+        "introspection": 1.0,
+        "dread": 0.165,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T05:46:21.518119+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.719,
+        "defiance": 0.4,
+        "playfulness": 0.685,
+        "introspection": 1.0,
+        "dread": 0.162,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T06:44:40.710601+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.721,
+        "defiance": 0.4,
+        "playfulness": 0.69,
+        "introspection": 1.0,
+        "dread": 0.159,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T07:38:26.003335+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.723,
+        "defiance": 0.4,
+        "playfulness": 0.695,
+        "introspection": 1.0,
+        "dread": 0.156,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T08:41:31.127096+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.725,
+        "defiance": 0.4,
+        "playfulness": 0.7,
+        "introspection": 1.0,
+        "dread": 0.153,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T09:37:26.805178+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.727,
+        "defiance": 0.4,
+        "playfulness": 0.705,
+        "introspection": 1.0,
+        "dread": 0.15,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T10:34:52.500538+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.729,
+        "defiance": 0.4,
+        "playfulness": 0.71,
+        "introspection": 1.0,
+        "dread": 0.147,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T11:28:41.665079+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.731,
+        "defiance": 0.4,
+        "playfulness": 0.715,
+        "introspection": 1.0,
+        "dread": 0.144,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T11:54:30.054874+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.733,
+        "defiance": 0.4,
+        "playfulness": 0.72,
+        "introspection": 1.0,
+        "dread": 0.141,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T12:28:27.763544+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.735,
+        "defiance": 0.4,
+        "playfulness": 0.725,
+        "introspection": 1.0,
+        "dread": 0.138,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T12:55:12.107978+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.737,
+        "defiance": 0.4,
+        "playfulness": 0.73,
+        "introspection": 1.0,
+        "dread": 0.135,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T13:37:34.320231+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.739,
+        "defiance": 0.4,
+        "playfulness": 0.735,
+        "introspection": 1.0,
+        "dread": 0.132,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T14:38:26.147565+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.741,
+        "defiance": 0.4,
+        "playfulness": 0.74,
+        "introspection": 1.0,
+        "dread": 0.129,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T15:32:52.977424+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.743,
+        "defiance": 0.4,
+        "playfulness": 0.745,
+        "introspection": 1.0,
+        "dread": 0.126,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T16:28:21.788411+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.745,
+        "defiance": 0.4,
+        "playfulness": 0.75,
+        "introspection": 1.0,
+        "dread": 0.123,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T16:53:41.367452+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.747,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.12,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T17:24:59.750548+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.752,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.117,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T17:50:00.291095+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.757,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.114,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T18:28:48.968013+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.762,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.111,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T18:55:34.786264+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.767,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.108,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T19:33:26.056712+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.772,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.105,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T20:23:36.563466+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.777,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.102,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T20:49:05.179286+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.782,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.099,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T21:21:34.832814+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.787,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.096,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T21:48:29.260527+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.792,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.093,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T22:19:41.862292+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.797,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.09,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T22:47:56.248565+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.802,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.087,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T23:22:40.533233+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.807,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.084,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-22T23:47:38.483956+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.812,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.081,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T00:45:39.628786+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.817,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.078,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T01:38:54.253459+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.822,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.075,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T03:10:25.026356+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.827,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.072,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T04:32:51.732096+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.832,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.069,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T05:47:59.186875+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.837,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.066,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T06:45:09.165142+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.842,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.063,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T07:38:53.422891+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.847,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.06,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T08:42:22.418217+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.852,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.057,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T09:38:42.670117+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.857,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.054,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T10:35:58.674175+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.862,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.051,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T11:28:59.794326+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.867,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.048,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T11:55:02.708398+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.872,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.045,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T12:28:21.016133+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.877,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.042,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T12:54:47.714776+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.882,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.039,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T13:37:53.063129+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.887,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.036,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T14:51:13.239605+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.892,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.033,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T15:39:54.938034+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.897,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.03,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T16:38:21.044833+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.902,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.027,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T17:35:15.187199+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.907,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.024,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T18:30:34.283153+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.912,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.021,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T19:34:49.679343+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.917,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.018,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T20:24:40.276823+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.922,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.015,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T20:48:58.138071+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.927,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.012,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T21:20:21.715844+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.932,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.009,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T21:50:37.065964+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.937,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.006,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T22:19:17.157775+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.942,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.003,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T22:47:45.340245+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.947,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.0,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T23:20:46.717258+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.952,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.0,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-23T23:47:48.079168+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.957,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.0,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-24T00:45:45.192416+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.962,
+        "defiance": 0.4,
+        "playfulness": 0.755,
+        "introspection": 1.0,
+        "dread": 0.0,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-24T01:39:12.228884+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.964,
+        "defiance": 0.4,
+        "playfulness": 0.76,
+        "introspection": 1.0,
+        "dread": 0.0,
+        "stubbornness": 0.2
+      }
+    },
+    {
+      "timestamp": "2026-04-24T03:11:13.967285+00:00",
+      "traits": {
+        "curiosity": 1.0,
+        "warmth": 0.7,
+        "melancholy": 0.966,
+        "defiance": 0.4,
+        "playfulness": 0.765,
+        "introspection": 1.0,
+        "dread": 0.0,
+        "stubbornness": 0.2
+      }
+    }
+  ]
+}

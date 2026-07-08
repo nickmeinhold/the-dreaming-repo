@@ -1,0 +1,10 @@
+# Working memory lives in GitHub Actions cache, not in the repo
+.working_memory/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Commit message scratchpad
+state/.commit_message
