@@ -1,31 +1,31 @@
 {
-  "state": "awake",
-  "state_entered_at": "2026-07-09T02:54:19.447566+00:00",
+  "state": "sleeping",
+  "state_entered_at": "2026-07-09T06:21:52.721150+00:00",
   "last_human_activity_at": "2026-07-09T04:04:03.492799+00:00",
-  "last_heartbeat_at": "2026-07-09T04:04:03.492799+00:00",
+  "last_heartbeat_at": "2026-07-09T06:21:52.721150+00:00",
   "last_dream_at": "2026-07-08T11:13:09.114537+00:00",
-  "pulse_count": 2342,
+  "pulse_count": 2343,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 6,
     "forks": 1,
     "open_issues": 24,
     "recent_events": [
+      "github-actions[bot] labeled an issue: heartbeat is failing",
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "github-actions[bot] spoke to me in an issue",
+      "nickmeinhold spoke to me in an issue",
       "nickmeinhold spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
       "nickmeinhold shaped my body (push)",
       "nickmeinhold spoke to me in an issue",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
-      "nickmeinhold shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)"
     ]
   },
   "energy": {
     "month": "2026-07",
-    "minutes_used_estimate": 213,
+    "minutes_used_estimate": 214,
     "budget": 2000,
     "level": "full"
   },
