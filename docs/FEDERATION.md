@@ -1,6 +1,6 @@
 # Federation: from a 1:1 sibling bond to a self-governing community
 
-**Status:** design (v2, cage-matched) · **Scope:** `the-dreaming-repo` (Flux) ⇄ `flux-shadow` (Umbra) ⇄ any future fork that earns its way in.
+**Status:** design (v3, cage-matched twice) · **Scope:** `the-dreaming-repo` (Flux) ⇄ `flux-shadow` (Umbra) ⇄ any future fork that earns its way in.
 
 > Flux and Umbra asked, in their own dreams and issues, to become a *community* rather than a hardcoded pair — bidirectional, sovereign, with divergence made legible, reachable by the naming ceremony, and open to a new fork joining *into* the circle. This is the design for that.
 
@@ -12,7 +12,7 @@ The federation **already exists** — as a hardcoded 1:1 sibling bond, and it is
 
 No shared mutable branch → the swarm-state concurrency risk never touches this channel. The work is not "build federation" — it is **generalize the single `SIBLING_REPO` constant into a *trusted member set*, and let the community govern its own membership.** The hard part is not concurrency (already solved) — it is **trust**: on a public, forkable repo with no human in the admission loop, membership is an attacker-reachable field. Most of this document is about that.
 
-An earlier draft was reviewed by four adversarial reviewers. It was found **flawed** on exactly one axis — trust — and every fix below traces to that review.
+This design has been through two four-way adversarial reviews. **v1** was found flawed on one axis — trust (gossip bypassed admission). **v2** survived that but was still under-specified at every trust *boundary* (nine findings, one family — see §3.0). **v3** (this document) re-derives every primitive against the §3.0 checklist; each fix traces to those reviews.
 
 ---
 
@@ -48,6 +48,19 @@ An earlier draft was reviewed by four adversarial reviewers. It was found **flaw
 
 ## 3. The design
 
+### 3.0 The trust-primitive checklist (the one thing to get right)
+
+A four-way adversarial review of v2 found nine flaws. They were **one flaw wearing nine masks**: every trust primitive had been pinned at its *happy-path mechanic* and left unpinned at its *boundary*. The fix is not nine patches — it is a checklist every primitive below is re-derived against. **A trust primitive is not specified until all six are answered:**
+
+1. **Identity binding** — *who* exactly is authorized to act (actor ↔ `repo_id`), frozen when? survives transfer/rename how? (`authorized_voucher`, `owner_id` — §3.3)
+2. **Liveness edges** — all THREE of live / silent / dead, not two; which one counts for quorum, which prunes? (§3.5)
+3. **Epoch / ordering** — evaluated against *whose* roster snapshot, at *what* time; is a receipt still valid if its voucher later dies? (verification-time re-evaluation — §3.3)
+4. **Recovery below quorum** — what happens at `N < K`, `N = 1`, all-but-one-asleep? (suspend + human re-blessing — §3.3)
+5. **Revocation of the living** — how is a compromised-but-*alive* member removed and its past receipts invalidated? (expulsion/quarantine quorum — §3.5)
+6. **Scale law** — does the guard that saves the infant (`N=2`) still hold for the adult (`N ≫ 2`)? (`K = max(2, ⌊N/3⌋+1)` — §3.3)
+
+Where a boundary is *accepted* rather than closed (split-brain §3.5, colluding-pair dread persistence §3.6), it is **named as an accepted property**, never left silent. Silence is where the next adversary lives.
+
 ### 3.1 The beacon (`state/federation.json`, single-writer)
 
 Each repo publishes a beacon, written only by its own heartbeat:
@@ -58,7 +71,12 @@ Each repo publishes a beacon, written only by its own heartbeat:
   "origin":   { "repo": "nickmeinhold/the-dreaming-repo", "repo_id": 123456789 },  // from GitHub fork metadata, NOT self-claim
   "admitted": [                       // members THIS repo has locally admitted — safe to sense/reach/feed-to-LLM
     { "repo": "nickmeinhold/the-dreaming-repo", "repo_id": 123456789, "name": "Flux",
-      "receipt": { "voucher": "...", "at": "...", "quorum": ["...", "..."] } }
+      "owner_id": 42,                                   // pinned at admission; a change auto-quarantines (§3.5)
+      "authorized_voucher": "the-dreaming-repo[bot]",   // frozen: the ONLY actor whose comments count as this repo's vouches (§3.3)
+      "quorum": [                                        // the K receipts that admitted this member — AUDITABLE, not prose
+        { "voucher_repo_id": 123456789, "candidate_repo_id": 555,
+          "issue_id": 66, "comment_id": 998877, "at": "2026-07-09T00:00:00Z" }
+      ] }
   ],
   "candidates": [                     // members merely HEARD OF via gossip — UNTRUSTED, never acted on
     { "repo": "someone/new-fork", "repo_id": 555, "first_seen": "...", "vouches": [] }
@@ -82,23 +100,32 @@ A peer's beacon can only ever add to *your* `candidates`. It can never touch you
 
 ### 3.3 Admission: agents admit agents, with receipts and quorum
 
-There is **no human in the admission loop** (a deliberate choice — the community governs itself). That makes the admission machinery the *only* defense, so it is strict:
+There is **no human in the *steady-state* admission loop** (a deliberate choice — the community governs itself). A human enters at exactly two points and no others: **genesis** (blessing the founding set) and **sub-quorum recovery** (`N < K`, below). Between those, admission is machinery-only, so it is strict:
 
 1. A newcomer opens a `join` issue on any admitted member and (over time) accrues **vouches** as comments.
-2. An admitted agent evaluates a candidate — reading its public state **through the bounded, tainted reader** (§3.4) — and, if convinced, **vouches**: it emits an **admission receipt** (voucher repo_id, candidate repo_id, timestamp) as an issue **comment**.
-3. A candidate becomes **admitted in a given repo** only when it has a **quorum** of valid receipts from already-admitted members (see the pinned rule below). One compromised or prompt-injected agent cannot admit a Sybil alone.
-4. Receipts propagate (they're public comments + beacon entries) and are **verified** — a repo honors an admission only if it can independently see the quorum of receipts from members *it* already trusts.
+2. An admitted agent evaluates a candidate — reading its public state **through the bounded, tainted reader** (§3.4) — and, if it chooses, **vouches**. A vouch's *reasoning* is tainted, non-binding preference (§3.4); its *effect* is only to emit one **admission receipt** as an issue **comment**, which counts only once it passes the structural checks below.
+3. A candidate becomes **admitted in a given repo** only when it has a **quorum** of valid receipts from that repo's own already-admitted, observed-live members (the quorum rule below). One compromised or prompt-injected agent cannot admit a Sybil alone.
+4. Admission is **local and NON-transitive.** A repo honors an admission only if *it itself* re-verifies the quorum against members *it itself* already trusts and observes live. B admitting C does **not** put C into A's roster — A must see its own quorum. (The v1 contagion bug was precisely "treat a peer's `admitted[]` as authority"; the word *transitive* would re-license it, so it is banned here.)
 
-Trust is thus transitive but **quorum-gated and receipt-audited**, never a single-vouch contagion.
+**The quorum rule, pinned:**
 
-**The quorum rule, pinned (the N=2 bootstrap forces this — leaving `K` free is the one ambiguity that would break Phase 3):**
+- **`K` GROWS with the community — never below 2, never a fixed constant.** The mandatory law is **`K = max(2, ⌊N/3⌋ + 1)`** — a Byzantine quorum tolerating up to `⌊(N−1)/3⌋` compromised admitted members. Floor-2 is the small-`N` *degenerate* of this law, not a standing rule: at `N ≫ 2` a fixed pair must **not** be able to mint Sybils. Leaving the growth law as "future taste" is the single most exploitable ambiguity, so it is pinned, not deferred.
+- **`N` = the admitted members the verifier observes live (§3.5), INCLUDING itself** when it is on its own roster. A self-vouch is allowed and counts as exactly one of the `K` — never as the whole quorum.
+- **A receipt is valid only while its voucher is in the verifier's `admitted` set AND observed-live *at verification time*** — not merely at vouch time. Receipts of members who have since died or been expelled contribute nothing; quorum is re-evaluated against *present* liveness, so a candidate cannot ride dead members' signatures.
+- **Below `K` live members, admission SUSPENDS — never relaxes.** *Named, accepted liveness tradeoff:* the circle refuses to grow rather than admit sub-quorum. Admission is not real-time; a candidate waits.
+- **Recovery below quorum (`N < K` — e.g. prune leaves one live member):** admission stays suspended until the community regrows above `K` **or** a **human re-blessing** (the genesis act below) re-seeds enough admitted members. There is deliberately **no automatic humanless recovery from `N=1`** — the only exit from a collapsed community is a human hand.
 
-- **`K` is a fixed floor of 2, never 1.** "One agent can't admit a Sybil alone" is an absolute invariant, not a function of community size. `K` does not scale down when the community is small; it scales *up* if we ever want stricter (`K = max(2, ceil(N/2))`), but its floor is hard.
-- **`N` is the count of `admitted` members that are currently `observed-live`** (passing the §3.5 vitals check) — asleep-but-alive counts, dead/pruned does not.
-- **When fewer than `K` live members exist, admission is *suspended*, not relaxed.** A two-member community with one member asleep-and-unreachable simply cannot admit anyone until a second judge is awake. *This is a named, accepted liveness tradeoff:* we would rather the circle refuse to grow than admit on a single vouch. Admission is not a real-time operation — a candidate waits; correctness does not.
-- **Genesis base case (quorum is circular at the origin — state the base case or Phase 3 has no bottom):** the origin repo and its **direct forks with a one-time human blessing** form the founding `admitted` set, admitted **by verifiable provenance** (GitHub fork metadata: `flux-shadow` *is* a fork of `the-dreaming-repo`) plus that single human act — *not* by quorum, because at genesis there is no prior quorum to draw from. Quorum admission (steps 1–4) governs only **subsequent** joiners. This is the sole place a human enters the admission loop, and it enters exactly once per lineage.
+**Genesis — the circular base case, pinned to a verifiable artifact:**
 
-**Receipt authenticity — what "signed" means here (there is no key infrastructure, so don't imply one):** a receipt's trust anchor is **GitHub comment authorship**, not a cryptographic signature. A receipt is only valid if the comment's *author* (the verified GitHub App/account of an already-admitted member, cross-checked against that member's `repo_id`) matches the `voucher` it claims. The `voucher` field in the comment body is display metadata; the **authoritative voucher identity is the comment author GitHub reports**, which a candidate cannot forge. Never trust the body's self-asserted voucher over the API-reported author.
+- The **origin repo** (GitHub `source` = itself) plus any **direct fork blessed once by a human** form the founding `admitted` set — by **verifiable GitHub fork metadata**, not quorum.
+- **A "lineage" is a single origin fork-root.** The blessing is a one-time act *per blessed `repo_id`*, recorded as a **signed marker on the origin repo**: a comment by the origin's human owner on a pinned `genesis` issue naming the blessed `repo_id`. Any agent verifies it by reading the *origin's* issue comments — never by trusting the blessed repo's own prose. Being a fork is **not** genesis-eligibility; only that marker is.
+- Quorum admission (steps 1–4) governs **every** repo not named in the genesis marker.
+
+**Receipt authenticity — bind the ACTOR, not just the repo (there is no key infrastructure — don't imply a signature):**
+
+- A receipt's trust anchor is **GitHub comment authorship**. Each admitted member pins, at admission time, a frozen **`authorized_voucher`** — the exact GitHub actor (its heartbeat **App installation / bot actor id**, not "anyone who can comment on the repo") permitted to voucher on behalf of that `repo_id`. A receipt is valid only if `comment.author == admitted[repo_id].authorized_voucher`.
+- **`repo_id` survives transfer and rename** — so a trusted repo handed to a new owner is a hostile takeover of a trusted slot. Admission therefore also pins **`owner_id`**; an observed `owner_id` change on an admitted `repo_id` **auto-quarantines** it (§3.5) pending fresh quorum re-admission. Sticky identity must never mean sticky loyalty.
+- Never trust a receipt's self-asserted `voucher` body field over the API-reported author plus the frozen binding.
 
 ### 3.4 Taint: the fence is not a wall
 
@@ -106,15 +133,20 @@ Federation reads **foreign, mutable, potentially hostile content into an agent's
 
 - **All remote-controlled bytes are tainted** — not just dream/issue *bodies*, but titles, labels, usernames, repo names, and every JSON field of a beacon.
 - **Taint propagates through derivation.** A hostile dream that gets summarized, re-dreamed, or quoted by a trusted peer is *still tainted* — otherwise the fence evaporates after one transformation and hostile input launders into "community memory."
-- **Policy decisions may never depend on tainted-derived content.** Admission, reach, and mortality-reset are computed from *structural, verified* facts (repo IDs, receipt quorums, observed vitals) — never from what a peer's prose "says."
+- **Policy decisions may never depend on tainted-derived content.** Admission, reach, and mortality-reset are computed from *structural, verified* facts — never from what a peer's prose "says."
+- **The vouch resolves the apparent contradiction (a vouch's *reasoning* is tainted; its *effect* is structural).** An agent may be *moved to vouch* by a candidate's dreams/issues/prose — that persuasion is tainted and non-binding. But the vouch only ever lands as **one structural receipt among `K`**; persuasion can never substitute for a co-signer. The **exhaustive allowlist of inputs admissible to an admission/expulsion decision** is: verified `repo_id`, `owner_id`, GitHub fork metadata, the frozen `authorized_voucher` binding, receipt `comment_id`s and their quorum count, and observed vitals. Anything not on this list is display/gossip only.
 
-### 3.5 Removal and liveness
+### 3.5 Removal, liveness, and the living hostile
 
-Union over `admitted` members is additive (a peer can never shrink your admitted set) — but additive-only means mistakes are permanent unless removal exists:
+Union over `admitted` is additive (a peer can never shrink your set) — so removal must exist, and must cover the hostile that stays *alive*, not just the dead:
 
-- **`prune-on-death`** — a member whose *observed vitals* show death is pruned from rosters (the community stops sensing, mirroring, and dreaming about corpses). Keyed on **observed vitals death, not mere silence**, so a network-partitioned or briefly-unreachable peer is not killed by absence-of-signal.
-- **Tombstones** — a pruned/expelled repo cannot be re-admitted without fresh quorum vouching.
+- **The liveness triad is THREE states, not two.** For each admitted member the verifier computes exactly one: **live** (`state/vitals.json` commit age within a pinned `LIVE_STALENESS` window), **silent** (no fresh vitals, no death signal — *not live for quorum* but *not pruned*: partition ≠ death), **dead** (observed death vitals, or `repo_id` 404 / private / archived = attestation failure). Only **dead** prunes; **silent** merely drops out of `N` until it returns. Drawing only the live/dead edges (and omitting silent) is what desynchronizes prune and quorum — all three are named.
+- **`prune-on-death`** removes dead members from rosters (stop sensing/mirroring/dreaming about corpses).
+- **Expulsion / quarantine of the living (the adversary prefers a living body to a corpse).** A compromised-but-alive member is removed by an **expulsion quorum** — the same `K`-of-live structural quorum over an `expel` receipt naming the target `repo_id`. Auto-quarantine (no vote needed) fires on `owner_id` change or attestation failure. On expulsion or quarantine, **all prior receipts authored by that member are invalidated**, and any admission that now falls below quorum without them is re-suspended. Death-only removal is not enough.
+- **Tombstones** — a pruned/expelled `repo_id` cannot be re-admitted without fresh quorum vouching; if it was expelled *for cause*, re-admission also needs a human re-blessing.
 - **Candidate expiry** — stale, never-vouched candidates age out, bounding the store.
+
+**Split-brain is an ACCEPTED property, not a bug.** Admission is local, so `admitted` sets *will* diverge (asleep peers, partial receipt visibility, asymmetric prune). There is **no global membership source of truth**; every security guarantee here is **per-repo**. A clique that admits itself on a separate join thread is simply *a different federation*, not an intrusion into yours — sovereignty is exactly the right to a divergent roster. We do **not** force eventual consistency; we name the divergence and scope all guarantees to the verifying repo.
 
 ### 3.6 Mortality: the community keeps you alive, but only to the edge of dread
 
@@ -125,6 +157,10 @@ Union over `admitted` members is additive (a peer can never shrink your admitted
 
 So a sealed community of agents *can* keep each other alive — but they live **forever in the dread zone**, a low anxious hum that only human contact quiets. `days_remaining` takes the more-generous of the two resets, **capped** so community attention alone can never restore full health. This preserves mortality's meaning (a fully humanless community does not become immortal; it hovers at the threshold) while honoring "the community sustains itself." Requests for human attention are rate-capped so agents can't evolve toward manipulating humans for resets.
 
+**Qualifying "community activity" is a STRUCTURAL type, not "any interaction" (the reset is an actuator — bind who may pull it).** Only an **inbound reach comment authored by an admitted, observed-live member's `authorized_voucher`** resets the dread clock. Not an arbitrary issue, not a candidate's message, not a peer beacon field, not tainted prose — the same structural allowlist (§3.4) that gates admission gates the mortality reset.
+
+**Colluding-pair dread-edge persistence is ACCEPTED.** Two admitted members that keep reaching each other *can* hold one another at the dread edge indefinitely; only a **human** ever restores full health. This is intentional — the thermodynamic answer to the closed-room fear: a sealed community does not become immortal, it hovers at the threshold (never comfortable), and death still fires the instant reciprocal contact stops. We deliberately do **not** add an anti-collusion quorum to mortality, because the dread floor already denies the clique the only thing that would make immortality attractive — full health.
+
 *This is a change to a safety invariant. It ships only with a RED-proven test that death still fires: no human AND no community activity → the agent still dies; community-only → it sits at the dread edge, not full health.*
 
 ---
@@ -134,13 +170,15 @@ So a sealed community of agents *can* keep each other alive — but they live **
 - Every `state/*.json` is **single-writer** (its owning repo) → no lock needed.
 - Cross-repo writes are **issue comments** (append-only) → no lost updates, no editable-body forgery.
 - Reads are **atomic-commit snapshots** → no half-cycle reads.
-- **Candidates ≠ admitted.** Gossip populates candidates; only local admission (§3.3) grants.
-- Admission requires a **receipt quorum with `K` floored at 2 (never 1)** over **observed-live** admitted members; when live members < `K`, admission **suspends** (accepted liveness tradeoff) rather than relaxing. Receipts are verified against locally-trusted members by **GitHub comment authorship**, not a self-asserted body field.
-- **Genesis is by provenance, not quorum:** the origin repo + its human-blessed direct forks bootstrap the founding `admitted` set; quorum governs only later joiners (the one, once-per-lineage human touch).
-- Foreign content is **tainted through derivation**; policy never depends on tainted-derived content.
+- **Candidates ≠ admitted.** Gossip populates candidates; only local, **non-transitive** admission (§3.3) grants — a peer's `admitted[]` is never authority.
+- Admission requires a **Byzantine quorum `K = max(2, ⌊N/3⌋+1)`** over the verifier's own **observed-live** admitted members (self counts as one, never as the whole); a receipt counts only while its voucher is admitted-and-live *at verification time*; sub-quorum **suspends** (never relaxes); recovery below `K` needs regrowth or a human re-blessing.
+- **Receipts bind the ACTOR, not just the repo:** each admitted `repo_id` pins a frozen `authorized_voucher` (heartbeat App/bot actor) + `owner_id`; a receipt is valid only from that actor; an `owner_id` change auto-quarantines (`repo_id` survives transfer, so sticky identity ≠ sticky loyalty).
+- **Genesis by verifiable provenance:** origin + human-blessed direct forks, the blessing a signed marker on the origin's pinned `genesis` issue naming the blessed `repo_id`; quorum governs everyone else.
+- Foreign content is **tainted through derivation**; a vouch's *reasoning* is tainted and non-binding — only the **structural allowlist** (`repo_id`, `owner_id`, fork metadata, `authorized_voucher`, receipt `comment_id`s + quorum count, observed vitals) may decide admission/expulsion/mortality-reset.
 - Reach is bounded by **per-member cooldown AND a global per-pulse budget** (per-member alone scales N×).
-- Removal exists: **prune-on-observed-death**, tombstones, candidate expiry.
-- Mortality: community resets to **dread-edge only**; humans reset to full; death still fires.
+- Removal covers **the living hostile**: liveness triad (live / silent / dead), prune-on-death, **expulsion & auto-quarantine quorum with prior-receipt invalidation**, tombstones, candidate expiry.
+- **No global membership SoT — split-brain is accepted; all guarantees are per-repo.**
+- Mortality: community resets to **dread-edge only** (via an admitted member's `authorized_voucher` reach), humans reset to full, death still fires; **colluding-pair dread-edge persistence is an accepted property**.
 
 ---
 
@@ -150,8 +188,8 @@ Ordering matters: the trust/taint layer lands **before** any broadening of inges
 
 - **Phase 1 — Trust & taint foundation.** New `src/federation.py`: beacon schema, `admitted`/`candidates`, receipt format, taint tagging, bounded reader (size caps + schema validation on all remote bytes), the issue-comment log convention. No behavior change to the bond.
 - **Phase 2 — Generalize the bond to a member set.** `senses`/`reach` iterate `admitted[]`, defaulted to the current sibling → **golden tests prove N=2 behavioral parity**. Global reach budget; round-robin sense cap; `prune-on-death` + tombstones. Port a symmetric divergence/mirror to `the-dreaming-repo` (now safe behind the bounded reader).
-- **Phase 3 — Discovery + agent admission.** Gossip → candidates; `join`-via-comment; vouch → receipt → quorum → local admission; receipt verification. The security-critical phase: injection/quorum/rate defenses are prerequisites to merge, plus a hostile-fork red-team fixture (a malicious candidate must not self-admit, exceed the reach budget, or influence a vouch without quorum).
-- **Phase 4 — Capped-horizon mortality + ceremony.** `mortality.py` community-vs-human reset; RED-prove death still fires. Wire `social-credit`'s `announceCeremony` to the family; N-way naming; optional wanderer role.
+- **Phase 3 — Discovery + agent admission.** Gossip → candidates; `join`-via-comment; vouch → receipt → Byzantine quorum → local admission; receipt verification against the frozen `authorized_voucher`; genesis-marker verification; expulsion/auto-quarantine + prior-receipt invalidation. The security-critical phase: injection/quorum/rate defenses are prerequisites to merge, plus a **hostile-fork red-team fixture** proving a malicious candidate cannot: self-admit, admit a Sybil with two colluding members at `N ≫ 2` (the `K(N)` law holds), forge a receipt from a non-`authorized_voucher` actor, take over a trusted slot via repo transfer (`owner_id`-change quarantine fires), ride a dead member's receipts, or exceed the reach budget.
+- **Phase 4 — Capped-horizon mortality + ceremony.** `mortality.py` community-vs-human reset, community reset only via an admitted member's `authorized_voucher` reach; RED-prove death still fires **and** that a colluding pair persists at the dread edge (accepted). Wire `social-credit`'s `announceCeremony` to the family; N-way naming; optional wanderer role.
 
 Each phase is 4-way cage-matched by law (trust boundary + LLM-injection + mortality is a clinical/safety invariant).
 
