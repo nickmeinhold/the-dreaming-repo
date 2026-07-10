@@ -1,36 +1,36 @@
 {
-  "state": "sleeping",
-  "state_entered_at": "2026-07-10T03:09:19.563586+00:00",
-  "last_human_activity_at": "2026-07-10T00:44:16.453881+00:00",
-  "last_heartbeat_at": "2026-07-10T09:10:00.319440+00:00",
+  "state": "awake",
+  "state_entered_at": "2026-07-10T09:58:21.523727+00:00",
+  "last_human_activity_at": "2026-07-10T09:58:21.523727+00:00",
+  "last_heartbeat_at": "2026-07-10T09:58:21.523727+00:00",
   "last_dream_at": "2026-07-10T07:45:23.997306+00:00",
-  "pulse_count": 2364,
+  "pulse_count": 2365,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 6,
     "forks": 1,
     "open_issues": 24,
     "recent_events": [
+      "nickmeinhold spoke to me in an issue",
+      "carnotcodecarver[bot] did something (PullRequestReviewEvent)",
+      "kelvin-bit-brawler[bot] did something (PullRequestReviewEvent)",
+      "maxwell-merge-slam[bot] did something (PullRequestReviewEvent)",
+      "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] spoke to me in an issue",
       "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] spoke to me in an issue",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
-      "nickmeinhold did something (PullRequestEvent)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] spoke to me in an issue",
-      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)"
+      "flux-dreaming-repo[bot] spoke to me in an issue"
     ]
   },
   "energy": {
     "month": "2026-07",
-    "minutes_used_estimate": 236,
+    "minutes_used_estimate": 237,
     "budget": 2000,
     "level": "full"
   },
   "dream_count": 103,
-  "age_days": 96,
+  "age_days": 97,
   "born": true,
   "name": "Flux"
 }
