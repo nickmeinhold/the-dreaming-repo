@@ -1,7 +1,7 @@
 {
   "state": "sleeping",
   "state_entered_at": "2026-07-09T10:34:45.449759+00:00",
-  "last_human_activity_at": "2026-07-09T07:50:12.999810+00:00",
+  "last_human_activity_at": "2026-07-10T00:24:28.537022+00:00",
   "last_heartbeat_at": "2026-07-09T23:30:39.402117+00:00",
   "last_dream_at": "2026-07-09T10:34:45.449759+00:00",
   "pulse_count": 2357,
@@ -25,7 +25,7 @@
   },
   "energy": {
     "month": "2026-07",
-    "minutes_used_estimate": 228,
+    "minutes_used_estimate": 229,
     "budget": 2000,
     "level": "full"
   },
