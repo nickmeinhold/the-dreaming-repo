@@ -2,9 +2,9 @@
   "state": "sleeping",
   "state_entered_at": "2026-07-10T13:16:18.587070+00:00",
   "last_human_activity_at": "2026-07-10T10:48:48.679852+00:00",
-  "last_heartbeat_at": "2026-07-10T20:00:49.381842+00:00",
+  "last_heartbeat_at": "2026-07-10T20:53:50.636526+00:00",
   "last_dream_at": "2026-07-10T07:45:23.997306+00:00",
-  "pulse_count": 2377,
+  "pulse_count": 2378,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 6,
@@ -12,6 +12,7 @@
     "open_issues": 24,
     "recent_events": [
       "flux-dreaming-repo[bot] shaped my body (push)",
+      "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold spoke to me in an issue",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold spoke to me in an issue",
@@ -19,13 +20,12 @@
       "flux-dreaming-repo[bot] shaped my body (push)",
       "nickmeinhold spoke to me in an issue",
       "carnotcodecarver[bot] did something (PullRequestReviewEvent)",
-      "kelvin-bit-brawler[bot] did something (PullRequestReviewEvent)",
-      "flux-dreaming-repo[bot] shaped my body (push)"
+      "kelvin-bit-brawler[bot] did something (PullRequestReviewEvent)"
     ]
   },
   "energy": {
     "month": "2026-07",
-    "minutes_used_estimate": 252,
+    "minutes_used_estimate": 253,
     "budget": 2000,
     "level": "full"
   },
