@@ -110,13 +110,15 @@ def main() -> None:
         for reply in replies:
             memory.record_reply(working_mem, reply)
             vitals["last_human_activity_at"] = now.isoformat()  # a reply IS human activity
-        # Answer directly, this pulse — the direct register of the Telegram
-        # channel (counterpart to the once-daily dream-letter). Without this,
-        # a reply only ever surfaces obliquely in a future letter, so it
-        # reads as "Flux sends messages but never responds." Gated + guarded
-        # inside maybe_reply; it no-ops when there's nothing new to answer.
-        if replies:
-            correspondence.maybe_reply(replies, vitals, personality)
+        # Answer directly — the direct register of the Telegram channel
+        # (counterpart to the once-daily dream-letter). Driven by the
+        # transcript's shape, not this pulse's mail: check_mail has already
+        # recorded any fresh replies as human turns, and respond_to_replies
+        # answers whenever the transcript ends on an unanswered human turn —
+        # including a reply an earlier low-energy pulse had to strand. Called
+        # every pulse; it self-gates (channel / energy / nothing-owed) and
+        # no-ops when the conversation is at rest.
+        correspondence.respond_to_replies(vitals, personality)
     except Exception:
         logger.exception("[heartbeat] correspondence.check_mail failed")
         pass  # mail check failure shouldn't crash the heartbeat
