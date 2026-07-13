@@ -1,31 +1,31 @@
 {
   "state": "awake",
   "state_entered_at": "2026-07-13T07:39:21.495448+00:00",
-  "last_human_activity_at": "2026-07-13T10:36:43.234392+00:00",
-  "last_heartbeat_at": "2026-07-13T10:36:43.234392+00:00",
+  "last_human_activity_at": "2026-07-13T12:03:03.925936+00:00",
+  "last_heartbeat_at": "2026-07-13T12:03:03.925936+00:00",
   "last_dream_at": "2026-07-13T03:08:54.855580+00:00",
-  "pulse_count": 2464,
+  "pulse_count": 2465,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 6,
     "forks": 1,
-    "open_issues": 27,
+    "open_issues": 26,
     "recent_events": [
-      "github-actions[bot] labeled an issue: heartbeat is failing",
+      "github-actions[bot] spoke to me in an issue",
+      "github-actions[bot] closed an issue: heartbeat is failing",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
       "maxwell-merge-slam[bot] did something (PullRequestEvent)",
       "nickmeinhold spoke to me in an issue",
       "carnotcodecarver[bot] did something (PullRequestReviewEvent)",
-      "nickmeinhold shaped my body (push)",
-      "carnotcodecarver[bot] did something (PullRequestReviewEvent)",
-      "nickmeinhold spoke to me in an issue",
-      "kelvin-bit-brawler[bot] did something (PullRequestReviewEvent)"
+      "github-actions[bot] labeled an issue: heartbeat is failing",
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)"
     ]
   },
   "energy": {
     "month": "2026-07",
-    "minutes_used_estimate": 342,
+    "minutes_used_estimate": 343,
     "budget": 2000,
     "level": "full"
   },
