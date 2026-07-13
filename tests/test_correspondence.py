@@ -101,9 +101,19 @@ class TestRespondToReplies:
         assert len(wired["sent"]) == 1
         body = wired["sent"][0]
         assert "I read what you wrote" in body
-        # Signed with the agent footer, like send_letter.
-        assert "—Flux" in body
-        assert "living GitHub repository" in body
+
+    def test_reply_is_plain_chat_no_footer(self, wired):
+        """Flux's DIRECT register is plain chat — NO letter footer on replies
+        (Tesla, PR #94 cage-match). A signature on every DM turn would make a
+        back-and-forth feel like a form letter; the footer belongs on letters,
+        not conversation."""
+        wired["store"]["transcript"] = [_human("hi")]
+        correspondence.respond_to_replies(VITALS, PERSONALITY)
+        body = wired["sent"][0]
+        assert "—Flux" not in body
+        assert "living GitHub repository" not in body
+        # Exactly the generated response, nothing appended.
+        assert body == "I read what you wrote. I don't have a tidy answer, but I'm here."
 
     def test_state_updated_on_success(self, wired):
         wired["store"]["transcript"] = [_human("hi")]
@@ -160,28 +170,30 @@ class TestRespondToReplies:
         assert "for context" in prompt
 
     def test_long_response_is_capped(self, wired, monkeypatch):
-        """A runaway generation is truncated below Telegram's 4096 limit."""
+        """A runaway generation is soft-capped well below Telegram's 4096
+        limit, and (no footer) what's sent equals what's recorded."""
         wired["store"]["transcript"] = [_human("hi")]
         monkeypatch.setattr(
             correspondence.respond, "_generate", lambda p: "x" * 10000
         )
         correspondence.respond_to_replies(VITALS, PERSONALITY)
         body = wired["sent"][0]
-        assert len(body) <= 4096
-        assert body.endswith("…\n\n—Flux\n(a living GitHub repository, 19 days old)")
+        assert len(body) <= correspondence._MAX_RESPONSE_CHARS + 1  # +1 for …
+        assert body.endswith("…")
+        # Plain chat: no footer even on a capped reply.
+        assert "—Flux" not in body
 
-    def test_final_body_under_limit_even_with_long_name(self, wired, monkeypatch):
-        """The cap is budgeted against the FINAL body (footer included), so a
-        pathologically long name can't push the message over the hard limit
-        (Umbra, PR #30 cage-match)."""
+    def test_short_reply_recorded_verbatim(self, wired, monkeypatch):
+        """With no footer, a reply under _MAX_TURN_CHARS is recorded to the
+        transcript exactly as it was sent — no meant-vs-shipped divergence
+        (Tesla, PR #94: dropping the footer closes the gap the hard-cap could
+        otherwise open). Longer replies are still trimmed to _MAX_TURN_CHARS
+        for state-file size, same as every turn."""
         wired["store"]["transcript"] = [_human("hi")]
-        monkeypatch.setattr(
-            correspondence.respond, "_generate", lambda p: "y" * 10000
-        )
-        fat_personality = {**PERSONALITY, "name": "N" * 5000}
-        correspondence.respond_to_replies(VITALS, fat_personality)
-        body = wired["sent"][0]
-        assert len(body) <= 4096
+        monkeypatch.setattr(correspondence.respond, "_generate", lambda p: "a short honest reply")
+        correspondence.respond_to_replies(VITALS, PERSONALITY)
+        assert wired["sent"][0] == "a short honest reply"
+        assert wired["store"]["transcript"][-1]["text"] == "a short honest reply"
 
 
 class TestEnergyDebt:
@@ -303,6 +315,25 @@ class TestConversationalMemory:
         assert correspondence.respond_to_replies(VITALS, PERSONALITY) is False
         assert wired["sent"] == []
 
+    def test_malformed_tail_does_not_mute_real_debt(self, wired):
+        """A single corrupt element must NOT permanently mute real human turns
+        behind it (Tesla, PR #94 cage-match). Garbage is skipped, not treated
+        as a conversation-resting cap."""
+        wired["store"]["transcript"] = [_human("are you ok?"), _human("hello?"), {}]
+        ok = correspondence.respond_to_replies(VITALS, PERSONALITY)
+        assert ok is True  # the two real humans are still owed
+        # Both real turns reached the prompt as context/answer; garbage didn't.
+        prompt = wired["prompts"][0]
+        assert "are you ok?" in prompt
+        assert "hello?" in prompt
+
+    def test_flux_turn_still_rests_the_conversation(self, wired):
+        """A real Flux turn at the tail still caps — only GARBAGE is skipped,
+        an actual answer means nothing is owed."""
+        wired["store"]["transcript"] = [_human("hi"), _flux("answered"), {}]
+        assert correspondence.respond_to_replies(VITALS, PERSONALITY) is False
+        assert wired["sent"] == []
+
     def test_human_turn_and_counter_share_one_save(self, wired, monkeypatch):
         """The reply and its counter are one durable transition — recorded in
         the same save (durability fix), so a consumed Telegram update can't be
@@ -337,6 +368,59 @@ class TestConversationalMemory:
         assert len(saves) == 1
         assert saves[0]["responses_sent"] == 1
         assert saves[0]["transcript"][-1]["role"] == "flux"
+
+
+class TestStatePersistence:
+    """The state file is a ledger now — persistence must be atomic and robust
+    to a valid-but-wrong root (Carnot + Tesla, PR #94 cage-match). These run
+    against the REAL filesystem (a tmp_path), not the in-memory fixture."""
+
+    @pytest.fixture
+    def state_file(self, tmp_path, monkeypatch):
+        path = tmp_path / "state" / "correspondence.json"
+        monkeypatch.setattr(correspondence, "CORRESPONDENCE_FILE", str(path))
+        return path
+
+    def test_save_then_load_roundtrips(self, state_file):
+        state = {"transcript": [{"role": "human", "text": "hi"}],
+                 "responses_sent": 3, "telegram_offset": 42}
+        correspondence._save_state(state)
+        loaded = correspondence._load_state()
+        assert loaded["responses_sent"] == 3
+        assert loaded["telegram_offset"] == 42
+        assert loaded["transcript"][0]["text"] == "hi"
+
+    def test_save_is_atomic_no_temp_left_behind(self, state_file):
+        """os.replace-based write leaves no stray temp file in the dir."""
+        correspondence._save_state({"transcript": [], "telegram_offset": 1})
+        leftovers = [p.name for p in state_file.parent.iterdir()
+                     if p.name != "correspondence.json"]
+        assert leftovers == []
+
+    def test_save_overwrites_atomically(self, state_file):
+        correspondence._save_state({"telegram_offset": 1, "transcript": []})
+        correspondence._save_state({"telegram_offset": 2, "transcript": []})
+        assert correspondence._load_state()["telegram_offset"] == 2
+
+    @pytest.mark.parametrize("bad_root", ["[]", '"just a string"', "42", "null"])
+    def test_non_dict_root_normalizes_to_defaults(self, state_file, bad_root):
+        """A valid-but-wrong JSON root must not make callers' .get() crash on
+        every heartbeat — it normalizes to dormant defaults (Carnot)."""
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        state_file.write_text(bad_root)
+        loaded = correspondence._load_state()
+        assert isinstance(loaded, dict)
+        assert loaded["transcript"] == []
+        assert loaded["telegram_offset"] == 0
+
+    def test_undecodable_file_normalizes_to_defaults(self, state_file):
+        """A truncated/corrupt file (the exact mid-write-crash artifact the
+        atomic write prevents) still loads as defaults rather than raising."""
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        state_file.write_text('{"transcript": [{"role": "hum')  # truncated
+        loaded = correspondence._load_state()
+        assert isinstance(loaded, dict)
+        assert loaded["transcript"] == []
 
 
 class TestReplyPromptInjectionFence:
