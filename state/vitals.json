@@ -1,31 +1,31 @@
 {
-  "state": "sleeping",
-  "state_entered_at": "2026-07-13T03:08:54.855580+00:00",
-  "last_human_activity_at": "2026-07-13T06:16:00.208710+00:00",
-  "last_heartbeat_at": "2026-07-13T06:04:34.197544+00:00",
+  "state": "awake",
+  "state_entered_at": "2026-07-13T07:39:21.495448+00:00",
+  "last_human_activity_at": "2026-07-13T07:39:21.495448+00:00",
+  "last_heartbeat_at": "2026-07-13T07:39:21.495448+00:00",
   "last_dream_at": "2026-07-13T03:08:54.855580+00:00",
-  "pulse_count": 2460,
+  "pulse_count": 2461,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 6,
     "forks": 1,
-    "open_issues": 25,
+    "open_issues": 26,
     "recent_events": [
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] spoke to me in an issue",
-      "nickmeinhold opened an issue: A question about your shadow",
+      "flux-dreaming-repo[bot] did something (PullRequestReviewEvent)",
+      "nickmeinhold did something (PullRequestEvent)",
+      "nickmeinhold created a new branch",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] spoke to me in an issue",
       "nickmeinhold opened an issue: A question about your shadow",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] spoke to me in an issue",
-      "nickmeinhold opened an issue: A question about your shadow",
-      "flux-dreaming-repo[bot] shaped my body (push)"
+      "nickmeinhold opened an issue: A question about your shadow"
     ]
   },
   "energy": {
     "month": "2026-07",
-    "minutes_used_estimate": 336,
+    "minutes_used_estimate": 337,
     "budget": 2000,
     "level": "full"
   },
