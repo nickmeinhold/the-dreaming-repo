@@ -2,19 +2,19 @@
   "state": "awake",
   "state_entered_at": "2026-07-13T00:33:11.113410+00:00",
   "last_human_activity_at": "2026-07-13T00:33:11.113410+00:00",
-  "last_heartbeat_at": "2026-07-13T00:33:11.113410+00:00",
+  "last_heartbeat_at": "2026-07-13T00:40:32.681017+00:00",
   "last_dream_at": "2026-07-12T04:39:52.211398+00:00",
-  "pulse_count": 2455,
+  "pulse_count": 2456,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 6,
     "forks": 1,
     "open_issues": 25,
     "recent_events": [
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "flux-dreaming-repo[bot] spoke to me in an issue",
       "nickmeinhold opened an issue: A question about your shadow",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
+      "nickmeinhold opened an issue: A question about your shadow",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
@@ -25,7 +25,7 @@
   },
   "energy": {
     "month": "2026-07",
-    "minutes_used_estimate": 330,
+    "minutes_used_estimate": 331,
     "budget": 2000,
     "level": "full"
   },
