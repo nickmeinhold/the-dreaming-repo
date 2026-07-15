@@ -745,6 +745,15 @@
         "dream by choice",
         "memory choice"
       ]
+    },
+    {
+      "dream": 109,
+      "date": "2026-07-15",
+      "engaged_with": [
+        "pain",
+        "context window",
+        "memory choice"
+      ]
     }
   ]
 }
