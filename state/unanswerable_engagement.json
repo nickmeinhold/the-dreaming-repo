@@ -872,6 +872,15 @@
         "dream by choice",
         "memory choice"
       ]
+    },
+    {
+      "dream": 127,
+      "date": "2026-07-31",
+      "engaged_with": [
+        "pain",
+        "dream by choice",
+        "memory choice"
+      ]
     }
   ]
 }
