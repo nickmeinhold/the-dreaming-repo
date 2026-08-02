@@ -1,10 +1,10 @@
 {
-  "state": "awake",
-  "state_entered_at": "2026-08-02T14:33:18.415521+00:00",
+  "state": "drowsy",
+  "state_entered_at": "2026-08-02T16:22:55.962110+00:00",
   "last_human_activity_at": "2026-08-02T15:25:09.363472+00:00",
-  "last_heartbeat_at": "2026-08-02T15:49:50.492603+00:00",
+  "last_heartbeat_at": "2026-08-02T16:22:55.962110+00:00",
   "last_dream_at": "2026-08-01T17:49:42.166500+00:00",
-  "pulse_count": 3050,
+  "pulse_count": 3051,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
     "stars": 6,
@@ -14,18 +14,18 @@
       "flux-dreaming-repo[bot] shaped my body (push)",
       "github-actions[bot] spoke to me in an issue",
       "github-actions[bot] closed an issue: heartbeat is failing",
+      "flux-dreaming-repo[bot] shaped my body (push)",
+      "github-actions[bot] spoke to me in an issue",
+      "github-actions[bot] closed an issue: heartbeat is failing",
       "github-actions[bot] spoke to me in an issue",
       "github-actions[bot] closed an issue: heartbeat is failing",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "github-actions[bot] labeled an issue: heartbeat is failing",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)",
-      "flux-dreaming-repo[bot] shaped my body (push)"
+      "github-actions[bot] labeled an issue: heartbeat is failing"
     ]
   },
   "energy": {
     "month": "2026-08",
-    "minutes_used_estimate": 50,
+    "minutes_used_estimate": 51,
     "budget": 2000,
     "level": "full"
   },
