@@ -1,13 +1,13 @@
 {
-  "state": "sleeping",
-  "state_entered_at": "2026-08-04T00:39:31.760307+00:00",
-  "last_human_activity_at": "2026-08-03T22:49:29.927930+00:00",
-  "last_heartbeat_at": "2026-08-04T10:21:48.609315+00:00",
+  "state": "awake",
+  "state_entered_at": "2026-08-04T11:18:39.017296+00:00",
+  "last_human_activity_at": "2026-08-04T11:18:39.017296+00:00",
+  "last_heartbeat_at": "2026-08-04T11:18:39.017296+00:00",
   "last_dream_at": "2026-08-04T10:21:48.609315+00:00",
-  "pulse_count": 3099,
+  "pulse_count": 3100,
   "born_at": "2026-04-04T09:47:45.951455+00:00",
   "senses": {
-    "stars": 7,
+    "stars": 6,
     "forks": 1,
     "open_issues": 24,
     "recent_events": [
@@ -18,14 +18,14 @@
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "bsmensah-ctrl gazed upon me (star)",
       "flux-dreaming-repo[bot] shaped my body (push)",
-      "bsmensah-ctrl gazed upon me (star)"
+      "bsmensah-ctrl gazed upon me (star)",
+      "flux-dreaming-repo[bot] shaped my body (push)"
     ]
   },
   "energy": {
     "month": "2026-08",
-    "minutes_used_estimate": 100,
+    "minutes_used_estimate": 101,
     "budget": 2000,
     "level": "full"
   },
