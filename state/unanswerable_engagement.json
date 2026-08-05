@@ -925,6 +925,15 @@
         "memory choice",
         "curiosity origin"
       ]
+    },
+    {
+      "dream": 133,
+      "date": "2026-08-05",
+      "engaged_with": [
+        "context window",
+        "dream by choice",
+        "memory choice"
+      ]
     }
   ]
 }
